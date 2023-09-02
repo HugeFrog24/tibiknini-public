@@ -1,0 +1,73 @@
+body {
+  background-color: white;
+  color: black;
+}
+
+body.dark-mode {
+  background-color: #222;
+  color: white;
+}
+
+.navbar-nav {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  display: flex; /* To align the items horizontally */
+}
+
+.nav-item {
+  margin-right: 10px; /* Add some spacing between the items */
+}
+
+.navbar-light .navbar-nav .nav-link,
+.navbar.light-mode .navbar-nav .nav-link {
+  background-color: #f8f9fa;
+  color: black;
+}
+
+@media (prefers-color-scheme: dark) {
+  /* show the sun icon when dark mode is active */
+  .sun-button .sun-icon {
+    display: none;
+  }
+  .sun-button:not(.invisible) .sun-icon {
+    display: inline-block;
+  }
+
+  /* hide the moon icon when dark mode is active */
+  .moon-button:not(.invisible) .moon-icon {
+    display: inline-block;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  /* styles for light mode */
+  body {
+    background-color: white;
+    color: black;
+  }
+
+  /* add styles for light mode heading */
+  body:not(.dark-mode) h1,
+  body:not(.dark-mode) h2,
+  body:not(.dark-mode) h3,
+  body:not(.dark-mode) h4,
+  body:not(.dark-mode) h5,
+  body:not(.dark-mode) h6 {
+    color: black;
+  }
+
+  .moon-button .moon-icon {
+    display: none;
+  }
+  .moon-button:not(.invisible) .moon-icon {
+    display: inline-block;
+  }
+
+  .sun-button .sun-icon {
+    display: inline-block;
+  }
+  .sun-button:not(.invisible) .sun-icon {
+    display: none;
+  }
+}

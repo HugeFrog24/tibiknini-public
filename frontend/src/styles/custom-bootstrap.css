@@ -1,0 +1,10 @@
+.my-bg-dark {
+  background-color: #0d0d0d;
+}
+
+.custom-tabs .nav-link.active {
+  border: none;
+  border-bottom: 3px solid #ff864a;
+  background-color: transparent;
+  color: #ff864a;
+}
