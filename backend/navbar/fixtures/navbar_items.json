@@ -1,0 +1,26 @@
+[
+  {
+    "model": "navbar.navbaritem",
+    "pk": 1,
+    "fields": {
+      "label": "Home",
+      "destination_url": "/home/"
+    }
+  },
+  {
+    "model": "navbar.navbaritem",
+    "pk": 2,
+    "fields": {
+      "label": "Blog",
+      "destination_url": "/blog/"
+    }
+  },
+  {
+    "model": "navbar.navbaritem",
+    "pk": 3,
+    "fields": {
+      "label": "Contact",
+      "destination_url": "/contact/"
+    }
+  }
+]

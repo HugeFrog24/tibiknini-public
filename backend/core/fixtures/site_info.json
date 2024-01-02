@@ -1,0 +1,13 @@
+[
+  {
+    "model": "core.siteinfo",
+    "pk": 1,
+    "fields": {
+      "site_title": "Tibik-Nini",
+      "site_description": "Your Site Description",
+      "privacy_policy": "Your Privacy Policy Content",
+      "terms_of_service": "Your Terms of Service Content",
+      "tos_version": 0
+    }
+  }
+]

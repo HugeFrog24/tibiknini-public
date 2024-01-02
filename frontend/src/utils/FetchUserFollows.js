@@ -1,8 +1,8 @@
-import axios from 'axios';
+import api from './api';
 
-const FetchUserFollows = async (apiUrl, username, followType, setFollows) => {
+const FetchUserFollows = async (username, followType, setFollows) => {
     try {
-        const response = await axios.get(`${apiUrl}/users/${username}/${followType}/`);
+        const response = await api.get(`/users/${username}/${followType}/`);
         setFollows(response.data);
     } catch (error) {
         console.error(error.message);

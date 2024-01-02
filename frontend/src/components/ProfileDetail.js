@@ -1,85 +1,77 @@
 import {useCallback, useContext, useEffect, useRef, useState} from "react";
 import {Link, useNavigate, useParams} from "react-router-dom";
-import {Button, Card, Col, Container, Row, Tab, Tabs} from "react-bootstrap";
+import {Button, Card, Col, Container, InputGroup, Form, Row, Tab, Tabs} from "react-bootstrap";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faCheckCircle} from "@fortawesome/free-solid-svg-icons";
-import axios from "axios";
-import ApiUrlContext from "./contexts/ApiUrlContext";
+import {faCheckCircle, faPencilAlt, faSave, faTimes} from "@fortawesome/free-solid-svg-icons";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
+
 import UserContext from "./contexts/UserContext";
+import {REDIRECT_REASONS} from "./constants/Constants";
 import BlogPostsTab from "./BlogPostsTab";
 import ProfileImage from "./ProfileImage";
-import {GetAccessToken} from "../utils/AccessToken";
 import FetchUserFollows from '../utils/FetchUserFollows';
 import UseDarkMode from "../utils/UseDarkMode";
+import {handleProfileImageError} from '../utils/ImageUtils';
+import api from '../utils/api';
 
 function ProfileDetail() {
-    const apiUrl = useContext(ApiUrlContext);
+    const authenticatedUser = useContext(UserContext);
+    const { username } = useParams();
+    const navigate = useNavigate();
+    const { bgClass, textClass } = UseDarkMode();
+    const [bio, setBio] = useState('');
+    const [loading, setLoading] = useState(true);
+
     const [activeTab, setActiveTab] = useState("posts");
     const [profile, setProfile] = useState({});
     const [isFollowing, setIsFollowing] = useState(false);
-    const {username} = useParams();
     const [followers, setFollowers] = useState([]);
     const [following, setFollowing] = useState([]);
-    const accessToken = GetAccessToken();
-    const authenticatedUser = useContext(UserContext);
+
     const isOwner = authenticatedUser && authenticatedUser.username === username;
     const fileInputRef = useRef(null);
-    const {bgClass, textClass} = UseDarkMode();
-    const navigate = useNavigate();
 
-    const fetchProfile = useCallback(
-        async (username) => {
-            try {
-                const response = await axios.get(`${apiUrl}/users/${username}/`);
-                setProfile(response.data);
+    const [isEditingBio, setIsEditingBio] = useState(false);
+    const [bioInput, setBioInput] = useState('');
 
-                if (authenticatedUser && authenticatedUser.username !== username) {
-                    try {
-                        const followResponse = await axios.get(
-                            `${apiUrl}/users/${authenticatedUser.username}/follows/${username}/`,
-                            {
-                                headers: {
-                                    Authorization: `Bearer ${accessToken}`,
-                                },
-                            }
-                        );
-                        setIsFollowing(followResponse.status === 200);
-                    } catch (followError) {
-                        // Interpret a 404 error as "user is not following the profile"
-                        if (followError.response && followError.response.status === 404) {
-                            setIsFollowing(false);
-                        } else {
-                            console.error(followError);
-                        }
-                    }
-                }
-            } catch (error) {
-                if (error.response && error.response.status === 404) {
-                    navigate(`/error/${error.response.status}`, {
-                        state: {errorCode: 404}
-                    });
-                } else {
-                    console.error(error);
-                }
+    const fetchProfile = useCallback(async (username) => {
+        setLoading(true);
+
+        try {
+            const response = await api.get(`/users/${username}/`);
+            setProfile(response.data);
+        } catch (error) {
+            if (error?.response?.status === 404) {
+                navigate(`/error/${error?.response?.status}`, { state: { errorCode: 404 } });
             }
-        },
-        [apiUrl, setIsFollowing, setProfile, navigate, authenticatedUser, accessToken]
-    );
+            console.error(error);
+        }
+
+        // Only check the following status if there's an authenticated user
+        if (authenticatedUser) {
+            try {
+                const followResponse = await api.get(`/users/${authenticatedUser.username}/follows/${username}/`);
+                setIsFollowing(followResponse.status === 200);
+            } catch (error) {
+                if (error?.response?.status === 401) {
+                    navigate("/login", { state: { reason: REDIRECT_REASONS.VIEW_OWN_PROFILE } });
+                }
+                console.error(error);
+            }
+        }
+        setLoading(false);
+    }, [setIsFollowing, setProfile, navigate, authenticatedUser]);
 
     const handleImageUpload = async (event) => {
         const file = event.target.files[0];
         if (!file) return;
-
+    
         const formData = new FormData();
         formData.append("image", file);
-
+    
         try {
-            await axios.put(`${apiUrl}/users/me/image/update/`, formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                    Authorization: `Bearer ${accessToken}`,
-                },
-            });
+            await api.put(`/users/me/image/update/`, formData);
             await fetchProfile(username);
         } catch (error) {
             console.error(error);
@@ -88,11 +80,7 @@ function ProfileDetail() {
 
     const handleImageDelete = async () => {
         try {
-            await axios.delete(`${apiUrl}/users/me/image/delete/`, {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                },
-            });
+            await api.delete(`/users/me/image/delete/`);
             await fetchProfile(username);
         } catch (error) {
             console.error(error);
@@ -101,57 +89,82 @@ function ProfileDetail() {
 
     const fetchFollowers = useCallback(
         async (username) => {
-            FetchUserFollows(apiUrl, username, 'followers', setFollowers);
+            FetchUserFollows(username, 'followers', setFollowers);
         },
-        [apiUrl]
+        []
     );
 
     const fetchFollowing = useCallback(
         async (username) => {
-            FetchUserFollows(apiUrl, username, 'following', setFollowing);
+            FetchUserFollows(username, 'following', setFollowing);
         },
-        [apiUrl]
+        []
     );
 
+    const handleEditBio = () => {
+        setBioInput(bio || '');  // Use the bio state variable
+        setIsEditingBio(true);
+    };
+
+    const handleSaveBio = async () => {
+        try {
+            await api.patch(`/users/${username}/bio/`, { bio: bioInput });
+            setBio(bioInput); // Update the local state
+            setIsEditingBio(false);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleCancelBioEdit = () => {
+        setIsEditingBio(false);
+    };
+
     useEffect(() => {
+        const fetchBio = async () => {
+            try {
+                const response = await api.get(`/users/${username}/bio/`);
+                setBio(response.data.bio);
+            } catch (error) {
+                console.error(error);
+            }
+        };
+        fetchBio();
+    }, [username]);
+
+    useEffect(() => {
+        // Reset isFollowing state when switching profiles
+        setIsFollowing(false);
+
         // Fetch profile and blog posts
         (async () => {
             await fetchProfile(username);
         })();
+    }, [username, fetchProfile]);
 
+    useEffect(() => {
+        if (username === "me" && !authenticatedUser && !loading) {
+            navigate("/login", { state: { reason: REDIRECT_REASONS.VIEW_OWN_PROFILE } });
+        }
+    }, [username, authenticatedUser, loading, navigate]);
+
+    useEffect(() => {
         // Fetch followers and following regardless of the active tab
         fetchFollowers(username);
         fetchFollowing(username);
-    }, [username, apiUrl, fetchProfile, fetchFollowers, fetchFollowing, activeTab]);
+        }, [username, fetchFollowers, fetchFollowing]);
 
     const handleFollowToggle = async () => {
-        if (!authenticatedUser || !accessToken) {
-            navigate('/login'); // Add your login route here
+        if (!authenticatedUser) {
+            navigate("/login", {state: {reason: REDIRECT_REASONS.FOLLOW_USER}});
             return;
         }
         try {
             if (isFollowing) {
-                // Unfollow if a follow relationship already exists
-                await axios.delete(
-                    `${apiUrl}/users/${authenticatedUser.username}/follows/${username}/`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${accessToken}`,
-                        },
-                    }
-                );
+                await api.delete(`/users/${authenticatedUser.username}/follows/${username}/`);
                 setIsFollowing(false);
             } else {
-                // Follow if no follow relationship exists
-                await axios.post(
-                    `${apiUrl}/users/${authenticatedUser.username}/follows/${username}/`,
-                    {},
-                    {
-                        headers: {
-                            Authorization: `Bearer ${accessToken}`,
-                        },
-                    }
-                );
+                await api.post(`/users/${authenticatedUser.username}/follows/${username}/`);
                 setIsFollowing(true);
             }
         } catch (error) {
@@ -170,26 +183,30 @@ function ProfileDetail() {
 
     return (
         <Container className="profile-detail">
-            {/* Breadcrumb component */}
-            {/* Replace with your breadcrumb component and pass app_name and page_title props */}
             <Row>
                 <Col>
                     <Container>
                         <Row className="align-items-center">
                             <Col>
                                 <Row>
-                                    <ProfileImage
-                                        imageSrc={profile.image}
-                                        imageAlt={profile.username}
-                                        width="120"
-                                        height="120"
-                                        showOptions={isOwner}
-                                        onImageUpload={handleImageUpload}
-                                        onImageDelete={handleImageDelete}
-                                        fileInputRef={fileInputRef}
-                                    />
+                                    {loading ? (
+                                        <Skeleton circle={true} height={120} width={120} />
+                                    ) : (
+                                        <ProfileImage
+                                            imageSrc={profile.image}
+                                            imageAlt={profile.username}
+                                            width="120"
+                                            height="120"
+                                            showOptions={isOwner}
+                                            onImageUpload={handleImageUpload}
+                                            onImageDelete={handleImageDelete}
+                                            fileInputRef={fileInputRef}
+                                        />
+                                    )}
                                     <Container className="d-flex justify-content-center align-items-center">
-                                        <h3 className={textClass}>{profile.username}</h3>
+                                        <h3 className={`${textClass} my-1`}>
+                                            {loading ? <Skeleton width={150} /> : profile.username}
+                                        </h3>
                                         {profile.is_staff && (
                                             <FontAwesomeIcon
                                                 icon={faCheckCircle}
@@ -203,14 +220,17 @@ function ProfileDetail() {
                         </Row>
                         <Row>
                             <Col xs={12}>
-                                <Button
-                                    onClick={handleFollowToggle}
-                                    variant={isFollowing ? "secondary" : "primary"}
-                                    className="mt-2 shadow"
-                                    disabled={authenticatedUser && authenticatedUser.username === username}
-                                >
-                                    {isFollowing ? "Unfollow" : "Follow"}
-                                </Button>
+                                {
+                                    (!authenticatedUser || authenticatedUser.username !== username) && username !== "me" && (
+                                        <Button
+                                            onClick={handleFollowToggle}
+                                            variant={isFollowing ? "secondary" : "primary"}
+                                            className="my-1 shadow"
+                                        >
+                                            {isFollowing ? "Unfollow" : "Follow"}
+                                        </Button>
+                                    )
+                                }
                             </Col>
                         </Row>
                         <Row>
@@ -222,8 +242,45 @@ function ProfileDetail() {
                         </Row>
                         <Row>
                             <Col xs={12}>
-                                <span
-                                    className="mt-2">{profile.bio ? profile.bio : `Hello, my name is ${profile.username} 👋`}</span>
+                                {isEditingBio ? (
+                                    <InputGroup hasValidation className="d-flex align-items-center mb-2 bg-white">
+                                        <Form.Control
+                                            type="text"
+                                            value={bioInput}
+                                            onChange={(e) => setBioInput(e.target.value)}
+                                            className={`${bgClass} ${textClass} mr-2 flex-grow-1`}
+                                            rounded="0"
+                                            isInvalid={bioInput.length > 256}
+                                        />
+                                        <Button variant="success" className="mr-2" onClick={handleSaveBio} rounded="0">
+                                            <FontAwesomeIcon icon={faSave} />
+                                        </Button>
+                                        <Button variant="danger" onClick={handleCancelBioEdit} rounded="0">
+                                            <FontAwesomeIcon icon={faTimes} />
+                                        </Button>
+                                        <Form.Control.Feedback type="invalid">
+                                            Bio cannot exceed 256 characters.
+                                        </Form.Control.Feedback>
+                                    </InputGroup>
+                                    ) : (
+                                        <>
+                                        <spaprn>
+                                            {loading ? (
+                                                <Skeleton width={200} />
+                                            ) : (
+                                                bio || `Hello, my name is ${profile.username} 👋`
+                                            )}
+                                        </spaprn>
+                                        {(isOwner || username === "me") && (
+                                            <FontAwesomeIcon
+                                                icon={faPencilAlt}
+                                                className="ms-2"
+                                                style={{cursor: 'pointer'}}
+                                                onClick={handleEditBio}
+                                            />
+                                            )}
+                                        </>
+                                        )}
                             </Col>
                         </Row>
                     </Container>
@@ -231,7 +288,7 @@ function ProfileDetail() {
                 <Col lg={8} md={6} sm={12}>
                     <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)} className="custom-tabs">
                         <Tab eventKey="posts" title="Posts">
-                            <BlogPostsTab username={username} apiUrl={apiUrl}/>
+                            <BlogPostsTab username={username} />
                         </Tab>
                         <Tab eventKey="followers" title="Followers">
                             {followers ? followers.map((follow, index) => (
@@ -240,9 +297,12 @@ function ProfileDetail() {
                                     <Card.Body className="d-flex align-items-center">
                                         <Link to={`/users/${follow.follower}`}
                                               className="text-start text-info text-decoration-none d-flex align-items-center">
-                                            <Card.Img variant="top" src={`${apiUrl}${follow.follower_image}`}
-                                                      className="rounded-circle me-3"
-                                                      style={{width: '50px', height: '50px'}}/>
+                                            <Card.Img
+                                                variant="top" src={follow.follower_image}
+                                                className="rounded-circle me-3"
+                                                style={{width: '50px', height: '50px'}}
+                                                onError={handleProfileImageError}
+                                            />
                                             <Card.Title className="mb-0">{follow.follower}</Card.Title>
                                         </Link>
                                     </Card.Body>
@@ -256,9 +316,12 @@ function ProfileDetail() {
                                     <Card.Body className="d-flex align-items-center">
                                         <Link to={`/users/${follow.following}`}
                                               className="text-start text-info text-decoration-none d-flex align-items-center">
-                                            <Card.Img variant="top" src={`${apiUrl}${follow.following_image}`}
-                                                      className="rounded-circle me-3"
-                                                      style={{width: '50px', height: '50px'}}/>
+                                            <Card.Img
+                                                variant="top" src={follow.following_image}
+                                                className="rounded-circle me-3"
+                                                style={{width: '50px', height: '50px'}}
+                                                onError={handleProfileImageError}
+                                            />
                                             <Card.Title className="mb-0">{follow.following}</Card.Title>
                                         </Link>
                                     </Card.Body>

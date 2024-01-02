@@ -1,13 +1,3 @@
-body {
-  background-color: white;
-  color: black;
-}
-
-body.dark-mode {
-  background-color: #222;
-  color: white;
-}
-
 .navbar-nav {
   list-style-type: none;
   margin: 0;
@@ -41,12 +31,6 @@ body.dark-mode {
 }
 
 @media (prefers-color-scheme: light) {
-  /* styles for light mode */
-  body {
-    background-color: white;
-    color: black;
-  }
-
   /* add styles for light mode heading */
   body:not(.dark-mode) h1,
   body:not(.dark-mode) h2,

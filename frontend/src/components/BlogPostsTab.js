@@ -1,57 +1,48 @@
-import React, {useCallback, useContext, useEffect, useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import BlogPostCard from "./BlogPostCard";
-import Spinner from "react-bootstrap/Spinner";
-import ApiUrlContext from "./contexts/ApiUrlContext";
+import api from '../utils/api';  // Adjust the path to point to your api file
 
 const BlogPostsTab = ({username}) => {
-    const apiUrl = useContext(ApiUrlContext);
     const [blogPosts, setBlogPosts] = useState([]);
     const [hasError, setHasError] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchBlogPosts = useCallback(
-        (retryAttempt) => {
+        async (retryAttempt) => {
             setIsLoading(true);
             setHasError(false);
-            const url = `${apiUrl}/blog/posts/author/${username}/`;
-            fetch(url)
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error(
-                            `Network response was not ok: ${response.statusText}`
-                            );
-                    }
-                    return response.json();
-                })
-                .then((data) => {
-                    setBlogPosts(data.results);
+            const url = `/blog/posts/author/${username}/`;
+            try {
+                const response = await api.get(url);
+                setBlogPosts(response.data.results);
+                setIsLoading(false);
+            } catch (error) {
+                console.error("Error fetching blog posts:", error);
+                if (retryAttempt < 3) {
+                    setTimeout(() => {
+                        fetchBlogPosts(retryAttempt + 1);
+                    }, 3000 * retryAttempt);
+                } else {
                     setIsLoading(false);
-                })
-                .catch((error) => {
-                    console.error("Error fetching blog posts:", error);
-                    if (retryAttempt < 3) {
-                        setTimeout(() => {
-                            fetchBlogPosts(retryAttempt + 1);
-                            }, 3000 * retryAttempt);
-                    } else {
-                        setIsLoading(false);
-                        setHasError(true);
-                    }
-                });
-            },
-        [apiUrl, username]
-        );
+                    setHasError(true);
+                }
+            }
+        },
+        [username]
+    );
 
     useEffect(() => {
         fetchBlogPosts(1);
-        }, [fetchBlogPosts]);
+    }, [fetchBlogPosts]);
 
     return (
         <>
-        {isLoading ? (
-            <Spinner animation="border" role="status">
-                <span className="visually-hidden">Loading...</span>
-            </Spinner>
+            {isLoading ? (
+                <div>
+                    {Array(5).fill(0).map((_, index) => (
+                        <BlogPostCard key={index} />
+                    ))}
+                </div>
             ) : hasError ? (
                 <div>
                     <h2 role="img" aria-label="Warning">
@@ -59,19 +50,19 @@ const BlogPostsTab = ({username}) => {
                     </h2>
                     <p>Error retrieving data</p>
                 </div>
-                ) : blogPosts.length === 0 ? (
-                    <div>
-                        <h3>Nothing to show</h3>
-                        <p>There are no blog posts available at this time.</p>
-                    </div>
-                    ) : (
-                        blogPosts.map((post, index) => (
-                            <BlogPostCard
-                                key={post.id || index}
-                                post={post}
-                            />
-                            ))
-                            )}
+            ) : blogPosts.length === 0 ? (
+                <div>
+                    <h3>Nothing to show</h3>
+                    <p>There are no blog posts available at this time.</p>
+                </div>
+            ) : (
+                blogPosts.map((post, index) => (
+                    <BlogPostCard
+                        key={post.id || index}
+                        post={post}
+                    />
+                ))
+            )}
         </>
         );
 };

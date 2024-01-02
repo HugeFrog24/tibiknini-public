@@ -1,54 +1,50 @@
-version: '3'
+version: '3.8'
 
 services:
-    certbot:
-        image: certbot/certbot
-        volumes:
-            - ./tibiknini/etc-letsencrypt:/etc/letsencrypt
-            - ./tibiknini/var-lib-letsencrypt:/var/lib/letsencrypt
-        entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
-        restart: always
-
     db:
         image: postgres
         env_file:
-            - ./tibiknini/.env
+            - ./backend/.env
         volumes:
-            - dbdata:/var/lib/postgresql/data # Ensure data persistence across container restarts
+            - dbdata16:/var/lib/postgresql/data # Ensure data persistence across container restarts
+
 
     nginx:
         build:
-            context: ./tibiknini
+            context: .
             dockerfile: ./nginx/Dockerfile
             args:
-                ENVIRONMENT: ${ENV}
+                ENVIRONMENT: ${ENV:-prod}
+        develop:
+            watch: # for hot reload during development
+                - action: rebuild
+                  path: ./frontend
         volumes:
-            - ./tibiknini/etc-letsencrypt:/etc/letsencrypt:ro
-            - ./tibiknini/media:/var/www/media
-            - ./tibiknini/staticfiles:/var/www/staticfiles
-            - ./frontend/build:/var/www/html
+            - ${MEDIA_PATH}:/var/www/media
+            - ./backend/staticfiles:/var/www/staticfiles
         ports:
             - "80:80"
             - "443:443"
+        depends_on:
+            - django
         restart: always
 
     django:
-        build: ./tibiknini
-        command: gunicorn tibiknini.wsgi:application --workers 3 --bind 0.0.0.0:8000
+        build: ./backend
+        command: gunicorn backend.wsgi:application --workers 3 --bind 0.0.0.0:8000
         depends_on:
             - db
         env_file:
-            - ./tibiknini/.env # common settings
-            - ./tibiknini/.env.prod # production-specific settings
-            - ./tibiknini/.env.dev # development-specific settings
+            - ./backend/.env # common settings
+            - ./backend/.env.${ENV:-prod} # environment-specific settings
         ports:
             - "8000:8000"
         restart: always
         volumes:
-            - ./tibiknini:/usr/src/app
-            - dbdata:/var/lib/postgresql/data
+            - ./backend:/usr/src/app
+            - dbdata16:/var/lib/postgresql/data
+            - ${MEDIA_PATH}:/usr/src/app/media
 
 volumes:
-    dbdata:
-        name: tibiknini_dbdata
-        external: true
+    dbdata16:
+        name: tibiknini-dbdata16

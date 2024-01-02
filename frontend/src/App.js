@@ -1,31 +1,37 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useState, Suspense} from "react";
 import {Route, Routes, useLocation, useNavigate} from "react-router-dom";
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { Spinner } from 'react-bootstrap';
 import {ToastContainer} from 'react-toastify';
 import {Helmet, HelmetProvider} from 'react-helmet-async';
 import config from './config.json';
 
-import BlogPostsList from "./components/BlogPostsList";
+import DocumentRenderer from "./components/DocumentRenderer";
 import ErrorComponent from "./components/ErrorComponent";
-import Footer from './components/Footer';
-import Home from "./components/Home";
-import Login from "./components/Login";
 import Navbar from "./components/Navbar";
-import BlogPostDetail from "./components/BlogPostDetail";
-import Contact from "./components/Contact";
-import ProfileDetail from "./components/ProfileDetail";
-import FetchUser from "./utils/FetchUser";
-import RefreshAccessToken from "./utils/RefreshAccessToken";
+import Footer from './components/Footer';
 
 import DarkModeContext from "./components/contexts/DarkModeContext";
 import ApiUrlContext from "./components/contexts/ApiUrlContext";
 import UserContext from "./components/contexts/UserContext";
 
+import api from "./utils/api";
+import { setApiUrl } from './utils/api';
+import UseDarkMode from "./utils/UseDarkMode";
+
 import "./App.css";
 import "./styles/custom-bootstrap.css";
-import {GetAccessToken, RemoveTokens} from "./utils/AccessToken";
-import BlogPostForm from "./components/BlogPostForm";
-import DocumentRenderer from "./components/DocumentRenderer";
+
+// Lazy-load non-essential components to reduce initial loading time
+const BlogPostForm = React.lazy(() => import("./components/BlogPostForm"));
+const BlogPostsList = React.lazy(() => import("./components/BlogPostsList"));
+const BlogPostDetail = React.lazy(() => import("./components/BlogPostDetail"));
+const Contact = React.lazy(() => import("./components/Contact"));
+const Home = React.lazy(() => import("./components/Home"));
+const Login = React.lazy(() => import("./components/Login"));
+const ProfileDetail = React.lazy(() => import("./components/ProfileDetail"));
+const RegistrationWizard = React.lazy(() => import("./components/RegistrationWizard"));
+
 
 function App() {
     const getInitialDarkMode = () => {
@@ -47,6 +53,21 @@ function App() {
     };
 
     const [user, setUser] = useState(null);
+
+    // Fetch user's information when the application loads
+    useEffect(() => {
+        const fetchUser = async () => {
+        try {
+            const response = await api.get('/users/me/'); // Replace with your actual endpoint
+            setUser(response.data);
+        } catch (err) {
+            // Handle error
+        }
+        };
+
+        fetchUser();
+    }, []);
+
     const location = useLocation();
     
     // Set the API base URL to the relative path "/api".
@@ -57,35 +78,22 @@ function App() {
     // This approach simplifies deployment configurations, avoids CORS issues, and provides
     // a seamless integration between our frontend and backend services.
     const apiUrl = "/api";
+    setApiUrl(apiUrl);
 
-    const [modeClasses, setModeClasses] = useState({
-        content: "bg-light",
-    });
+    const modeClasses = UseDarkMode(isDarkMode);
 
-    function handleLogin(user) {
+    function updateUser(user) {
         setUser(user);
     }
 
     useEffect(() => {
-        setModeClasses({
-            content: isDarkMode ? "my-bg-dark text-light" : "bg-light",
-            text: isDarkMode ? "text-light" : "text-dark",
-        });
-        const token = GetAccessToken();
-        if (token) {
-            FetchUser(apiUrl, setUser, RefreshAccessToken)
-                .catch((error) => {
-                    console.error('Error fetching user:', error.message);
-                    // if there's an error, remove the invalid tokens and redirect to login
-                    RemoveTokens();
-                    navigate('/login');
-                });
-        }
-    }, [apiUrl, isDarkMode, navigate]);
+        // Make a GET request to the server to ensure the CSRF cookie is set
+        api.get('set-csrf-token/');
+    }, []);
 
     return (
         <HelmetProvider>
-            <DarkModeContext.Provider value={{isDarkMode, toggleDarkMode}}>
+            <DarkModeContext.Provider value={{isDarkMode, toggleDarkMode, modeClasses}}>
                 <ApiUrlContext.Provider value={apiUrl}>
                     <UserContext.Provider value={user}>
                         <Helmet>
@@ -101,54 +109,59 @@ function App() {
                         <div className="App">
                             <ToastContainer/>
                             <div
-                                className={`content p-5 ${modeClasses.content}`}
-                                style={{minHeight: "100vh"}}
-                            >
-                                <Routes>
-                                    <Route
-                                        path="/"
-                                        element={<Home textClass={modeClasses.text}/>}
-                                    />
-                                    <Route
-                                        path="/blog/"
-                                        element={<BlogPostsList postId={undefined}/>}
-                                    />
-                                    <Route
-                                        path="/blog/posts/:postId"
-                                        element={
-                                            <BlogPostDetail/>
-                                        }
-                                    />
-                                    <Route path="/blog/posts/:postId/edit" element={<BlogPostForm/>}/>
-                                    <Route
-                                        path="/blog/posts/new"
-                                        element={<BlogPostForm
-                                            previousPath={location.pathname !== "/blog/posts/new" ? location.pathname : "/blog"}/>}
-                                    />
-                                    <Route
-                                        path="/contact/"
-                                        element={<Contact/>}
-                                    />
-                                    <Route
-                                        path="/users/:username"
-                                        element={<ProfileDetail textClass={modeClasses.text}/>}
-                                    />
-                                    <Route
-                                        path="/login"
-                                        element={
-                                            <Login onLogin={handleLogin}/>
-                                        }
-                                    />
-                                    <Route
-                                        path="/privacy-policy"
-                                        element={<DocumentRenderer endpoint="/api/privacy_policy/"/>}
-                                    />
-                                    <Route
-                                        path="/terms-of-service"
-                                        element={<DocumentRenderer endpoint="/api/terms_of_service/"/>}
-                                    />
-                                    <Route path="*" element={<ErrorComponent errorCode={404}/>}/>
-                                </Routes>
+                                className={`content p-5 ${modeClasses.textClass}`}
+                                style={{...modeClasses.contentStyle, minHeight: "100vh"}}>
+                                <Suspense fallback={<Spinner />}>
+                                    <Routes>
+                                        <Route
+                                            path="/"
+                                            element={<Home textClass={modeClasses.text}/>}
+                                        />
+                                        <Route
+                                            path="/blog/"
+                                            element={<BlogPostsList postId={undefined}/>}
+                                        />
+                                        <Route
+                                            path="/blog/posts/:postId"
+                                            element={
+                                                <BlogPostDetail/>
+                                            }
+                                        />
+                                        <Route path="/blog/posts/:postId/edit" element={<BlogPostForm/>}/>
+                                        <Route
+                                            path="/blog/posts/new"
+                                            element={<BlogPostForm
+                                                previousPath={location.pathname !== "/blog/posts/new" ? location.pathname : "/blog"}/>}
+                                        />
+                                        <Route
+                                            path="/contact/"
+                                            element={<Contact/>}
+                                        />
+                                        <Route
+                                            path="/users/:username"
+                                            element={<ProfileDetail textClass={modeClasses.text}/>}
+                                        />
+                                        <Route
+                                            path="/login"
+                                            element={
+                                                <Login onLogin={updateUser}/>
+                                            }
+                                        />
+                                        <Route
+                                            path="/register"
+                                            element={<RegistrationWizard />}
+                                        />
+                                        <Route
+                                            path="/privacy-policy"
+                                            element={<DocumentRenderer endpoint="/privacy_policy/"/>}
+                                        />
+                                        <Route
+                                            path="/terms-of-service"
+                                            element={<DocumentRenderer endpoint="/terms_of_service/"/>}
+                                        />
+                                        <Route path="*" element={<ErrorComponent errorCode={404}/>}/>
+                                    </Routes>
+                                </Suspense>
                             </div>
                             <Footer/>
                         </div>

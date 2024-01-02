@@ -1,23 +1,19 @@
 import React, {useContext, useEffect, useState} from 'react';
 
-import {Button, FloatingLabel, Form} from "react-bootstrap";
+import {Button, FloatingLabel, Form, Spinner} from "react-bootstrap";
 import {useNavigate, useParams} from "react-router-dom";
 import {toast} from "react-toastify";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faSave, faTimes} from '@fortawesome/free-solid-svg-icons';
 
-import ApiUrlContext from "./contexts/ApiUrlContext";
 import UserContext from "./contexts/UserContext";
 import {REDIRECT_REASONS} from "./constants/Constants";
 import UseBlogPost from "./UseBlogPost";
-import {GetAccessToken} from "../utils/AccessToken";
 import UseDarkMode from "../utils/UseDarkMode";
 
 const BlogPostForm = ({previousPath}) => {
-    const apiUrl = useContext(ApiUrlContext);
-    const accessToken = GetAccessToken();
     const navigate = useNavigate();
-    const {fetchBlogPost, createBlogPost, updateBlogPost} = UseBlogPost(apiUrl, accessToken);
+    const {fetchBlogPost, createBlogPost, updateBlogPost} = UseBlogPost();
     const {bgClass, textClass} = UseDarkMode();
     const {postId} = useParams();
     const user = useContext(UserContext);
@@ -29,18 +25,24 @@ const BlogPostForm = ({previousPath}) => {
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
 
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     const handleToggleDraft = () => setIsDraft(!isDraft);
 
     const handleSave = async (isDraft) => {
+        setIsSubmitting(true);  // Set loading to true when save process starts
+
         // Ensure user is authenticated
         if (!user || !user.is_authenticated) {
             toast.warning("You must be logged in to save this post.");
+            setIsSubmitting(false);  // Reset loading to false
             return;
         }
 
         // Ensure user has permissions for updating a post (only when editing)
         if (postId && !(user.is_staff || user.id === post.author.id)) {
             toast.warning("You do not have permission to save this post.");
+            setIsSubmitting(false);  // Reset loading to false
             return;
         }
 
@@ -48,6 +50,7 @@ const BlogPostForm = ({previousPath}) => {
         if (!title.trim() || !content.trim()) {
             // If either is empty, show a warning and return early
             toast.warning("Please fill all fields before saving.");
+            setIsSubmitting(false);  // Reset loading to false
             return;
         }
 
@@ -57,15 +60,22 @@ const BlogPostForm = ({previousPath}) => {
             is_draft: isDraft,
         };
 
-        if (!postId) {
-            // Create a new post
-            const response = await createBlogPost(newPost);
-            // Navigate to the new post's detail view
-            navigate(`/blog/posts/${response.id}`);
-        } else {
-            // Update existing post
-            const response = await updateBlogPost(post.id, newPost);
-            navigate(`/blog/posts/${post.id}`);
+        try {
+            if (!postId) {
+                // Create a new post
+                const response = await createBlogPost(newPost);
+                // Navigate to the new post's detail view
+                navigate(`/blog/posts/${response.id}`);
+            } else {
+                // Update existing post
+                await updateBlogPost(post.id, newPost);
+                navigate(`/blog/posts/${post.id}`);
+            }
+        } catch (error) {
+            console.error("Error saving post:", error);
+            toast.error('An error occurred while saving the post. Please try again.');
+        } finally {
+            setIsSubmitting(false);  // Reset loading to false once save process completes
         }
     };
 
@@ -128,8 +138,20 @@ const BlogPostForm = ({previousPath}) => {
                         Draft
                     </label>
                 </div>
-                <Button variant="outline-success" className="me-2" onClick={() => handleSave(isDraft)}>
-                    <FontAwesomeIcon icon={faSave}/> Save
+                <Button variant={isSubmitting ? "secondary" : "outline-success"} className="me-2" onClick={() => handleSave(isDraft)} disabled={isSubmitting}>
+                {
+                    isSubmitting ?
+                        <Spinner
+                            as="span"
+                            animation="border"
+                            size="sm"
+                            role="status"
+                            aria-hidden="true"
+                        /> :
+                        <>
+                            <FontAwesomeIcon icon={faSave}/> Save
+                        </>
+                }
                 </Button>
                 <Button variant="outline-secondary" onClick={handleCancel}>
                     <FontAwesomeIcon icon={faTimes}/> Cancel

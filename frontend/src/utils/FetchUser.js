@@ -1,14 +1,8 @@
-import axios from 'axios';
-import {GetAccessToken} from "./AccessToken";
+import api from './api';
 
-const FetchUser = async (apiUrl, onLogin, RefreshAccessToken) => {
+const FetchUser = async (onLogin) => {
     try {
-        const response = await axios.get(`${apiUrl}/users/me/`, {
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${GetAccessToken()}`,
-            },
-        });
+        const response = await api.get('/users/me/');
 
         if (response.status === 200) {
             const userData = response.data;
@@ -17,14 +11,8 @@ const FetchUser = async (apiUrl, onLogin, RefreshAccessToken) => {
             throw new Error("Error fetching user data");
         }
     } catch (error) {
-        if (error.response && error.response.status === 401) {
-            const refreshed = await RefreshAccessToken(apiUrl);
-            if (refreshed) {
-                return FetchUser(apiUrl, onLogin, RefreshAccessToken);
-            }
-        }
         console.error(error.message);
-        throw error;
+        throw error; // simply throw the error and let higher-level logic handle it
     }
 };
 

@@ -8,13 +8,11 @@ import { Helmet } from 'react-helmet-async';
 
 import config from "../config.json";
 import BlogPostCard from "./BlogPostCard";
-import Spinner from "react-bootstrap/Spinner";
-import ApiUrlContext from "./contexts/ApiUrlContext";
 import UserContext from "./contexts/UserContext";
 import UseDarkMode from "../utils/UseDarkMode";
+import api from "../utils/api"
 
 const BlogPostsList = ({postId}) => {
-    const apiUrl = useContext(ApiUrlContext);
     const [blogPosts, setBlogPosts] = useState([]);
     const isDetailView = postId !== undefined;
     const [hasError, setHasError] = useState(false);
@@ -26,22 +24,16 @@ const BlogPostsList = ({postId}) => {
     const [totalPages, setTotalPages] = useState(0);
 
     const fetchBlogPosts = useCallback(
-        (retryAttempt, page = 1) => {
+        (retryAttempt = 0, page = 1) => {
             setIsLoading(true);
             setHasError(false);
             const url = postId
-                ? `${apiUrl}/blog/posts/id/${postId}/`
-                : `${apiUrl}/blog/posts/?page=${page}`;
-            fetch(url)
+                ? `/blog/posts/id/${postId}/`
+                : `/blog/posts/?page=${page}`;
+
+            api.get(url)
                 .then((response) => {
-                    if (!response.ok) {
-                        throw new Error(
-                            `Network response was not ok: ${response.statusText}`
-                        );
-                    }
-                    return response.json();
-                })
-                .then((data) => {
+                    const data = response.data;
                     setBlogPosts(postId ? [data] : data.results);
                     if (data.page_count) {
                         setTotalPages(data.page_count);
@@ -55,7 +47,7 @@ const BlogPostsList = ({postId}) => {
                     console.error("Error fetching blog posts:", error);
                     if (retryAttempt < 3) {
                         setTimeout(() => {
-                            fetchBlogPosts(retryAttempt + 1);
+                            fetchBlogPosts(retryAttempt + 1, page);
                         }, 3000 * retryAttempt);
                     } else {
                         setIsLoading(false);
@@ -63,7 +55,7 @@ const BlogPostsList = ({postId}) => {
                     }
                 });
         },
-        [apiUrl, postId]
+        [postId]
     );
 
     const handleAddPostClick = () => {
@@ -122,9 +114,11 @@ const BlogPostsList = ({postId}) => {
             </div>
             <hr/>
             {isLoading ? (
-                <Spinner animation="border" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                </Spinner>
+                <div>
+                    {Array(5).fill(0).map((_, index) => (
+                        <BlogPostCard key={index} />
+                        ))}
+                </div>
             ) : hasError ? (
                 <div>
                     <h2 role="img" aria-label="Warning">

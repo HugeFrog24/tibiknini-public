@@ -1,23 +1,4 @@
-.navIcon {
-  display: block;
-  margin: 15px auto;
-}
-
-.navIcon:hover {
-  color: #007bff;
-}
-
+.navIcon:hover,
 .navIcon.active {
   color: #007bff;
-}
-
-.navLinkContainer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.label {
-  display: block;
 }

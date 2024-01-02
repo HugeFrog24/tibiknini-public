@@ -5,6 +5,7 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {
     faBookOpen,
     faEnvelope,
+    faGears,
     faHome,
     faMoon,
     faSignInAlt,
@@ -16,21 +17,45 @@ import {
 import DarkModeContext from "./contexts/DarkModeContext";
 import UserContext from "./contexts/UserContext";
 import styles from "../styles/NavigationBar.module.css";
-import {RemoveTokens} from "../utils/AccessToken";
-import UseDarkMode from "../utils/UseDarkMode";
+import { handleLogout } from '../utils/auth';
+import { handleProfileImageError } from '../utils/ImageUtils';
 
 function NavigationBar() {
     const {isDarkMode, toggleDarkMode} = useContext(DarkModeContext);
     const user = useContext(UserContext);
     const location = useLocation();
-    const { bgClass, textClass } = UseDarkMode();
+    const { modeClasses } = useContext(DarkModeContext);
+
+    const navItems = [
+        { path: "/", icon: faHome, label: "Home" },
+        { path: "/blog", icon: faBookOpen, label: "Blog" },
+        { path: "/contact", icon: faEnvelope, label: "Contact" },
+        ];
+
+    const renderNavLinks = () => {
+        return navItems.map((item) => (
+            <Nav.Link
+                key={item.path}
+                className={`${modeClasses.bgClass} ${modeClasses.textClass} mx-2 d-flex flex-column align-items-center text-center`}
+                as={Link}
+                to={item.path}
+                >
+                <FontAwesomeIcon
+                    icon={item.icon}
+                    className={`fa-lg fa-fw mx-auto d-block ${styles.navIcon} ${location.pathname === item.path ? styles.active : ""}`}
+                    title={item.label}
+                />
+                <span className="small d-block">{item.label}</span>
+            </Nav.Link>
+            ));
+    };
 
     const renderUserSection = () => {
         if (user) {
             return (
                 <Dropdown as={ButtonGroup} className={`d-flex align-items-center rounded-end`}>
                     <Dropdown.Toggle
-                        className={`${bgClass} ${textClass} ${styles.navLinkContainer}`}
+                        className={`${modeClasses.bgClass} ${modeClasses.textClass}`}
                         id="dropdown-basic"
                     >
                         <Image
@@ -39,16 +64,25 @@ function NavigationBar() {
                             width="24"
                             height="24"
                             className="me-2"
+                            onError={handleProfileImageError}
                         />
-                        <span>{user.username}</span>
                     </Dropdown.Toggle>
 
-                    <Dropdown.Menu>
-                        <Dropdown.Item as={Link} to={`/users/${user.username}`}>
+                    <Dropdown.Menu align="end"> {/* Aligns dropdown to the end (right side) of the toggle to prevent overflow */}
+                        <Dropdown.Item disabled>
+                            {user.username}
+                        </Dropdown.Item>
+                        <Dropdown.Item as={Link} to="/users/me">
                             <FontAwesomeIcon icon={faUser} className="me-2"/>
                             Profile
                         </Dropdown.Item>
-                        <Dropdown.Item onClick={RemoveTokens} className="text-danger">
+                        {user.is_staff && (
+                            <Dropdown.Item href="/admin">
+                                <FontAwesomeIcon icon={faGears} className="me-2"/>
+                                Admin console
+                            </Dropdown.Item>
+                        )}
+                        <Dropdown.Item onClick={handleLogout} className="text-danger">
                             <FontAwesomeIcon icon={faSignOutAlt} className="me-2"/>
                             Logout
                         </Dropdown.Item>
@@ -71,50 +105,9 @@ function NavigationBar() {
     };
 
     return (
-        <Navbar className={`px-4 ${bgClass} shadow`} expand={false}>
+        <Navbar className={`px-4 ${modeClasses.bgClass} shadow`} expand={false}>
             <Nav className="me-auto d-flex flex-row">
-                <Nav.Link
-                    className={`${bgClass} ${textClass} mx-2 ${styles.navLinkContainer}`}
-                    as={Link}
-                    to={"/"}
-                >
-                    <FontAwesomeIcon
-                        icon={faHome}
-                        className={`fa-lg fa-fw ${styles.navIcon} ${
-                            location.pathname === "/" ? styles.active : ""
-                        }`}
-                        title="Home"
-                    />
-                    <span className={`${styles.label} small`}>Home</span>
-                </Nav.Link>
-                <Nav.Link
-                    className={`${bgClass} ${textClass} mx-2 ${styles.navLinkContainer}`}
-                    as={Link}
-                    to={"/blog"}
-                >
-                    <FontAwesomeIcon
-                        icon={faBookOpen}
-                        className={`fa-lg fa-fw ${styles.navIcon} ${
-                            location.pathname === "/blog" ? styles.active : ""
-                        }`}
-                        title="Blog"
-                    />
-                    <span className={`${styles.label} small`}>Blog</span>
-                </Nav.Link>
-                <Nav.Link
-                    className={`${bgClass} ${textClass} mx-2 ${styles.navLinkContainer}`}
-                    as={Link}
-                    to={"/contact"}
-                >
-                    <FontAwesomeIcon
-                        icon={faEnvelope}
-                        className={`fa-lg fa-fw ${styles.navIcon} ${
-                            location.pathname === "/contact" ? styles.active : ""
-                        }`}
-                        title="Contact"
-                    />
-                    <span className={`${styles.label} small`}>Contact</span>
-                </Nav.Link>
+                {renderNavLinks()}
             </Nav>
             <ButtonGroup className="shadow">
                 <Button

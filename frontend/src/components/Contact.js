@@ -1,16 +1,14 @@
-import React, {useContext, useState} from 'react';
+import React, {useState} from 'react';
 import {Button, Col, Container, FloatingLabel, Form, Row} from 'react-bootstrap';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {faPaperPlane} from '@fortawesome/free-solid-svg-icons';
-import axios from 'axios';
 import {toast, ToastContainer} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import ApiUrlContext from "./contexts/ApiUrlContext";
+import api from '../utils/api';
 import UseDarkMode from '../utils/UseDarkMode';
 import Spinner from "react-bootstrap/Spinner";
 
 function ContactForm() {
-    const apiUrl = useContext(ApiUrlContext);
     const {bgClass, textClass} = UseDarkMode();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -44,7 +42,7 @@ function ContactForm() {
         setIsLoading(true);
 
         try {
-            const response = await axios.post(`${apiUrl}/messages/contact/`, {
+            const response = await api.post("/messages/contact/", {
                 name,
                 email,
                 subject,

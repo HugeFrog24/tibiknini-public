@@ -5,6 +5,8 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+import { handleProfileImageError } from '../utils/ImageUtils';
+
 function ProfileImage({
     imageSrc,
     imageAlt,
@@ -86,6 +88,7 @@ function ProfileImage({
                         alt={imageAlt}
                         width={width}
                         height={height}
+                        onError={handleProfileImageError}
                     />
                 </Button>
                 {isHovered && showOptions && (

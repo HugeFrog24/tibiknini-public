@@ -1,37 +1,36 @@
 import React, {useContext, useEffect, useState} from "react";
 import {Button} from "react-bootstrap";
 import {useNavigate, useParams} from "react-router-dom";
-import {CopyToClipboard} from 'react-copy-to-clipboard';
 import {toast, ToastContainer} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faHeart, faPencilAlt, faShareAlt, faTrash} from "@fortawesome/free-solid-svg-icons";
-import axios from 'axios';
 import {Helmet} from 'react-helmet-async';
 import ReactMarkdown from "react-markdown";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
-import ApiUrlContext from "./contexts/ApiUrlContext";
 import UserContext from "./contexts/UserContext";
 import UseBlogPost from "./UseBlogPost";
-import {GetAccessToken} from "../utils/AccessToken";
+import { handleProfileImageError } from '../utils/ImageUtils';
 import UseDarkMode from "../utils/UseDarkMode";
 import {REDIRECT_REASONS} from "./constants/Constants";
+import BlogPostComments from "./BlogPostComments";
 import config from '../config.json';
+import api from "../utils/api";
 
 const BlogPostDetail = ({previousPath}) => {
     const {postId} = useParams();
-    const apiUrl = useContext(ApiUrlContext);
-    const accessToken = GetAccessToken();
     const {textClass, linkClass} = UseDarkMode();
-    const {fetchBlogPost, deleteBlogPost} =
-        UseBlogPost(apiUrl, accessToken);
+    const {fetchBlogPost, deleteBlogPost} = UseBlogPost();
     const [postState, setPostState] = useState(null);
     const [likesCount, setLikesCount] = useState(0);
     const [isLiked, setIsLiked] = useState(false);
+    const [isLikeButtonHovered, setIsLikeButtonHovered] = useState(false);
     const navigate = useNavigate();
     const user = useContext(UserContext);
 
-    const handleCopy = () => {
+    const handleShare = () => {
         const url = window.location.href;
 
         if (navigator.share) {
@@ -39,10 +38,16 @@ const BlogPostDetail = ({previousPath}) => {
                 title: postState.title,
                 text: 'Check out this blog post!',
                 url: url,
-            })
-                .then(() => console.log('Successful share'))
-                .catch((error) => console.log('Error sharing', error));
+            }).catch((error) => {
+                if (error.name !== 'AbortError') {
+                    navigator.clipboard.writeText(url);
+                    toast.success("URL copied to clipboard!");
+                } else {
+                    toast.info("Sharing canceled.");
+                }
+            });
         } else {
+            navigator.clipboard.writeText(url);
             toast.success("URL copied to clipboard!");
         }
     };
@@ -56,30 +61,29 @@ const BlogPostDetail = ({previousPath}) => {
                     setLikesCount(post.likes_count);
                     setIsLiked(post.is_liked);
                 }
-            } catch (error) {
-                console.error("Failed to fetch post:", error);
+            } catch (errorCode) {
+                console.error("Failed to fetch post with error code:", errorCode);
+                if (errorCode === 404) {
+                    navigate("/error-404");
+                }
             }
         };
 
         if (postId) {
             fetchPost();
         }
-    }, [postId, fetchBlogPost]);
+    }, [postId, fetchBlogPost, navigate]);
 
     const handleLike = async () => {
         if (!user) {
-            navigate("/login", {state: {reason: REDIRECT_REASONS.LIKE_POST}});
+            navigate("/login", { state: { reason: REDIRECT_REASONS.LIKE_POST } });
             return;
         }
 
         try {
-            const response = await axios({
+            const response = await api({
                 method: isLiked ? 'delete' : 'post',
-                url: `${apiUrl}/blog/posts/id/${postId}/like/`,
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json',
-                },
+                url: `/blog/posts/id/${postId}/like/`
             });
 
             if ((isLiked && response.status === 204) || (!isLiked && response.status === 201)) {
@@ -144,7 +148,7 @@ const BlogPostDetail = ({previousPath}) => {
             <ToastContainer autoClose={3000}/>
             {postState ? (
                 <div
-                    className={`${textClass}`}
+                    className={`${textClass} text-start`}
                     id={`post-${postState.id}`}
                 >
                     {user &&
@@ -178,6 +182,7 @@ const BlogPostDetail = ({previousPath}) => {
                                     className="rounded-circle"
                                     width="16"
                                     height="16"
+                                    onError={handleProfileImageError}
                                 />
                                 <span className="fs-6">{postState.author.username}</span>
                             </a>
@@ -193,17 +198,36 @@ const BlogPostDetail = ({previousPath}) => {
                     </div>
                     <div className="text-start">{renderTags(postState.tags)}</div>
                     <div className="d-flex justify-content-end">
-                        <Button variant="outline-primary" className="me-2 shadow" onClick={handleLike}>
-                            <FontAwesomeIcon icon={faHeart} color={isLiked ? 'red' : 'gray'}/> {likesCount}
+                        <Button
+                            variant="outline-primary"
+                            className="me-2 shadow"
+                            onClick={handleLike}
+                            onMouseOver={() => setIsLikeButtonHovered(true)}
+                            onMouseOut={() => setIsLikeButtonHovered(false)}
+                        >
+                            <FontAwesomeIcon icon={faHeart} color={isLiked || isLikeButtonHovered ? 'red' : 'gray'}/> {likesCount}
                         </Button>
-                        <CopyToClipboard text={window.location.href} onCopy={handleCopy}>
-                            <Button variant="outline-primary" className="me-2 shadow">
-                                <FontAwesomeIcon icon={faShareAlt}/> Share
-                            </Button>
-                        </CopyToClipboard>
+                        <Button variant="outline-primary" className="me-2 shadow" onClick={handleShare}>
+                            <FontAwesomeIcon icon={faShareAlt}/> Share
+                        </Button>
                     </div>
+                    <BlogPostComments postId={postId} />
                 </div>
-            ) : null}
+                ) : (
+                // Skeleton placeholders for loading state
+                <div className="text-start">
+                    <Skeleton height={40} width={300} className="mb-3" />
+                    <div className="d-flex justify-content-between align-items-start">
+                        <div>
+                            <Skeleton circle={true} height={16} width={16} className="me-2" />
+                            <Skeleton width={100} />
+                        </div>
+                        <Skeleton width={120} />
+                    </div>
+                    <hr />
+                    <Skeleton count={5} />
+                </div>
+                )}
         </>
     );
 };
