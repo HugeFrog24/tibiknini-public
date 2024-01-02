@@ -1,5 +1,5 @@
 import React, {useEffect, useState, Suspense} from "react";
-import {Route, Routes, useLocation, useNavigate} from "react-router-dom";
+import {Route, Routes, useLocation} from "react-router-dom";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Spinner } from 'react-bootstrap';
 import {ToastContainer} from 'react-toastify';
@@ -43,7 +43,6 @@ function App() {
         return window.matchMedia("(prefers-color-scheme: dark)").matches;
     };
 
-    const navigate = useNavigate();
     const [isDarkMode, setIsDarkMode] = useState(getInitialDarkMode());
 
     const toggleDarkMode = () => {

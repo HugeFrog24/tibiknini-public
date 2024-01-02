@@ -1,7 +1,6 @@
 import api from './api';
 import FetchUser from './FetchUser';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
 
 export const handleLogin = async (username, password, recaptchaToken, onLogin, navigate, setIsLoading) => {
     setIsLoading(true);
