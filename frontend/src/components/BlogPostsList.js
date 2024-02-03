@@ -9,7 +9,7 @@ import { Helmet } from 'react-helmet-async';
 import config from "../config.json";
 import BlogPostCard from "./BlogPostCard";
 import UserContext from "./contexts/UserContext";
-import UseDarkMode from "../utils/UseDarkMode";
+import { useDarkMode } from './contexts/DarkModeContext';
 import api from "../utils/api"
 
 const BlogPostsList = ({postId}) => {
@@ -19,7 +19,7 @@ const BlogPostsList = ({postId}) => {
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
     const user = useContext(UserContext);
-    const {textClass} = UseDarkMode();
+    const { modeClasses } = useDarkMode();
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(0);
 
@@ -105,7 +105,7 @@ const BlogPostsList = ({postId}) => {
                 <meta name="description" content={`Browse the latest blog posts on ${config.siteName}`} />
             </Helmet>
             <div className="d-flex align-items-center justify-content-between">
-                <h1>Blog</h1>
+                <h1 className={modeClasses.textClass}>Blog</h1>
                 {user && (
                     <Button variant="success" className="shadow" onClick={handleAddPostClick}>
                         <FontAwesomeIcon icon={faPlus}/> Add post
@@ -131,7 +131,7 @@ const BlogPostsList = ({postId}) => {
                 </div>
             ) : blogPosts.length === 0 ? (
                 <div>
-                    <h3 className={textClass}>Nothing to show</h3>
+                    <h3 className={modeClasses.textClass}>Nothing to show</h3>
                     <p>There are no blog posts available at this time.</p>
                 </div>
             ) : (
@@ -143,7 +143,7 @@ const BlogPostsList = ({postId}) => {
                             isDetailView={isDetailView}
                             user={user}
                             postId={postId}
-                            textClass={textClass}
+                            textClass={modeClasses.textClass}
                             onPostUpdated={(updatedPost) =>
                                 handlePostUpdated(updatedPost, index)
                             }

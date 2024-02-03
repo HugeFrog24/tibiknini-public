@@ -6,14 +6,14 @@ import "react-loading-skeleton/dist/skeleton.css";
 
 import config from "../config.json";
 import api from "../utils/api";
-import UseDarkMode from "../utils/UseDarkMode";
+import { useDarkMode } from './contexts/DarkModeContext';
 
 function DocumentRenderer({endpoint, defaultTextClass}) {
     const [type, setType] = useState('');
     const [lastUpdated, setLastUpdated] = useState('');
     const [content, setContent] = useState('');
     const [loading, setLoading] = useState(true);
-    const {textClass} = defaultTextClass ? {textClass: defaultTextClass} : UseDarkMode();
+    const { modeClasses } = useDarkMode();
 
     useEffect(() => {
         const fetchDocument = async () => {
@@ -39,8 +39,8 @@ function DocumentRenderer({endpoint, defaultTextClass}) {
                 <title>{loading ? 'Loading...' : `${type} - ${config.siteName}`}</title>
                 <meta name="description" content={loading ? 'Loading...' : `Read ${type} at ${config.siteName}`}/>
             </Helmet>
-            <h1>{loading ? <Skeleton width={200}/> : type}</h1>
-            <p>{loading ? <Skeleton width={150}/> : `Last updated: ${lastUpdated}`}</p>
+            <h1 className={modeClasses.textClass}>{loading ? <Skeleton width={200}/> : type}</h1>
+            <p className={modeClasses.textClass}>{loading ? <Skeleton width={150}/> : `Last updated: ${lastUpdated}`}</p>
             {loading ? (
                 <div className="text-start">
                     <Skeleton width="90%" height={30} /> {/* Headline */}
@@ -51,7 +51,7 @@ function DocumentRenderer({endpoint, defaultTextClass}) {
                     <Skeleton width="90%" height={15} count={3} /> {/* Paragraph */}
                 </div>
             ) : (
-                <ReactMarkdown className={`${textClass} text-start`}>{content}</ReactMarkdown>
+                <ReactMarkdown className={`${modeClasses.textClass} text-start`}>{content}</ReactMarkdown>
             )}
         </>
     );

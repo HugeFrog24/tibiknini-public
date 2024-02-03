@@ -13,7 +13,7 @@ import "react-loading-skeleton/dist/skeleton.css";
 import UserContext from "./contexts/UserContext";
 import UseBlogPost from "./UseBlogPost";
 import { handleProfileImageError } from '../utils/ImageUtils';
-import UseDarkMode from "../utils/UseDarkMode";
+import { useDarkMode } from './contexts/DarkModeContext';
 import {REDIRECT_REASONS} from "./constants/Constants";
 import BlogPostComments from "./BlogPostComments";
 import config from '../config.json';
@@ -21,7 +21,7 @@ import api from "../utils/api";
 
 const BlogPostDetail = ({previousPath}) => {
     const {postId} = useParams();
-    const {textClass, linkClass} = UseDarkMode();
+    const { modeClasses } = useDarkMode();
     const {fetchBlogPost, deleteBlogPost} = UseBlogPost();
     const [postState, setPostState] = useState(null);
     const [likesCount, setLikesCount] = useState(0);
@@ -148,7 +148,7 @@ const BlogPostDetail = ({previousPath}) => {
             <ToastContainer autoClose={3000}/>
             {postState ? (
                 <div
-                    className={`${textClass} text-start`}
+                    className={`${modeClasses.textClass} text-start`}
                     id={`post-${postState.id}`}
                 >
                     {user &&
@@ -171,10 +171,10 @@ const BlogPostDetail = ({previousPath}) => {
                         )}
                     <div className="d-flex justify-content-between align-items-start">
                         <div>
-                            <h2 className={`text-start ${textClass}`}>{postState.title}</h2>
+                            <h2 className={`text-start ${modeClasses.textClass}`}>{postState.title}</h2>
                             <a
                                 href={`/users/${postState.author.username}`}
-                                className={`${linkClass} text-decoration-none d-flex gap-3 align-items-center`}
+                                className={`${modeClasses.linkClass} text-decoration-none d-flex gap-3 align-items-center`}
                             >
                                 <img
                                     src={postState.author.image}

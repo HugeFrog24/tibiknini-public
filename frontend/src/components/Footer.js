@@ -1,11 +1,10 @@
 import {Container, Nav} from 'react-bootstrap';
 import {Link} from 'react-router-dom';
-import DarkModeContext from "./contexts/DarkModeContext";
-import { useContext } from 'react';
+import { useDarkMode } from './contexts/DarkModeContext';
 
 function Footer() {
 
-    const { modeClasses } = useContext(DarkModeContext);
+    const { modeClasses } = useDarkMode();
 
     return (
         <Container as="footer" fluid

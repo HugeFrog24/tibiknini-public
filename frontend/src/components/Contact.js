@@ -5,11 +5,11 @@ import {faPaperPlane} from '@fortawesome/free-solid-svg-icons';
 import {toast, ToastContainer} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import api from '../utils/api';
-import UseDarkMode from '../utils/UseDarkMode';
+import { useDarkMode } from './contexts/DarkModeContext';
 import Spinner from "react-bootstrap/Spinner";
 
 function ContactForm() {
-    const {bgClass, textClass} = UseDarkMode();
+    const { modeClasses } = useDarkMode();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [subject, setSubject] = useState('');
@@ -80,7 +80,7 @@ function ContactForm() {
                                     type="text"
                                     value={name}
                                     onChange={e => setName(e.target.value)}
-                                    className={`${bgClass} ${textClass} shadow`}
+                                    className={`${modeClasses.bgClass} ${modeClasses.textClass} shadow`}
                                     placeholder="Enter your name"
                                     autoComplete="off"
                                     isInvalid={nameInvalid} // Add this line
@@ -92,7 +92,7 @@ function ContactForm() {
                                     type="text"
                                     value={email}
                                     onChange={e => setEmail(e.target.value)}
-                                    className={`${bgClass} ${textClass} shadow`}
+                                    className={`${modeClasses.bgClass} ${modeClasses.textClass} shadow`}
                                     placeholder="Enter your email address"
                                     autoComplete="off"
                                     isInvalid={emailInvalid} // Add this line
@@ -106,7 +106,7 @@ function ContactForm() {
                                     type="text"
                                     value={subject}
                                     onChange={e => setSubject(e.target.value)}
-                                    className={`${bgClass} ${textClass} shadow`}
+                                    className={`${modeClasses.bgClass} ${modeClasses.textClass} shadow`}
                                     placeholder="Enter the subject"
                                     autoComplete="off"
                                     isInvalid={subjectInvalid} // Add this line
@@ -118,7 +118,7 @@ function ContactForm() {
                                     as="textarea"
                                     placeholder="Your message here"
                                     style={{resize: "none", height: '100px'}}
-                                    className={`${bgClass} ${textClass} shadow`}
+                                    className={`${modeClasses.bgClass} ${modeClasses.textClass} shadow`}
                                     value={message}
                                     onChange={e => setMessage(e.target.value)}
                                     isInvalid={messageInvalid} // Add this line

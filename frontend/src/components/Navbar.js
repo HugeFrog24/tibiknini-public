@@ -14,17 +14,16 @@ import {
     faUser,
 } from "@fortawesome/free-solid-svg-icons";
 
-import DarkModeContext from "./contexts/DarkModeContext";
+import { useDarkMode } from "./contexts/DarkModeContext";
 import UserContext from "./contexts/UserContext";
 import styles from "../styles/NavigationBar.module.css";
 import { handleLogout } from '../utils/auth';
 import { handleProfileImageError } from '../utils/ImageUtils';
 
 function NavigationBar() {
-    const {isDarkMode, toggleDarkMode} = useContext(DarkModeContext);
+    const {isDarkMode, toggleDarkMode, modeClasses} = useDarkMode();
     const user = useContext(UserContext);
     const location = useLocation();
-    const { modeClasses } = useContext(DarkModeContext);
 
     const navItems = [
         { path: "/", icon: faHome, label: "Home" },

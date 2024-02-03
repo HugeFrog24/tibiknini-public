@@ -7,7 +7,7 @@ import ReCAPTCHA from "react-google-recaptcha";
 
 import config from "../config.json";
 import FetchUser from "../utils/FetchUser";
-import UseDarkMode from "../utils/UseDarkMode";
+import { useDarkMode } from './contexts/DarkModeContext';
 import api from '../utils/api';
 import { handleLogin } from '../utils/auth';
 import {TOAST_MESSAGES} from './constants/Strings';
@@ -20,7 +20,7 @@ function Login({onLogin}) {
     const [usernameInvalid, setUsernameInvalid] = useState(false);
     const [passwordInvalid, setPasswordInvalid] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const {bgClass, textClass} = UseDarkMode();
+    const { modeClasses } = useDarkMode();
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -72,7 +72,7 @@ function Login({onLogin}) {
                                 id="username"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
-                                className={`${bgClass} ${textClass} shadow`}
+                                className={`${modeClasses.bgClass} ${modeClasses.textClass} shadow`}
                                 placeholder="Enter your username"
                                 autoComplete="username"
                                 isInvalid={usernameInvalid}
@@ -85,7 +85,7 @@ function Login({onLogin}) {
                                 id="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className={`${bgClass} ${textClass} shadow`}
+                                className={`${modeClasses.bgClass} ${modeClasses.textClass} shadow`}
                                 placeholder="Enter your password"
                                 autoComplete="current-password"
                                 isInvalid={passwordInvalid}

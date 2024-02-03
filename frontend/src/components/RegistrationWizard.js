@@ -6,7 +6,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 
 import api from '../utils/api';
-import UseDarkMode from "../utils/UseDarkMode";
+import { useDarkMode } from './contexts/DarkModeContext';
 import {REDIRECT_REASONS} from "./constants/Constants";
 
 function RegistrationWizard() {
@@ -137,7 +137,7 @@ function RegistrationWizard() {
     const [currentStep, setCurrentStep] = useState(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
-    const {bgClass, textClass} = UseDarkMode();
+    const { modeClasses } = useDarkMode();
     const navigate = useNavigate();
     const recaptchaRef = useRef(null);
     
@@ -206,7 +206,7 @@ function RegistrationWizard() {
                                             onChange={formik.handleChange}
                                             onBlur={formik.handleBlur}
                                             placeholder={field.placeholder}
-                                            className={`${bgClass} ${textClass} shadow ${formik.errors[field.id] && formik.touched[field.id] ? "is-invalid" : ""}`}
+                                            className={`${modeClasses.bgClass} ${modeClasses.textClass} shadow ${formik.errors[field.id] && formik.touched[field.id] ? "is-invalid" : ""}`}
                                             autoComplete="off"
                                         />
                                         {formik.errors[field.id] && formik.touched[field.id] && (

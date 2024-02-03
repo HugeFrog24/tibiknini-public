@@ -9,12 +9,12 @@ import {faSave, faTimes} from '@fortawesome/free-solid-svg-icons';
 import UserContext from "./contexts/UserContext";
 import {REDIRECT_REASONS} from "./constants/Constants";
 import UseBlogPost from "./UseBlogPost";
-import UseDarkMode from "../utils/UseDarkMode";
+import { useDarkMode } from './contexts/DarkModeContext';
 
 const BlogPostForm = ({previousPath}) => {
     const navigate = useNavigate();
     const {fetchBlogPost, createBlogPost, updateBlogPost} = UseBlogPost();
-    const {bgClass, textClass} = UseDarkMode();
+    const { modeClasses } = useDarkMode();
     const {postId} = useParams();
     const user = useContext(UserContext);
     // Add a new state for the fetched post
@@ -159,7 +159,7 @@ const BlogPostForm = ({previousPath}) => {
             </div>
             <FloatingLabel controlId="floatingTitle" label="Title">
                 <Form.Control
-                    className={`mb-3 ${textClass} ${bgClass}`}
+                    className={`mb-3 ${modeClasses.textClass} ${modeClasses.bgClass}`}
                     type="text"
                     placeholder="Enter your title"
                     value={title}
@@ -168,7 +168,7 @@ const BlogPostForm = ({previousPath}) => {
             </FloatingLabel>
             <FloatingLabel controlId="floatingContent" label="Content">
                 <Form.Control
-                    className={`mb-3 ${textClass} ${bgClass}`}
+                    className={`mb-3 ${modeClasses.textClass} ${modeClasses.bgClass}`}
                     as="textarea"
                     // Ideally, this would set the visible number of lines in the textarea to 15.
                     // However, due to Bootstrap's styles for floating labels, this doesn't work on its own.

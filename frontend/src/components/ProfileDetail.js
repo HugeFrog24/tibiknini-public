@@ -11,7 +11,7 @@ import {REDIRECT_REASONS} from "./constants/Constants";
 import BlogPostsTab from "./BlogPostsTab";
 import ProfileImage from "./ProfileImage";
 import FetchUserFollows from '../utils/FetchUserFollows';
-import UseDarkMode from "../utils/UseDarkMode";
+import { useDarkMode } from './contexts/DarkModeContext';
 import {handleProfileImageError} from '../utils/ImageUtils';
 import api from '../utils/api';
 
@@ -19,7 +19,7 @@ function ProfileDetail() {
     const authenticatedUser = useContext(UserContext);
     const { username } = useParams();
     const navigate = useNavigate();
-    const { bgClass, textClass } = UseDarkMode();
+    const { modeClasses } = useDarkMode();
     const [bio, setBio] = useState('');
     const [loading, setLoading] = useState(true);
 
@@ -204,7 +204,7 @@ function ProfileDetail() {
                                         />
                                     )}
                                     <Container className="d-flex justify-content-center align-items-center">
-                                        <h3 className={`${textClass} my-1`}>
+                                        <h3 className={`${modeClasses.textClass} my-1`}>
                                             {loading ? <Skeleton width={150} /> : profile.username}
                                         </h3>
                                         {profile.is_staff && (
@@ -235,7 +235,7 @@ function ProfileDetail() {
                         </Row>
                         <Row>
                             <Col xs={12}>
-                                <i className={`opacity-75 mt-2 ${textClass}`}>
+                                <i className={`opacity-75 mt-2 ${modeClasses.textClass}`}>
                                     Member since {formatDate(profile.date_joined)}
                                 </i>
                             </Col>
@@ -248,7 +248,7 @@ function ProfileDetail() {
                                             type="text"
                                             value={bioInput}
                                             onChange={(e) => setBioInput(e.target.value)}
-                                            className={`${bgClass} ${textClass} mr-2 flex-grow-1`}
+                                            className={`${modeClasses.bgClass} ${modeClasses.textClass} mr-2 flex-grow-1`}
                                             rounded="0"
                                             isInvalid={bioInput.length > 256}
                                         />
@@ -293,7 +293,7 @@ function ProfileDetail() {
                         <Tab eventKey="followers" title="Followers">
                             {followers ? followers.map((follow, index) => (
                                 <Card key={follow.follower || index}
-                                      className={`my-4 ${bgClass} shadow`}>
+                                      className={`my-4 ${modeClasses.bgClass} shadow`}>
                                     <Card.Body className="d-flex align-items-center">
                                         <Link to={`/users/${follow.follower}`}
                                               className="text-start text-info text-decoration-none d-flex align-items-center">
@@ -312,7 +312,7 @@ function ProfileDetail() {
                         <Tab eventKey="following" title="Following">
                             {following ? following.map((follow, index) => (
                                 <Card key={follow.following || index}
-                                      className={`my-4 ${bgClass} shadow`}>
+                                      className={`my-4 ${modeClasses.bgClass} shadow`}>
                                     <Card.Body className="d-flex align-items-center">
                                         <Link to={`/users/${follow.following}`}
                                               className="text-start text-info text-decoration-none d-flex align-items-center">

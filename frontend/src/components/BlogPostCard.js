@@ -1,16 +1,15 @@
 import {Button, Card, Col, Row} from "react-bootstrap";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {faImage} from '@fortawesome/free-solid-svg-icons';
-import { useContext } from 'react';
+import { useDarkMode } from './contexts/DarkModeContext';
 import { useNavigate } from 'react-router-dom';
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { handleProfileImageError } from '../utils/ImageUtils';
-import DarkModeContext from "./contexts/DarkModeContext";
 
 const BlogPostCard = ({post}) => {
-    const { modeClasses } = useContext(DarkModeContext);
     const navigate = useNavigate();
+    const { modeClasses } = useDarkMode();
 
     // Determine the background color based on the post's accent_color
     const getBackgroundColor = () => {

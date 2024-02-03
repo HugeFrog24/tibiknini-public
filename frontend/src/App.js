@@ -11,13 +11,12 @@ import ErrorComponent from "./components/ErrorComponent";
 import Navbar from "./components/Navbar";
 import Footer from './components/Footer';
 
-import DarkModeContext from "./components/contexts/DarkModeContext";
+import { DarkModeProvider } from "./components/contexts/DarkModeContext";
 import ApiUrlContext from "./components/contexts/ApiUrlContext";
 import UserContext from "./components/contexts/UserContext";
 
 import api from "./utils/api";
 import { setApiUrl } from './utils/api';
-import UseDarkMode from "./utils/UseDarkMode";
 
 import "./App.css";
 import "./styles/custom-bootstrap.css";
@@ -34,24 +33,11 @@ const RegistrationWizard = React.lazy(() => import("./components/RegistrationWiz
 
 
 function App() {
-    const getInitialDarkMode = () => {
-        const savedPreference = localStorage.getItem("darkMode");
-        if (savedPreference !== null) {
-            return JSON.parse(savedPreference);
-        }
-
-        return window.matchMedia("(prefers-color-scheme: dark)").matches;
-    };
-
-    const [isDarkMode, setIsDarkMode] = useState(getInitialDarkMode());
-
-    const toggleDarkMode = () => {
-        const newDarkMode = !isDarkMode;
-        setIsDarkMode(newDarkMode);
-        localStorage.setItem("darkMode", JSON.stringify(newDarkMode));
-    };
-
     const [user, setUser] = useState(null);
+    const [isDarkMode, setIsDarkMode] = useState(() => {
+        const savedPreference = localStorage.getItem("darkMode");
+        return savedPreference !== null ? JSON.parse(savedPreference) : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    });
 
     // Fetch user's information when the application loads
     useEffect(() => {
@@ -79,8 +65,6 @@ function App() {
     const apiUrl = "/api";
     setApiUrl(apiUrl);
 
-    const modeClasses = UseDarkMode(isDarkMode);
-
     function updateUser(user) {
         setUser(user);
     }
@@ -90,9 +74,14 @@ function App() {
         api.get('set-csrf-token/');
     }, []);
 
+    // Apply the dark mode class at the top level based on isDarkMode state
+    useEffect(() => {
+        document.body.className = isDarkMode ? 'dark-mode' : 'light-mode';
+    }, [isDarkMode]);
+
     return (
         <HelmetProvider>
-            <DarkModeContext.Provider value={{isDarkMode, toggleDarkMode, modeClasses}}>
+            <DarkModeProvider>
                 <ApiUrlContext.Provider value={apiUrl}>
                     <UserContext.Provider value={user}>
                         <Helmet>
@@ -108,13 +97,13 @@ function App() {
                         <div className="App">
                             <ToastContainer/>
                             <div
-                                className={`content p-5 ${modeClasses.textClass}`}
-                                style={{...modeClasses.contentStyle, minHeight: "100vh"}}>
+                                className={`content p-5 ${isDarkMode ? 'my-bg-dark' : 'bg-light'}`}
+                                style={{minHeight: "100vh"}}>
                                 <Suspense fallback={<Spinner />}>
                                     <Routes>
                                         <Route
                                             path="/"
-                                            element={<Home textClass={modeClasses.text}/>}
+                                            element={<Home />}
                                         />
                                         <Route
                                             path="/blog/"
@@ -138,7 +127,7 @@ function App() {
                                         />
                                         <Route
                                             path="/users/:username"
-                                            element={<ProfileDetail textClass={modeClasses.text}/>}
+                                            element={<ProfileDetail />}
                                         />
                                         <Route
                                             path="/login"
@@ -166,7 +155,7 @@ function App() {
                         </div>
                     </UserContext.Provider>
                 </ApiUrlContext.Provider>
-            </DarkModeContext.Provider>
+            </DarkModeProvider>
         </HelmetProvider>
     );
 }
