@@ -15,7 +15,7 @@ def validate_image_extension(ext):
 def validate_image_file(image_path):
     try:
         Image.open(image_path)
-    except IOError:
+    except OSError:
         raise ValidationError("Invalid image file")
 
 

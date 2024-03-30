@@ -16,7 +16,7 @@ class Command(BaseCommand):
         terms_of_service = self.read_file(terms_of_service_file)
 
         # Load the initial JSON data and extract the site_title
-        with open("core/fixtures/site_info.json", "r") as json_file:
+        with open("core/fixtures/site_info.json") as json_file:
             initial_data = json.load(json_file)
             site_title = initial_data[0]["fields"]["site_title"]
 
