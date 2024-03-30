@@ -3,6 +3,7 @@ import subprocess
 from dotenv import load_dotenv
 from pathlib import Path
 import argparse  # Import argparse for better argument parsing
+import sys  # Import sys for sys.exit()
 
 def main():
     # Create the argument parser
@@ -28,15 +29,19 @@ def main():
     # Print the environment for confirmation
     print(f"Running in {env} environment, using {env_file}")
 
+    # Prepare the environment for subprocess
+    subprocess_env = os.environ.copy()
+    subprocess_env["ENV"] = env  # Set the ENV variable to be used by Docker
+
     # Run docker-compose with the specified operation
     match (operation, env):
         case ('up', 'dev'):
-            subprocess.run(['docker-compose', 'build'])
-            subprocess.run(['docker-compose', 'watch'])
+            subprocess.run(['docker-compose', 'build'], env=subprocess_env)
+            subprocess.run(['docker-compose', 'watch'], env=subprocess_env)
         case ('up', _):
-            subprocess.run(['docker-compose', 'up', '--build', '-d'])
+            subprocess.run(['docker-compose', 'up', '--build', '-d'], env=subprocess_env)
         case ('down', _):
-            subprocess.run(['docker-compose', 'down'])
+            subprocess.run(['docker-compose', 'down'], env=subprocess_env)
 
 if __name__ == "__main__":
     main()
