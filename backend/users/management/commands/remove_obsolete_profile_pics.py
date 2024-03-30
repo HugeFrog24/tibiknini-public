@@ -1,8 +1,10 @@
 from pathlib import Path
 
-from django.core.management.base import BaseCommand
 from django.conf import settings
-from users.models import Profile  # replace 'your_app_name' with your actual app name
+from django.core.management.base import BaseCommand
+
+from users.models import \
+    Profile  # replace 'your_app_name' with your actual app name
 
 
 class Command(BaseCommand):

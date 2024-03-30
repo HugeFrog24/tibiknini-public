@@ -1,7 +1,7 @@
-from rest_framework import serializers
 from django.template.defaultfilters import truncatewords
+from rest_framework import serializers
 
-from blog.models import BlogPost, Tag, Like, Comment
+from blog.models import BlogPost, Comment, Like, Tag
 from users.models import Profile
 
 

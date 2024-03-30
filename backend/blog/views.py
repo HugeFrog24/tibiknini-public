@@ -1,11 +1,13 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, mixins, status, viewsets
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import (IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 
-from api.permissions import IsNotHidden, IsAuthorOrAdmin
-from .models import BlogPost, Like, Comment
+from api.permissions import IsAuthorOrAdmin, IsNotHidden
+
+from .models import BlogPost, Comment, Like
 from .pagination import CustomPageNumberPagination
 from .serializers import BlogPostSerializer, CommentSerializer, LikeSerializer
 

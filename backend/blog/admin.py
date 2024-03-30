@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import BlogPost, Tag, Comment, Like
+
+from .models import BlogPost, Comment, Like, Tag
 
 
 @admin.register(BlogPost)

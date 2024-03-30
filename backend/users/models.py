@@ -1,4 +1,5 @@
 import uuid
+
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.files.storage import default_storage
@@ -7,7 +8,8 @@ from django.utils.translation import gettext_lazy as _
 
 from .managers import CustomUserManager
 from .utils import process_profile_image, rename_profile_picture
-from .validators import username_validator, validate_reserved_username, validate_image_file_size
+from .validators import (username_validator, validate_image_file_size,
+                         validate_reserved_username)
 
 
 class CustomUser(AbstractUser):

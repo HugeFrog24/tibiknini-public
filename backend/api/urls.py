@@ -1,8 +1,9 @@
 from django.contrib.auth import views as auth_views
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.permissions import AllowAny
 
 from core.views import PrivacyPolicyView, TermsOfServiceView
+
 from .views import NavbarItemList, ReCaptchaLoginView, set_csrf_token
 
 app_name = 'api'

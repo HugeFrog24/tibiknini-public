@@ -1,8 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from PIL import Image
 from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
+from PIL import Image
 
 ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif'}
 

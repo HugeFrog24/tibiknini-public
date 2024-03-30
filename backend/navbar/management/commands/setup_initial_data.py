@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+
 from ...views import load_default_navbar_items
 
 
