@@ -30,13 +30,14 @@ def main():
     print(f"Running in {env} environment, using {env_file}")
 
     # Run docker-compose with the specified operation
-    if operation == 'up' and env == 'dev':
-        subprocess.run(['docker-compose', 'build'])
-        subprocess.run(['docker-compose', 'watch'])
-    if operation == 'up':
-        subprocess.run(['docker-compose', 'up', '--build', '-d'])
-    if operation == 'down':
-        subprocess.run(['docker-compose', 'down'])
+    match (operation, env):
+        case ('up', 'dev'):
+            subprocess.run(['docker-compose', 'build'])
+            subprocess.run(['docker-compose', 'watch'])
+        case ('up', _):
+            subprocess.run(['docker-compose', 'up', '--build', '-d'])
+        case ('down', _):
+            subprocess.run(['docker-compose', 'down'])
 
 if __name__ == "__main__":
     main()
