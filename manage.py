@@ -1,42 +1,47 @@
 import os
 import subprocess
-import sys
 from dotenv import load_dotenv
 from pathlib import Path
+import argparse  # Import argparse for better argument parsing
+import sys  # Import sys for sys.exit()
 
 def main():
-    # Check if a command-line argument is provided
-    if len(sys.argv) != 2:
-        print("Usage: python3 start.py [up|down]. In development, 'up' will execute 'watch'.")
-        sys.exit(1)
+    # Create the argument parser
+    parser = argparse.ArgumentParser(description="Manage Docker environments. Allows starting up or shutting down services. In development, 'up' will execute 'watch'.")
+    # Add arguments for operation and environment
+    parser.add_argument('operation', choices=['up', 'down'], help="Operation to perform: 'up' to start services (executes 'watch' in dev), 'down' to stop them.")
+    parser.add_argument('--env', default='prod', help="Specify the environment to use (default: 'prod'). If 'dev' is specified and operation is 'up', 'watch' will be executed.")
 
-    # Get the operation (up or down) from command-line argument
-    operation = sys.argv[1]
-    if operation not in ['up', 'down']:
-        print("Invalid operation. Use 'up' or 'down'.")
-        sys.exit(1)
+    # Parse the command-line arguments
+    args = parser.parse_args()
 
-    # Get the ENV environment variable, default to 'prod' if not set
-    env = os.environ.get('ENV', 'prod')
+    # Get the operation and environment from the parsed arguments
+    operation = args.operation
+    env = args.env
 
-    # Load the appropriate .env file based on the ENV variable
+    # Load the appropriate .env file based on the --env argument
     env_file = Path(f'./backend/.env.{env}')
     if not env_file.exists():
         print(f"Environment file {env_file} does not exist.")
         sys.exit(1)
     load_dotenv(dotenv_path=str(env_file))
 
-    # Print the environment for confirmation (optional, can be removed)
+    # Print the environment for confirmation
     print(f"Running in {env} environment, using {env_file}")
 
+    # Prepare the environment for subprocess
+    subprocess_env = os.environ.copy()
+    subprocess_env["ENV"] = env  # Set the ENV variable to be used by Docker
+
     # Run docker-compose with the specified operation
-    if operation == 'up' and env == 'dev':
-        subprocess.run(['docker-compose', 'build'])
-        subprocess.run(['docker-compose', 'watch'])
-    if operation == 'up':
-        subprocess.run(['docker-compose', 'up', '--build', '-d'])
-    if operation == 'down':
-        subprocess.run(['docker-compose', 'down'])
+    match (operation, env):
+        case ('up', 'dev'):
+            subprocess.run(['docker-compose', 'build'], env=subprocess_env)
+            subprocess.run(['docker-compose', 'watch'], env=subprocess_env)
+        case ('up', _):
+            subprocess.run(['docker-compose', 'up', '--build', '-d'], env=subprocess_env)
+        case ('down', _):
+            subprocess.run(['docker-compose', 'down'], env=subprocess_env)
 
 if __name__ == "__main__":
     main()

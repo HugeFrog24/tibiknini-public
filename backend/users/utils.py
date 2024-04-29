@@ -1,11 +1,12 @@
 import uuid
-from PIL import Image
+from pathlib import Path
+
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.utils import timezone
-from pathlib import Path
+from PIL import Image
 
-from .validators import validate_image_file, validate_image_extension
+from .validators import validate_image_extension, validate_image_file
 
 
 def rename_profile_picture(instance, filename):

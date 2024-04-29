@@ -1,13 +1,15 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, mixins, status, viewsets
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import (IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 
-from api.permissions import IsNotHidden, IsAuthorOrAdmin
-from .models import BlogPost, Like, Comment
+from api.permissions import IsAuthorOrAdmin, IsNotHidden
+
+from .models import BlogPost, Comment, Like
 from .pagination import CustomPageNumberPagination
-from .serializers import BlogPostSerializer, CommentSerializer
+from .serializers import BlogPostSerializer, CommentSerializer, LikeSerializer
 
 User = get_user_model()
 
@@ -41,28 +43,39 @@ class BlogPostLikeView(
     mixins.CreateModelMixin, mixins.DestroyModelMixin, generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    lookup_field = "pk"
     lookup_url_kwarg = "post_id"
+    serializer_class = LikeSerializer
 
     def get_queryset(self):
         return Like.objects.filter(post_id=self.kwargs[self.lookup_url_kwarg])
 
+    def perform_create(self, serializer):
+        # Retrieve the post using the post_id from the URL kwargs
+        post_id = self.kwargs.get(self.lookup_url_kwarg)
+        post = get_object_or_404(BlogPost, id=post_id)
+        # Pass the post object directly to the serializer's save method
+        serializer.save(user=self.request.user, post=post)
+
     def post(self, request, *args, **kwargs):
+        # Check if the like already exists
         if self.get_queryset().filter(user=request.user).exists():
-            return Response(
-                {"detail": "You have already liked this post"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        return self.create(request, *args, **kwargs)
+            return Response({"detail": "You have already liked this post"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            # Proceed to create the like using the perform_create method logic
+            return self.create(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
-        instance = self.get_queryset().filter(user=request.user).first()
-        if instance:
-            self.destroy(request, *args, **kwargs)
+        post_id = self.kwargs.get(self.lookup_url_kwarg)
+        user = request.user
+        like_instance = Like.objects.filter(post_id=post_id, user=user).first()
+
+        if like_instance:
+            # If the like instance is found, delete it and return a success response
+            like_instance.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
         else:
-            return Response(
-                {"detail": "Like not found"}, status=status.HTTP_404_NOT_FOUND
-            )
+            # If no like instance is found, return a 404 response
+            return Response({"detail": "Like not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
 class BlogPostsByUserView(generics.ListAPIView):

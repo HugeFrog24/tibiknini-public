@@ -1,4 +1,5 @@
 import json
+
 from .models import NavbarItem
 
 
@@ -6,7 +7,7 @@ def load_default_navbar_items():
     # Check if there are any navbar items in the database
     if not NavbarItem.objects.exists():
         # Load the default navbar items from the JSON file
-        with open('default_navbar_items.json', 'r') as f:
+        with open('default_navbar_items.json') as f:
             default_items = json.load(f)
 
         # Create and save the default navbar items in the database

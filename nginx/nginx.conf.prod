@@ -1,5 +1,5 @@
 server {
-    server_name tibiknini.ru;
+    server_name boger.dev;
 
     location /django-static/ {
         alias /var/www/staticfiles/;
@@ -39,7 +39,7 @@ server {
 }
 
 server {
-    server_name tibiknini.space tibiknini.site;
+    server_name boger.dev;
     listen 80;
     return 301 https://tibiknini.ru$request_uri;
 }

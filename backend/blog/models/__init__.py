@@ -1,2 +1,2 @@
-from .blogpost import BlogPost, Tag, Like # noqa: F401
-from .comment import Comment # noqa: F401
+from .blogpost import BlogPost, Like, Tag  # noqa: F401
+from .comment import Comment  # noqa: F401

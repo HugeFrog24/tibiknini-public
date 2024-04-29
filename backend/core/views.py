@@ -1,4 +1,5 @@
 from rest_framework import generics
+
 from .models import SiteInfo, SiteInfoType
 from .serializers import SiteInfoSerializer
 

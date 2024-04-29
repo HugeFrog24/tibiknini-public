@@ -1,7 +1,7 @@
-from rest_framework import serializers
 from django.template.defaultfilters import truncatewords
+from rest_framework import serializers
 
-from blog.models import BlogPost, Tag, Like, Comment
+from blog.models import BlogPost, Comment, Like, Tag
 from users.models import Profile
 
 
@@ -22,9 +22,14 @@ class BlogPostAuthorSerializer(serializers.ModelSerializer):
 
 
 class LikeSerializer(serializers.ModelSerializer):
+    user = serializers.HiddenField(
+        default=serializers.CurrentUserDefault()
+    )
+
     class Meta:
         model = Like
-        fields = ("user", "post", "created")
+        fields = ('user', 'created')
+        read_only_fields = ('created',)
 
 
 class BlogPostSerializer(serializers.ModelSerializer):

@@ -1,22 +1,21 @@
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.http import JsonResponse
-
 from rest_framework import generics, parsers, status
 from rest_framework.decorators import parser_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from api.utils.recaptcha import verify_recaptcha
+
 from .models import CustomUser, Follow
 from .serializers import (FollowSerializer, ProfileBioSerializer,
                           ProfileImageSerializer, ProfileSerializer,
                           UserRegistrationSerializer)
 from .utils import process_profile_image
-from api.utils.recaptcha import verify_recaptcha
-from .validators import (validate_reserved_username,
-                         validate_unique_username,
-                         username_validator)
+from .validators import (username_validator, validate_reserved_username,
+                         validate_unique_username)
 
 User = get_user_model()
 

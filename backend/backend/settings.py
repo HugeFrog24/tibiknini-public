@@ -9,17 +9,25 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-from datetime import timedelta
 import os
+from datetime import timedelta
 from pathlib import Path
-from dotenv import load_dotenv
 
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
+
+def get_secret(secret_name, default=None):
+    secret_path = f'/run/secrets/{secret_name}'
+    try:
+        with open(secret_path) as secret_file:
+            return secret_file.read().strip()
+    except FileNotFoundError:
+        return default
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
@@ -36,7 +44,7 @@ if DEBUG:
     CSRF_COOKIE_HTTPONLY = False
     load_dotenv()
 else:
-    ALLOWED_HOSTS = ["django", "tibiknini.ru", "tibiknini.site", "tibiknini.space"]
+    ALLOWED_HOSTS = ["django", os.getenv('DOMAIN_NAME')]
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_HTTPONLY = True
@@ -103,9 +111,9 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB'),
-        'USER': os.getenv('POSTGRES_USER'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+        'NAME': get_secret('postgres_db', None),
+        'USER': get_secret('postgres_user', None),
+        'PASSWORD': get_secret('postgres_password', None),
         'HOST': 'db',
         'PORT': 5432,
     }
@@ -146,7 +154,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost",
     "http://127.0.0.1",
 ]
-CSRF_TRUSTED_ORIGINS = ["127.0.0.1", "localhost", "https://*.tibiknini.ru", "https://*.tibiknini.site", "https://*.tibiknini.space"]
+CSRF_TRUSTED_ORIGINS = ["127.0.0.1", "localhost", f"https://*.{os.getenv('DOMAIN_NAME')}"]
 SESSION_COOKIE_HTTPONLY = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
@@ -160,11 +168,11 @@ MEDIA_ROOT = '/usr/src/app/media'  # Directory where uploaded media is saved.
 MEDIA_URL = '/media/'  # Public URL at the browser
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = os.getenv('EMAIL_HOST')
-EMAIL_PORT = os.getenv('EMAIL_PORT')
+EMAIL_HOST = get_secret('email_host')
+EMAIL_PORT = get_secret('email_port')
 EMAIL_USE_SSL = True
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+EMAIL_HOST_USER = get_secret('email_host_user')
+EMAIL_HOST_PASSWORD = get_secret('email_host_password')
 
 RECAPTCHA_SECRET_KEY = os.getenv('RECAPTCHA_SECRET_KEY')
 

@@ -1,5 +1,5 @@
 server {
-    server_name tibiknini.ru 23.88.122.83;
+    server_name localhost 23.88.122.83;
 
     location /django-static/ {
         alias /var/www/staticfiles/;
@@ -43,20 +43,18 @@ server {
 }
 
 server {
-    server_name tibiknini.ru tibiknini.space tibiknini.site;
+    server_name localhost;
 
     listen 80;
-    return 301 https://tibiknini.ru$request_uri;
+    return 301 https://localhost$request_uri;
 }
 
 server {
-    server_name tibiknini.space tibiknini.site;
-
     # listen 443 ssl;
     # ssl_certificate /etc/letsencrypt/live/www.tibiknini.site/fullchain.pem; # managed by Certbot
     # ssl_certificate_key /etc/letsencrypt/live/www.tibiknini.site/privkey.pem; # managed by Certbot
     # include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
     # ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
 
-    return 301 https://tibiknini.ru$request_uri;
+    return 301 https://localhost$request_uri;
 }

@@ -1,14 +1,15 @@
-from django.contrib.auth import authenticate, login as auth_login
-from django.http import JsonResponse, HttpResponse
+from django.contrib.auth import authenticate
+from django.contrib.auth import login as auth_login
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
-
-from navbar.models import NavbarItem
-
 from rest_framework import generics, status
 from rest_framework.views import APIView
 
+from navbar.models import NavbarItem
+
 from .serializers import NavbarItemSerializer
 from .utils.recaptcha import verify_recaptcha
+
 
 @ensure_csrf_cookie
 def set_csrf_token(request):

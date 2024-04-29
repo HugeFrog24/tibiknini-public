@@ -94,7 +94,7 @@ function Login({onLogin}) {
                         </FloatingLabel>
                         <ReCAPTCHA
                             ref={recaptchaRef}
-                            sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY}
+                            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
                             size="invisible"
                             onChange={handleRecaptcha}
                         />

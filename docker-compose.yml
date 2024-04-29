@@ -1,13 +1,16 @@
-version: '3.8'
-
 services:
     db:
         image: postgres
-        env_file:
-            - ./backend/.env
+        environment:
+            POSTGRES_DB_FILE: /run/secrets/postgres_db
+            POSTGRES_USER: /run/secrets/postgres_user
+            POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+        secrets:
+            - postgres_db
+            - postgres_user
+            - postgres_password
         volumes:
             - dbdata16:/var/lib/postgresql/data # Ensure data persistence across container restarts
-
 
     nginx:
         build:
@@ -44,6 +47,30 @@ services:
             - ./backend:/usr/src/app
             - dbdata16:/var/lib/postgresql/data
             - ${MEDIA_PATH}:/usr/src/app/media
+        secrets:
+            - postgres_db
+            - postgres_user
+            - postgres_password
+            - email_host
+            - email_port
+            - email_host_user
+            - email_host_password
+
+secrets:
+    postgres_db:
+        file: ./secrets/postgres_db.txt
+    postgres_user:
+        file: ./secrets/postgres_user.txt
+    postgres_password:
+        file: ./secrets/postgres_password.txt
+    email_host:
+        file: ./secrets/email_host.txt
+    email_port:
+        file: ./secrets/email_port.txt
+    email_host_user:
+        file: ./secrets/email_host_user.txt
+    email_host_password:
+        file: ./secrets/email_host_password.txt
 
 volumes:
     dbdata16:
