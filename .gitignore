@@ -1,5 +1,7 @@
 dumps/
 secrets/
+.env.prod
+.env.dev
 
 node_modules/
 
@@ -9,6 +11,7 @@ __pycache__/
 *$py.class
 
 # C extensions
+*.so
 
 # Distribution / packaging
 .Python
@@ -125,9 +128,6 @@ celerybeat.pid
 
 # Environments
 .env
-.env.prod
-.env.dev
-.env.debug
 .venv
 env/
 venv/
