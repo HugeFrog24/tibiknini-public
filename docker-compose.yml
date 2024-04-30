@@ -48,6 +48,7 @@ services:
             - dbdata16:/var/lib/postgresql/data
             - ${MEDIA_PATH}:/usr/src/app/media
         secrets:
+            - django_secret_key
             - postgres_db
             - postgres_user
             - postgres_password
@@ -57,6 +58,8 @@ services:
             - email_host_password
 
 secrets:
+    django_secret_key:
+        file: ./secrets/django_secret_key.txt
     postgres_db:
         file: ./secrets/postgres_db.txt
     postgres_user:

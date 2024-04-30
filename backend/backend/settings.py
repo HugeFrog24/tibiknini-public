@@ -30,7 +30,7 @@ def get_secret(secret_name, default=None):
         return default
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+SECRET_KEY = get_secret('django_secret_key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Set DEBUG to True only if the environment variable 'DEBUG' is set to 'true' (case-insensitive).
