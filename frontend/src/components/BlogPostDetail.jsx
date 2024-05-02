@@ -9,10 +9,10 @@ import {Helmet} from 'react-helmet-async';
 import ReactMarkdown from "react-markdown";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
+import Avatar from '@mui/material/Avatar';
 
 import UserContext from "./contexts/UserContext";
 import UseBlogPost from "./UseBlogPost";
-import { handleProfileImageError } from '../utils/ImageUtils';
 import { useDarkMode } from './contexts/DarkModeContext';
 import {REDIRECT_REASONS} from "./constants/Constants";
 import BlogPostComments from "./BlogPostComments";
@@ -176,13 +176,10 @@ const BlogPostDetail = ({previousPath}) => {
                                 href={`/users/${postState.author.username}`}
                                 className={`${modeClasses.linkClass} text-decoration-none d-flex gap-3 align-items-center`}
                             >
-                                <img
+                                <Avatar
                                     src={postState.author.image}
                                     alt={postState.author.username}
-                                    className="rounded-circle"
-                                    width="16"
-                                    height="16"
-                                    onError={handleProfileImageError}
+                                    sx={{ width: 16, height: 16 }}
                                 />
                                 <span className="fs-6">{postState.author.username}</span>
                             </a>

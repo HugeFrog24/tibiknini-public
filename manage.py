@@ -19,16 +19,6 @@ def main():
     operation = args.operation
     env = args.env
 
-    # Load the appropriate .env file based on the --env argument
-    env_file = Path(f'./backend/.env.{env}')
-    if not env_file.exists():
-        print(f"Environment file {env_file} does not exist.")
-        sys.exit(1)
-    load_dotenv(dotenv_path=str(env_file))
-
-    # Print the environment for confirmation
-    print(f"Running in {env} environment, using {env_file}")
-
     # Prepare the environment for subprocess
     subprocess_env = os.environ.copy()
     subprocess_env["ENV"] = env  # Set the ENV variable to be used by Docker

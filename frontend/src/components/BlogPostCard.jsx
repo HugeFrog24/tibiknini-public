@@ -5,7 +5,7 @@ import { useDarkMode } from './contexts/DarkModeContext';
 import { useNavigate } from 'react-router-dom';
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
-import { handleProfileImageError } from '../utils/ImageUtils';
+import Avatar from '@mui/material/Avatar';
 
 const BlogPostCard = ({post}) => {
     const navigate = useNavigate();
@@ -76,13 +76,10 @@ const BlogPostCard = ({post}) => {
                             </Card.Link>
                         </Card.Title>
                         <div className="d-flex align-items-center gap-3">
-                            <img
+                            <Avatar
                                 src={post.author.image}
                                 alt={post.author.username}
-                                className="rounded-circle"
-                                width="32"
-                                height="32"
-                                onError={handleProfileImageError}
+                                sx={{ width: 32, height: 32 }}
                             />
                             <Card.Link
                                 onClick={() => navigate(`/users/${post.author.username}`)}
