@@ -174,7 +174,7 @@ EMAIL_USE_SSL = True
 EMAIL_HOST_USER = get_secret('email_host_user')
 EMAIL_HOST_PASSWORD = get_secret('email_host_password')
 
-RECAPTCHA_SECRET_KEY = os.getenv('RECAPTCHA_SECRET_KEY')
+RECAPTCHA_SECRET_KEY = get_secret('recaptcha_secret_key')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

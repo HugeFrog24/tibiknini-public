@@ -33,15 +33,20 @@ def main():
     subprocess_env = os.environ.copy()
     subprocess_env["ENV"] = env  # Set the ENV variable to be used by Docker
 
+    # Define the base and override Compose files
+    base_compose_file = 'docker-compose.yml'
+    override_compose_file = f'docker-compose.{env}.yml'
+
     # Run docker-compose with the specified operation
+    compose_files = ['-f', base_compose_file, '-f', override_compose_file]
     match (operation, env):
         case ('up', 'dev'):
-            subprocess.run(['docker-compose', 'build'], env=subprocess_env)
-            subprocess.run(['docker-compose', 'watch'], env=subprocess_env)
+            subprocess.run(['docker-compose', *compose_files, 'build'], env=subprocess_env)
+            subprocess.run(['docker-compose', *compose_files, 'watch'], env=subprocess_env)
         case ('up', _):
-            subprocess.run(['docker-compose', 'up', '--build', '-d'], env=subprocess_env)
+            subprocess.run(['docker-compose', *compose_files, 'up', '--build', '-d'], env=subprocess_env)
         case ('down', _):
-            subprocess.run(['docker-compose', 'down'], env=subprocess_env)
+            subprocess.run(['docker-compose', *compose_files, 'down'], env=subprocess_env)
 
 if __name__ == "__main__":
     main()

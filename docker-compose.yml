@@ -23,7 +23,6 @@ services:
                 - action: rebuild
                   path: ./frontend
         volumes:
-            - ${MEDIA_PATH}:/var/www/media
             - ./backend/staticfiles:/var/www/staticfiles
         ports:
             - "80:80"
@@ -37,18 +36,15 @@ services:
         command: gunicorn backend.wsgi:application --workers 3 --bind 0.0.0.0:8000
         depends_on:
             - db
-        env_file:
-            - ./backend/.env # common settings
-            - ./backend/.env.${ENV:-prod} # environment-specific settings
         ports:
             - "8000:8000"
         restart: always
         volumes:
             - ./backend:/usr/src/app
             - dbdata16:/var/lib/postgresql/data
-            - ${MEDIA_PATH}:/usr/src/app/media
         secrets:
             - django_secret_key
+            - recaptcha_secret_key
             - postgres_db
             - postgres_user
             - postgres_password
@@ -60,6 +56,8 @@ services:
 secrets:
     django_secret_key:
         file: ./secrets/django_secret_key.txt
+    recaptcha_secret_key:
+        file: ./secrets/recaptcha_secret_key.txt
     postgres_db:
         file: ./secrets/postgres_db.txt
     postgres_user:
