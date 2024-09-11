@@ -28,7 +28,7 @@ function SetupWizard() {
             } catch (error) {
                 if (error.response && error.response.status === 503) {
                     setIsLoading(false);
-                } else {
+                } else if (!axios.isCancel(error)) { // Check if the error is not due to the axios cancel
                     showToast('An error occurred while checking setup status.', 'error');
                     navigate('/');
                 }
