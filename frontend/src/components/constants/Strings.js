@@ -5,5 +5,7 @@ export const TOAST_MESSAGES = {
     EDIT_POST: 'You must be logged in to edit this post.',
     VIEW_OWN_PROFILE: 'To view your profile, please log in.',
     FOLLOW_USER: 'To follow this user, please log in.',
-    REGISTRATION_SUCCESSFUL: 'You\'ve registered successfully. Please log in.'
+    REGISTRATION_SUCCESSFUL: 'You\'ve registered successfully. Please log in.',
+    SETUP_COMPLETE: 'Setup complete. Please log in.',
+    SETUP_ALREADY: 'Setup is already complete. Redirecting to home page.',
 }

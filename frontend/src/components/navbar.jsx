@@ -1,6 +1,6 @@
 import React, {useContext} from "react";
 import {Link, useLocation} from "react-router-dom";
-import {Button, ButtonGroup, Dropdown, Image, Nav, Navbar} from "react-bootstrap";
+import {Button, ButtonGroup, Dropdown, Nav, Navbar} from "react-bootstrap";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {
     faBookOpen,
@@ -13,12 +13,12 @@ import {
     faSun,
     faUser,
 } from "@fortawesome/free-solid-svg-icons";
+import Avatar from '@mui/material/Avatar';
 
 import { useDarkMode } from "./contexts/DarkModeContext";
 import UserContext from "./contexts/UserContext";
 import styles from "../styles/NavigationBar.module.css";
 import { handleLogout } from '../utils/auth';
-import { handleProfileImageError } from '../utils/ImageUtils';
 
 function NavigationBar() {
     const {isDarkMode, toggleDarkMode, modeClasses} = useDarkMode();
@@ -57,14 +57,13 @@ function NavigationBar() {
                         className={`${modeClasses.bgClass} ${modeClasses.textClass}`}
                         id="dropdown-basic"
                     >
-                        <Image
-                            src={`${user.image}`}
-                            roundedCircle
-                            width="24"
-                            height="24"
-                            className="me-2"
-                            onError={handleProfileImageError}
-                        />
+                        <Avatar
+                            src={user.image}
+                            alt={user.username}
+                            sx={{ width: 24, height: 24 }}
+                        >
+                            {user.username.charAt(0).toUpperCase()}
+                        </Avatar>
                     </Dropdown.Toggle>
 
                     <Dropdown.Menu align="end"> {/* Aligns dropdown to the end (right side) of the toggle to prevent overflow */}

@@ -1,16 +1,14 @@
 import React, {useEffect, useRef, useState} from "react";
 import {Button, Col, Container, FloatingLabel, Form, Row} from "react-bootstrap";
-import {toast} from "react-toastify";
 import {useLocation, useNavigate} from "react-router-dom";
 import { Helmet } from 'react-helmet-async';
 import ReCAPTCHA from "react-google-recaptcha";
 
 import config from "../config.json";
-import FetchUser from "../utils/FetchUser";
 import { useDarkMode } from './contexts/DarkModeContext';
-import api from '../utils/api';
 import { handleLogin } from '../utils/auth';
-import {TOAST_MESSAGES} from './constants/Strings';
+import { REDIRECT_REASONS } from './constants/Constants';
+import { showToast } from '../utils/toastUtils';
 
 import Spinner from "react-bootstrap/Spinner";
 
@@ -49,9 +47,10 @@ function Login({onLogin}) {
 
     useEffect(() => {
         if (location.state && location.state.reason) {
-            const message = TOAST_MESSAGES[location.state.reason];
-            if (message) {
-                toast.warning(message);
+            const reason = location.state.reason;
+            if (reason && REDIRECT_REASONS[reason]) {
+                const { message, type } = REDIRECT_REASONS[reason];
+                showToast(message, type);
             }
         }
     }, [location]);

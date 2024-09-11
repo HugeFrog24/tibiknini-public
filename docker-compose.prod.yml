@@ -1,0 +1,10 @@
+services:
+  django:
+    environment:
+      DEBUG: "False"
+      DOMAIN_NAME: boger.dev
+      MEDIA_PATH: /var/www/media
+  nginx:
+    volumes:
+      # Change the host path (left side) to point to your desired storage pool for media files
+      - /var/www/media:/var/www/media

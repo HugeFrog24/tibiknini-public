@@ -3,7 +3,7 @@ services:
         image: postgres
         environment:
             POSTGRES_DB_FILE: /run/secrets/postgres_db
-            POSTGRES_USER: /run/secrets/postgres_user
+            POSTGRES_USER_FILE: /run/secrets/postgres_user
             POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
         secrets:
             - postgres_db
@@ -23,8 +23,7 @@ services:
                 - action: rebuild
                   path: ./frontend
         volumes:
-            - ${MEDIA_PATH}:/var/www/media
-            - ./backend/staticfiles:/var/www/staticfiles
+            - static_volume:/var/www/staticfiles
         ports:
             - "80:80"
             - "443:443"
@@ -37,18 +36,16 @@ services:
         command: gunicorn backend.wsgi:application --workers 3 --bind 0.0.0.0:8000
         depends_on:
             - db
-        env_file:
-            - ./backend/.env # common settings
-            - ./backend/.env.${ENV:-prod} # environment-specific settings
         ports:
             - "8000:8000"
         restart: always
         volumes:
             - ./backend:/usr/src/app
+            - static_volume:/usr/src/app/staticfiles
             - dbdata16:/var/lib/postgresql/data
-            - ${MEDIA_PATH}:/usr/src/app/media
         secrets:
             - django_secret_key
+            - recaptcha_secret_key
             - postgres_db
             - postgres_user
             - postgres_password
@@ -60,6 +57,8 @@ services:
 secrets:
     django_secret_key:
         file: ./secrets/django_secret_key.txt
+    recaptcha_secret_key:
+        file: ./secrets/recaptcha_secret_key.txt
     postgres_db:
         file: ./secrets/postgres_db.txt
     postgres_user:
@@ -78,3 +77,5 @@ secrets:
 volumes:
     dbdata16:
         name: tibiknini-dbdata16
+    static_volume:
+        name: tibiknini-static-volume

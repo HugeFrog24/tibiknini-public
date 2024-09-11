@@ -2,6 +2,7 @@ from django.apps import apps
 from django.contrib.auth.base_user import BaseUserManager
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
+from django.contrib.auth.models import BaseUserManager
 
 
 class CustomUserManager(BaseUserManager):
@@ -14,17 +15,16 @@ class CustomUserManager(BaseUserManager):
         """
         Create and save a user with the given email and password.
         """
-        username = self.model.normalize_username(username)
         if not email:
             raise ValueError(_("The Email must be set"))
         email = self.normalize_email(email).lower()
+        username = username.lower()
         user = self.model(username=username, email=email, **extra_fields)
         user.set_password(password)
-        user.save()
+        user.save(using=self._db)
 
-        # Create the user's profile
-        Profile = apps.get_model('users', 'Profile')
-        Profile.objects.create(user=user)
+        # Remove the profile creation from here
+        # The signal will handle profile creation
 
         return user
 

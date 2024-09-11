@@ -1,3 +1,6 @@
+# Ignore Django collected static files
+# These are generated during deployment and should not be version controlled
+/backend/staticfiles/
 dumps/
 secrets/
 .env.prod

@@ -12,6 +12,11 @@ RUN pip install -r /usr/src/app/requirements.txt
 # copy our project code
 COPY . /usr/src/app/
 
+# Collect static files during build time
+# This ensures that static files are available when the container starts,
+# and prevents issues with empty volumes when the container is first run
+RUN python manage.py collectstatic --noinput
+
 # expose the port 8000
 EXPOSE 8000
 

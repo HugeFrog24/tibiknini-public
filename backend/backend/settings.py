@@ -75,6 +75,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'backend.middleware.SetupMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -154,7 +155,14 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost",
     "http://127.0.0.1",
 ]
-CSRF_TRUSTED_ORIGINS = ["127.0.0.1", "localhost", f"https://*.{os.getenv('DOMAIN_NAME')}"]
+CSRF_TRUSTED_ORIGINS = [
+    "http://127.0.0.1",
+    "https://127.0.0.1",
+    "http://localhost",
+    "https://localhost",
+    f"https://*.{os.getenv('DOMAIN_NAME')}"
+]
+
 SESSION_COOKIE_HTTPONLY = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
@@ -174,7 +182,7 @@ EMAIL_USE_SSL = True
 EMAIL_HOST_USER = get_secret('email_host_user')
 EMAIL_HOST_PASSWORD = get_secret('email_host_password')
 
-RECAPTCHA_SECRET_KEY = os.getenv('RECAPTCHA_SECRET_KEY')
+RECAPTCHA_SECRET_KEY = get_secret('recaptcha_secret_key')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

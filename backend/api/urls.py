@@ -1,10 +1,9 @@
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
-from rest_framework.permissions import AllowAny
 
 from core.views import PrivacyPolicyView, TermsOfServiceView
 
-from .views import NavbarItemList, ReCaptchaLoginView, set_csrf_token
+from .views import NavbarItemList, ReCaptchaLoginView, set_csrf_token, SetupView, SetupStatusView
 
 app_name = 'api'
 
@@ -20,4 +19,7 @@ urlpatterns = [
     path('set-csrf-token/', set_csrf_token, name='set_csrf_token'),
     path('auth/login/', ReCaptchaLoginView.as_view(), name='login'),
     path('auth/logout/', auth_views.LogoutView.as_view(), name='logout'),
+
+    path('setup/', SetupView.as_view(), name='setup'),
+    path('setup/status/', SetupStatusView.as_view(), name='setup_status'),
 ]

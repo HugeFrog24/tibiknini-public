@@ -1,11 +1,10 @@
-import {useEffect, useState} from "react";
-import {Button, Dropdown, DropdownButton} from "react-bootstrap";
-import {faCamera, faTrash, faUpload,} from "@fortawesome/free-solid-svg-icons";
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import React, { useState, useEffect } from "react";
+import { Button, Dropdown, DropdownButton } from "react-bootstrap";
+import { faCamera, faTrash, faUpload } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
-import { handleProfileImageError } from '../utils/ImageUtils';
+import Avatar from '@mui/material/Avatar';
 
 function ProfileImage({
     imageSrc,
@@ -40,7 +39,7 @@ function ProfileImage({
         setIsHovered(false);
         const timeout = setTimeout(() => {
             setShowDropdown(false);
-            }, 300);
+        }, 300);
         setHideDropdownTimeout(timeout);
     };
 
@@ -64,7 +63,7 @@ function ProfileImage({
         return () => {
             document.removeEventListener("click", handleDocumentClick);
         };
-        }, [showDropdown]);
+    }, [showDropdown]);
 
     return (
         <div
@@ -82,14 +81,14 @@ function ProfileImage({
                         cursor: showOptions ? "pointer" : "default",
                     }}
                     >
-                    <img
+                    <Avatar
                         src={imageSrc}
-                        className={`rounded-circle shadow ${isHovered ? "opacity-50" : ""}`}
                         alt={imageAlt}
-                        width={width}
-                        height={height}
-                        onError={handleProfileImageError}
-                    />
+                        sx={{ width, height }}
+                        className={`shadow ${isHovered ? "opacity-50" : ""}`}
+                    >
+                        {imageAlt.charAt(0).toUpperCase()}
+                    </Avatar>
                 </Button>
                 {isHovered && showOptions && (
                     <div className="position-absolute top-50 start-50 translate-middle">

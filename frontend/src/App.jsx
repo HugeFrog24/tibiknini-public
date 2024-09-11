@@ -1,5 +1,5 @@
 import React, {useEffect, useState, Suspense} from "react";
-import {Route, Routes, useLocation} from "react-router-dom";
+import {Route, Routes, useLocation, useNavigate} from "react-router-dom";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Spinner } from 'react-bootstrap';
 import {ToastContainer} from 'react-toastify';
@@ -15,11 +15,11 @@ import { DarkModeProvider } from "./components/contexts/DarkModeContext";
 import ApiUrlContext from "./components/contexts/ApiUrlContext";
 import UserContext from "./components/contexts/UserContext";
 
-import api from "./utils/api";
-import { setApiUrl } from './utils/api';
+import api, { setApiUrl, setNavigate } from "./utils/api";
 
 import "./App.css";
 import "./styles/custom-bootstrap.css";
+import 'react-toastify/dist/ReactToastify.css';
 
 // Lazy-load non-essential components to reduce initial loading time
 const BlogPostForm = React.lazy(() => import("./components/BlogPostForm"));
@@ -30,7 +30,7 @@ const Home = React.lazy(() => import("./components/Home"));
 const Login = React.lazy(() => import("./components/Login"));
 const ProfileDetail = React.lazy(() => import("./components/ProfileDetail"));
 const RegistrationWizard = React.lazy(() => import("./components/RegistrationWizard"));
-
+const SetupWizard = React.lazy(() => import("./components/SetupWizard"));
 
 function App() {
     const [user, setUser] = useState(null);
@@ -54,6 +54,7 @@ function App() {
     }, []);
 
     const location = useLocation();
+    const navigate = useNavigate();
     
     // Set the API base URL to the relative path "/api".
     // Thanks to the Nginx reverse proxy setup in our infrastructure,
@@ -64,6 +65,7 @@ function App() {
     // a seamless integration between our frontend and backend services.
     const apiUrl = "/api";
     setApiUrl(apiUrl);
+    setNavigate(navigate);
 
     function updateUser(user) {
         setUser(user);
@@ -71,7 +73,12 @@ function App() {
 
     useEffect(() => {
         // Make a GET request to the server to ensure the CSRF cookie is set
-        api.get('set-csrf-token/');
+        api.get('set-csrf-token/')
+            .catch(error => {
+                // Error is already handled by the interceptor, so we can
+                // just log it or ignore it here
+                console.error('CSRF token fetch failed:', error.message);
+            });
     }, []);
 
     // Apply the dark mode class at the top level based on isDarkMode state
@@ -95,7 +102,7 @@ function App() {
                         </Helmet>
                         <Navbar/>
                         <div className="App">
-                            <ToastContainer/>
+                            <ToastContainer position="top-right" />
                             <div
                                 className={`content p-5 ${isDarkMode ? 'my-bg-dark' : 'bg-light'}`}
                                 style={{minHeight: "100vh"}}>
@@ -138,6 +145,10 @@ function App() {
                                         <Route
                                             path="/register"
                                             element={<RegistrationWizard />}
+                                        />
+                                        <Route
+                                            path="/setup"
+                                            element={<SetupWizard />}
                                         />
                                         <Route
                                             path="/privacy-policy"

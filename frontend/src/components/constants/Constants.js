@@ -1,10 +1,11 @@
 export const REDIRECT_REASONS = {
-    AUTHENTICATED_ONLY: 'AUTHENTICATED_ONLY',
-    LIKE_POST: 'LIKE_POST',
-    CREATE_POST: 'CREATE_POST',
-    EDIT_POST: 'EDIT_POST',
-    VIEW_OWN_PROFILE: 'VIEW_OWN_PROFILE',
-    FOLLOW_USER: 'FOLLOW_USER',
-    REGISTRATION_SUCCESSFUL: 'REGISTRATION_SUCCESSFUL',
+    AUTHENTICATED_ONLY: { message: 'Authenticated only', type: 'warning' },
+    LIKE_POST: { message: 'Liked post', type: 'info' },
+    CREATE_POST: { message: 'Created post', type: 'success' },
+    EDIT_POST: { message: 'Edited post', type: 'info' },
+    VIEW_OWN_PROFILE: { message: 'Viewing own profile', type: 'info' },
+    FOLLOW_USER: { message: 'Followed user', type: 'info' },
+    REGISTRATION_SUCCESSFUL: { message: 'Registration successful', type: 'success' },
+    SETUP_COMPLETE: { message: 'Setup complete. Please login', type: 'success' }, // Updated reason
     // Add more standardized reasons as needed
 };

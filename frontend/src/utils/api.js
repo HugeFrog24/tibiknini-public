@@ -1,8 +1,9 @@
 import axios from 'axios';
-import { createBrowserHistory } from 'history';
+import { showToast } from './toastUtils';
+import { TOAST_MESSAGES } from '../components/constants/Strings';
 
-const history = createBrowserHistory();
-let apiUrl = '';  // This will be set later using setApiUrl
+let apiUrl = ''; // This will be set later using setApiUrl
+let navigate;
 
 const api = axios.create({
     withCredentials: true,
@@ -17,16 +18,30 @@ export const setApiUrl = (url) => {
     api.defaults.baseURL = url;  // Set the baseURL on the Axios instance
 };
 
+export const setNavigate = (navigateFunction) => {
+    navigate = navigateFunction;
+};
+
 api.interceptors.request.use(request => {
     request.headers['X-CSRFToken'] = getCookie('csrftoken');
     return request;
 });
 
 api.interceptors.response.use(
-    response => response,
+    response => {
+        // Check if this is the setup status endpoint and status is complete
+        if (response.config.url.endsWith('/setup/status/') && response.data.status === 'complete') {
+            showToast(TOAST_MESSAGES.SETUP_ALREADY, 'info'); // This will be the only place to show this toast
+            navigate('/');
+            throw new axios.Cancel('Setup is already complete');
+        }
+        return response;
+    },
     error => {
-        if (error.response.status === 401) {
-            history.push('/login');
+        if (error.response && error.response.status === 503) {
+            navigate('/setup');
+        } else if (error.response && error.response.status === 401) {
+            navigate('/login');
         }
         return Promise.reject(error);
     }
