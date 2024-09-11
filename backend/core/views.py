@@ -1,7 +1,7 @@
 from rest_framework import generics
 
-from .models import SiteInfo, SiteInfoType
-from .serializers import SiteInfoSerializer
+from .models import SiteInfo, PrivacyPolicy, TermsOfService
+from .serializers import SiteInfoSerializer, PrivacyPolicySerializer, TermsOfServiceSerializer
 
 
 class SiteInfoView(generics.RetrieveAPIView):
@@ -13,16 +13,20 @@ class SiteInfoView(generics.RetrieveAPIView):
 
 
 class PrivacyPolicyView(generics.RetrieveAPIView):
-    queryset = SiteInfo.objects.all()
-    serializer_class = SiteInfoSerializer
+    queryset = PrivacyPolicy.objects.all()
+    serializer_class = PrivacyPolicySerializer
 
     def get_object(self):
-        return SiteInfo.objects.filter(type=SiteInfoType.PRIVACY_POLICY).first()
+        privacy_policy = PrivacyPolicy.objects.first()
+        privacy_policy.content = privacy_policy.get_content()
+        return privacy_policy
 
 
 class TermsOfServiceView(generics.RetrieveAPIView):
-    queryset = SiteInfo.objects.all()
-    serializer_class = SiteInfoSerializer
+    queryset = TermsOfService.objects.all()
+    serializer_class = TermsOfServiceSerializer
 
     def get_object(self):
-        return SiteInfo.objects.filter(type=SiteInfoType.TERMS_OF_SERVICE).first()
+        terms_of_service = TermsOfService.objects.first()
+        terms_of_service.content = terms_of_service.get_content()
+        return terms_of_service

@@ -185,7 +185,7 @@ class SetupStatusView(APIView):
         env_path = Path(settings.BASE_DIR) / '.env'
         database_configured = False
         superuser_exists = None  # Use None to indicate uncertainty
-        site_title_set = False
+        site_title_set = None
 
         # Check if the database is configured
         if env_path.exists():
@@ -195,20 +195,23 @@ class SetupStatusView(APIView):
                         database_configured = True
                         break
 
-        # Only check for superuser if the database is configured
         if database_configured:
+            # Check if a superuser exists
             try:
                 superuser_exists = User.objects.filter(is_superuser=True).exists()
             except Exception as e:
                 logging.error(f"Error checking for superuser: {str(e)}", exc_info=True)
                 superuser_exists = None  # Indicate that the check failed
 
-        # Check if the site title is set
-        site_info_path = Path(settings.BASE_DIR) / 'core/fixtures/site_info.json'
-        if site_info_path.exists():
-            with site_info_path.open('r') as f:
-                site_info = json.load(f)
-                site_title_set = bool(site_info[0]['fields'].get('site_title'))
+            # Check if the site title is set in the database
+            try:
+                site_info = SiteInfo.objects.first()
+                if site_info and site_info.site_title.strip():
+                    site_title_set = True
+            except SiteInfo.DoesNotExist:
+                site_title_set = False
+            except Exception as e:
+                logging.error(f"Error retrieving site title: {str(e)}", exc_info=True)
 
         # Determine overall status
         if database_configured and superuser_exists and site_title_set:

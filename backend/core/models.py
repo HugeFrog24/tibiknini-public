@@ -1,20 +1,38 @@
 from django.db import models
 
 
-class SiteInfoType(models.TextChoices):
-    PRIVACY_POLICY = 'PRIVACY_POLICY', 'Privacy Policy'
-    TERMS_OF_SERVICE = 'TERMS_OF_SERVICE', 'Terms of Service'
-
-
 class SiteInfo(models.Model):
-    type = models.CharField(
-        max_length=20, choices=SiteInfoType.choices, unique=True, default=SiteInfoType.PRIVACY_POLICY
-    )
     site_title = models.CharField(max_length=255)
     site_description = models.TextField()
-    content = models.TextField()
-    tos_version = models.IntegerField(default=0)
-    last_updated = models.DateTimeField(auto_now=True)
+    last_updated = models.DateTimeField(auto_now_add=True, null=True)  # Allow null values
 
     def __str__(self):
         return self.site_title
+
+
+class PrivacyPolicy(models.Model):
+    content = models.TextField()
+    version = models.IntegerField(default=1)
+    last_updated = models.DateTimeField(auto_now=True)
+    title = models.CharField(max_length=50, default="Privacy Policy")
+
+    def __str__(self):
+        return f"{self.title} v{self.version}"
+
+    def get_content(self):
+        site_name = SiteInfo.objects.first().site_title
+        return self.content.replace("{SITE_NAME}", site_name)
+
+
+class TermsOfService(models.Model):
+    content = models.TextField()
+    version = models.IntegerField(default=1)
+    last_updated = models.DateTimeField(auto_now=True)
+    title = models.CharField(max_length=50, default="Terms of Service")
+
+    def __str__(self):
+        return f"{self.title} v{self.version}"
+
+    def get_content(self):
+        site_name = SiteInfo.objects.first().site_title
+        return self.content.replace("{SITE_NAME}", site_name)

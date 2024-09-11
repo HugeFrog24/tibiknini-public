@@ -9,7 +9,7 @@ import api from "../utils/api";
 import { useDarkMode } from './contexts/DarkModeContext';
 
 function DocumentRenderer({endpoint, defaultTextClass}) {
-    const [type, setType] = useState('');
+    const [title, setTitle] = useState('');
     const [lastUpdated, setLastUpdated] = useState('');
     const [content, setContent] = useState('');
     const [loading, setLoading] = useState(true);
@@ -20,7 +20,7 @@ function DocumentRenderer({endpoint, defaultTextClass}) {
             try {
                 const response = await api.get(endpoint);
                 setContent(response.data.content);
-                setType(response.data.type);
+                setTitle(response.data.title);
                 setLastUpdated(new Date(response.data.last_updated).toLocaleDateString());
             } catch (error) {
                 console.error(`Error fetching document from ${endpoint}:`, error);
@@ -36,10 +36,10 @@ function DocumentRenderer({endpoint, defaultTextClass}) {
     return (
         <>
             <Helmet>
-                <title>{loading ? 'Loading...' : `${type} - ${config.siteName}`}</title>
-                <meta name="description" content={loading ? 'Loading...' : `Read ${type} at ${config.siteName}`}/>
+                <title>{loading ? 'Loading...' : `${title} - ${config.siteName}`}</title>
+                <meta name="description" content={loading ? 'Loading...' : `Read ${title} at ${config.siteName}`}/>
             </Helmet>
-            <h1 className={modeClasses.textClass}>{loading ? <Skeleton width={200}/> : type}</h1>
+            <h1 className={modeClasses.textClass}>{loading ? <Skeleton width={200}/> : title}</h1>
             <p className={modeClasses.textClass}>{loading ? <Skeleton width={150}/> : `Last updated: ${lastUpdated}`}</p>
             {loading ? (
                 <div className="text-start">

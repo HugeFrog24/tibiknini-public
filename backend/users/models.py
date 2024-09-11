@@ -66,6 +66,10 @@ class Profile(models.Model):
             self.image = None
             self.save()
 
+    def delete(self, *args, **kwargs):
+        self.delete_image()
+        super().delete(*args, **kwargs)
+
 
 class Follow(models.Model):
     follower = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='following')

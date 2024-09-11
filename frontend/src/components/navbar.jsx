@@ -80,6 +80,10 @@ function NavigationBar() {
                                 Admin console
                             </Dropdown.Item>
                         )}
+                        <Dropdown.Item as={Link} to="/settings">
+                            <FontAwesomeIcon icon={faGears} className="me-2"/>
+                            Settings
+                        </Dropdown.Item>
                         <Dropdown.Item onClick={handleLogout} className="text-danger">
                             <FontAwesomeIcon icon={faSignOutAlt} className="me-2"/>
                             Logout

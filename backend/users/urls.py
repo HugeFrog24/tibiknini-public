@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import (CheckUsernameView, CurrentUserView, FollowView,
+from .views import (CheckUsernameView, CurrentUserView, FollowView, ProfileDeleteView,
                     ProfileDetailView, ProfileImageDeleteView,
                     ProfileImageUpdateView, ProfileListView,
                     UserBioRetrieveUpdateView, UserFollowersListView,
@@ -10,6 +10,7 @@ app_name = 'users'
 
 urlpatterns = [
     path('me/', CurrentUserView.as_view(), name='current_user'),
+    path('me/delete/', ProfileDeleteView.as_view(), name='profile-delete'),
     path('me/image/update/', ProfileImageUpdateView.as_view(), name='profile-image-update'),
     path('me/image/delete/', ProfileImageDeleteView.as_view(), name='profile-image-delete'),
     path('register/', UserRegistrationView.as_view(), name='register'),

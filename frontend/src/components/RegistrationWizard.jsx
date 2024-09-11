@@ -106,30 +106,23 @@ function RegistrationWizard() {
         onSubmit: async (values) => {
             const currentFields = steps[currentStep].fields.map(f => f.id);
             const currentValidationSchema = steps[currentStep].validationSchema;
-            let errors = {};
-            currentFields.forEach(field => {
-                try {
-                    currentValidationSchema.validateSyncAt(field, values);
-                } catch (err) {
-                    errors[field] = err.message;
-                }
-            });
-            formik.setErrors(errors);
-            if (Object.keys(errors).length === 0) {
+            try {
+                await currentValidationSchema.validate(values, { abortEarly: false });
                 if (currentStep === steps.length - 1) {
-                    // If it's the final step, execute ReCAPTCHA
                     recaptchaRef.current.execute();
                 } else {
-                    // If not the final step, just move to the next step
                     setCurrentStep(step => step + 1);
                 }
-            } else {
-                // When 'Next' is pressed, set ONLY the fields of the current step to "touched".
-                let touchedFields = currentFields.reduce((acc, field) => {
+            } catch (err) {
+                const errors = {};
+                err.inner.forEach(error => {
+                    errors[error.path] = error.message;
+                });
+                formik.setErrors(errors);
+                formik.setTouched(currentFields.reduce((acc, field) => {
                     acc[field] = true;
                     return acc;
-                    }, {});
-                formik.setTouched(touchedFields);
+                }, {}));
             }
         },
     });
@@ -197,7 +190,6 @@ function RegistrationWizard() {
                             <React.Fragment key={field.id}>
                                 {field.type !== "description" ? (
                                     <FloatingLabel controlId={field.id} label={field.label} className="mb-3">
-                                        {console.log(field.id, formik.errors[field.id], formik.touched[field.id])}
                                         <Form.Control
                                             type={field.type}
                                             id={field.id}
@@ -206,14 +198,12 @@ function RegistrationWizard() {
                                             onChange={formik.handleChange}
                                             onBlur={formik.handleBlur}
                                             placeholder={field.placeholder}
-                                            className={`${modeClasses.bgClass} ${modeClasses.textClass} shadow ${formik.errors[field.id] && formik.touched[field.id] ? "is-invalid" : ""}`}
+                                            className={`${modeClasses.bgClass} ${modeClasses.textClass} shadow ${formik.touched[field.id] && !!formik.errors[field.id] ? "is-invalid" : ""}`}
                                             autoComplete="off"
                                         />
-                                        {formik.errors[field.id] && formik.touched[field.id] && (
-                                            <Form.Control.Feedback type="invalid">
-                                                {formik.errors[field.id]}
-                                            </Form.Control.Feedback>
-                                        )}
+                                        <Form.Control.Feedback type="invalid">
+                                            {formik.errors[field.id]}
+                                        </Form.Control.Feedback>
                                     </FloatingLabel>
                                 ) : (
                                     <p className="text-start">{field.content}</p>

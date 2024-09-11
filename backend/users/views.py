@@ -7,6 +7,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from api.permissions import IsAuthorOrAdmin
 from api.utils.recaptcha import verify_recaptcha
 
 from .models import CustomUser, Follow
@@ -178,3 +179,16 @@ class UserRegistrationView(generics.CreateAPIView):
 
         # If reCAPTCHA is valid, proceed with the original registration logic
         return super().create(request, *args, **kwargs)
+
+
+class ProfileDeleteView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated, IsAuthorOrAdmin]
+    serializer_class = ProfileSerializer
+
+    def get_object(self):
+        return self.request.user.profile
+
+    def perform_destroy(self, instance):
+        user = instance.user
+        instance.delete()
+        user.delete()

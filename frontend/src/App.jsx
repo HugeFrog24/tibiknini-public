@@ -31,6 +31,7 @@ const Login = React.lazy(() => import("./components/Login"));
 const ProfileDetail = React.lazy(() => import("./components/ProfileDetail"));
 const RegistrationWizard = React.lazy(() => import("./components/RegistrationWizard"));
 const SetupWizard = React.lazy(() => import("./components/SetupWizard"));
+const ProfileSettings = React.lazy(() => import("./components/ProfileSettings"));
 
 function App() {
     const [user, setUser] = useState(null);
@@ -159,6 +160,10 @@ function App() {
                                             element={<DocumentRenderer endpoint="/terms_of_service/"/>}
                                         />
                                         <Route path="*" element={<ErrorComponent errorCode={404}/>}/>
+                                        <Route
+                                            path="/settings"
+                                            element={<ProfileSettings />}
+                                        />
                                     </Routes>
                                 </Suspense>
                             </div>
