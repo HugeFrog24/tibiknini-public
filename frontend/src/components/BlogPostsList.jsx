@@ -5,6 +5,7 @@ import {faPlus} from '@fortawesome/free-solid-svg-icons'
 import {useNavigate} from "react-router-dom";
 import Pagination from "react-bootstrap/Pagination";
 import { Helmet } from 'react-helmet-async';
+import { Typography } from '@mui/material'; // Import Typography from Material UI
 
 import config from "../config.json";
 import BlogPostCard from "./BlogPostCard";
@@ -105,7 +106,7 @@ const BlogPostsList = ({postId}) => {
                 <meta name="description" content={`Browse the latest blog posts on ${config.siteName}`} />
             </Helmet>
             <div className="d-flex align-items-center justify-content-between">
-                <h1 className={modeClasses.textClass}>Blog</h1>
+                <Typography variant="h4" component="h1">Blog</Typography>
                 {user && (
                     <Button variant="success" className="shadow" onClick={handleAddPostClick}>
                         <FontAwesomeIcon icon={faPlus}/> Add post
@@ -131,7 +132,7 @@ const BlogPostsList = ({postId}) => {
                 </div>
             ) : blogPosts.length === 0 ? (
                 <div>
-                    <h3 className={modeClasses.textClass}>Nothing to show</h3>
+                    <Typography variant="h5" component="h3">Nothing to show</Typography>
                     <p>There are no blog posts available at this time.</p>
                 </div>
             ) : (

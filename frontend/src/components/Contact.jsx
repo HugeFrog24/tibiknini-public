@@ -1,15 +1,13 @@
 import React, {useState} from 'react';
-import {Button, Col, Container, FloatingLabel, Form, Row} from 'react-bootstrap';
+import {Container, Row, Col} from 'react-bootstrap';
+import {TextField, Button, Typography, CircularProgress} from '@mui/material';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {faPaperPlane} from '@fortawesome/free-solid-svg-icons';
 import {toast, ToastContainer} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import api from '../utils/api';
-import { useDarkMode } from './contexts/DarkModeContext';
-import Spinner from "react-bootstrap/Spinner";
 
 function ContactForm() {
-    const { modeClasses } = useDarkMode();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [subject, setSubject] = useState('');
@@ -69,83 +67,77 @@ function ContactForm() {
 
     return (
         <>
-            <ToastContainer/>
+            <ToastContainer />
             <Container>
                 <Row className="justify-content-center">
-                    <Col xs={12} md={8} lg={3}>
-                        <h2 className="mt-2">Contact</h2>
-                        <Form onSubmit={handleSubmit}>
-                            <FloatingLabel controlId="floatingName" label="Name *" className="mb-3">
-                                <Form.Control
-                                    type="text"
-                                    value={name}
-                                    onChange={e => setName(e.target.value)}
-                                    className={`${modeClasses.bgClass} ${modeClasses.textClass} shadow`}
-                                    placeholder="Enter your name"
-                                    autoComplete="off"
-                                    isInvalid={nameInvalid} // Add this line
-                                />
-                                <Form.Control.Feedback type="invalid">Please fill your name.</Form.Control.Feedback>
-                            </FloatingLabel>
-                            <FloatingLabel controlId="floatingEmail" label="Email address *" className="mb-3">
-                                <Form.Control
-                                    type="text"
-                                    value={email}
-                                    onChange={e => setEmail(e.target.value)}
-                                    className={`${modeClasses.bgClass} ${modeClasses.textClass} shadow`}
-                                    placeholder="Enter your email address"
-                                    autoComplete="off"
-                                    isInvalid={emailInvalid} // Add this line
-                                />
-                                <Form.Control.Feedback type="invalid">
-                                    {email && !/\S+@\S+\.\S+/.test(email) ? 'Invalid email address.' : 'Email is required.'}
-                                </Form.Control.Feedback>
-                            </FloatingLabel>
-                            <FloatingLabel controlId="floatingSubject" label="Subject *" className="mb-3">
-                                <Form.Control
-                                    type="text"
-                                    value={subject}
-                                    onChange={e => setSubject(e.target.value)}
-                                    className={`${modeClasses.bgClass} ${modeClasses.textClass} shadow`}
-                                    placeholder="Enter the subject"
-                                    autoComplete="off"
-                                    isInvalid={subjectInvalid} // Add this line
-                                />
-                                <Form.Control.Feedback type="invalid">Please fill the subject.</Form.Control.Feedback>
-                            </FloatingLabel>
-                            <FloatingLabel controlId="floatingMessage" label="Message *" className="mb-3">
-                                <Form.Control
-                                    as="textarea"
-                                    placeholder="Your message here"
-                                    style={{resize: "none", height: '100px'}}
-                                    className={`${modeClasses.bgClass} ${modeClasses.textClass} shadow`}
-                                    value={message}
-                                    onChange={e => setMessage(e.target.value)}
-                                    isInvalid={messageInvalid} // Add this line
-                                />
-                                <Form.Control.Feedback type="invalid">Please fill the message.</Form.Control.Feedback>
-                            </FloatingLabel>
+                    <Col xs={12} md={8} lg={6}>
+                        <Typography variant="h4" component="h2" className="mt-2">Contact</Typography>
+                        <Typography variant="body1" className="mb-4">
+                            If you have any questions, comments, or concerns, please feel free to reach out to us using the form below. We look forward to hearing from you!
+                        </Typography>
+                        <form onSubmit={handleSubmit} noValidate>
+                            <TextField
+                                id="name"
+                                label="Name"
+                                variant="outlined"
+                                value={name}
+                                onChange={e => setName(e.target.value)}
+                                fullWidth
+                                required
+                                error={nameInvalid}
+                                helperText={nameInvalid ? "Please fill your name." : ""}
+                                className="mb-3"
+                            />
+                            <TextField
+                                id="email"
+                                label="Email address"
+                                variant="outlined"
+                                value={email}
+                                onChange={e => setEmail(e.target.value)}
+                                fullWidth
+                                required
+                                error={emailInvalid}
+                                helperText={emailInvalid ? (email && !/\S+@\S+\.\S+/.test(email) ? 'Invalid email address.' : 'Email is required.') : ""}
+                                className="mb-3"
+                            />
+                            <TextField
+                                id="subject"
+                                label="Subject"
+                                variant="outlined"
+                                value={subject}
+                                onChange={e => setSubject(e.target.value)}
+                                fullWidth
+                                required
+                                error={subjectInvalid}
+                                helperText={subjectInvalid ? "Please fill the subject." : ""}
+                                className="mb-3"
+                            />
+                            <TextField
+                                id="message"
+                                label="Message"
+                                variant="outlined"
+                                value={message}
+                                onChange={e => setMessage(e.target.value)}
+                                fullWidth
+                                required
+                                multiline
+                                rows={4}
+                                error={messageInvalid}
+                                helperText={messageInvalid ? "Please fill the message." : ""}
+                                className="mb-3"
+                            />
                             <Button
-                                variant={isLoading ? "secondary" : "primary"}
+                                variant="contained"
+                                color="primary"
                                 type="submit"
-                                className="shadow w-100"
+                                fullWidth
                                 disabled={isLoading}
+                                startIcon={isLoading ? <CircularProgress size="1rem" /> : <FontAwesomeIcon icon={faPaperPlane} />}
+                                className="shadow"
                             >
-                                {
-                                    isLoading ?
-                                        <Spinner
-                                            as="span"
-                                            animation="border"
-                                            size="sm"
-                                            role="status"
-                                            aria-hidden="true"
-                                        /> :
-                                        <>
-                                            <FontAwesomeIcon icon={faPaperPlane} className="me-2"/> SEND
-                                        </>
-                                }
+                                {isLoading ? "Sending..." : "SEND"}
                             </Button>
-                        </Form>
+                        </form>
                     </Col>
                 </Row>
             </Container>

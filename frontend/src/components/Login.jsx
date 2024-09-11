@@ -1,16 +1,14 @@
 import React, {useEffect, useRef, useState} from "react";
-import {Button, Col, Container, FloatingLabel, Form, Row} from "react-bootstrap";
-import {useLocation, useNavigate} from "react-router-dom";
+import {Col, Container, Form, Row} from "react-bootstrap";
 import { Helmet } from 'react-helmet-async';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ReCAPTCHA from "react-google-recaptcha";
+import { TextField, Typography, Button, CircularProgress } from '@mui/material'; // Import Material UI components
 
 import config from "../config.json";
-import { useDarkMode } from './contexts/DarkModeContext';
 import { handleLogin } from '../utils/auth';
 import { REDIRECT_REASONS } from './constants/Constants';
 import { showToast } from '../utils/toastUtils';
-
-import Spinner from "react-bootstrap/Spinner";
 
 function Login({onLogin}) {
     const [username, setUsername] = useState("");
@@ -18,7 +16,6 @@ function Login({onLogin}) {
     const [usernameInvalid, setUsernameInvalid] = useState(false);
     const [passwordInvalid, setPasswordInvalid] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const { modeClasses } = useDarkMode();
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -63,34 +60,34 @@ function Login({onLogin}) {
             </Helmet>
             <Row className="justify-content-center">
                 <Col xs={12} md={8} lg={3}>
-                    <h2 className="mb-3">Login</h2>
-                    <Form onSubmit={handleSubmit}>
-                        <FloatingLabel controlId="username" label="Username" className="mb-3">
-                            <Form.Control
-                                type="text"
-                                id="username"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                className={`${modeClasses.bgClass} ${modeClasses.textClass} shadow`}
-                                placeholder="Enter your username"
-                                autoComplete="username"
-                                isInvalid={usernameInvalid}
-                            />
-                            <Form.Control.Feedback type="invalid">Please fill your username.</Form.Control.Feedback>
-                        </FloatingLabel>
-                        <FloatingLabel controlId="password" label="Password" className="mb-3">
-                            <Form.Control
-                                type="password"
-                                id="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className={`${modeClasses.bgClass} ${modeClasses.textClass} shadow`}
-                                placeholder="Enter your password"
-                                autoComplete="current-password"
-                                isInvalid={passwordInvalid}
-                            />
-                            <Form.Control.Feedback type="invalid">Please fill your password.</Form.Control.Feedback>
-                        </FloatingLabel>
+                    {/* Use Typography for Material UI theming */}
+                    <Typography variant="h4" component="h2" className="mb-3">Login</Typography>
+                    <Form onSubmit={handleSubmit} noValidate>
+                        <TextField
+                            id="username"
+                            label="Username"
+                            variant="outlined"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            fullWidth
+                            required
+                            error={usernameInvalid}
+                            helperText={usernameInvalid ? "Please fill your username." : ""}
+                            className="mb-3"
+                        />
+                        <TextField
+                            id="password"
+                            label="Password"
+                            type="password"
+                            variant="outlined"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            fullWidth
+                            required
+                            error={passwordInvalid}
+                            helperText={passwordInvalid ? "Please fill your password." : ""}
+                            className="mb-3"
+                        />
                         <ReCAPTCHA
                             ref={recaptchaRef}
                             sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
@@ -99,26 +96,20 @@ function Login({onLogin}) {
                         />
                         <Button
                             type="submit"
-                            variant={isLoading ? "secondary" : "primary"}
-                            className="shadow w-100" disabled={isLoading}
+                            variant="contained"
+                            color="primary"
+                            className="shadow w-100"
+                            disabled={isLoading}
+                            startIcon={isLoading ? <CircularProgress size="1rem" /> : null}
                         >
-                            {
-                                isLoading ?
-                                    <Spinner
-                                        as="span"
-                                        animation="border"
-                                        size="sm"
-                                        role="status"
-                                        aria-hidden="true"
-                                    /> :
-                                    "Login"
-                            }
+                            Login
                         </Button>
                         <Button
-                            variant="outline-primary"
+                            variant="outlined"
+                            color="primary"
                             className="shadow w-100 mt-3"
                             onClick={() => navigate("/register/")}
-                            >
+                        >
                             Register
                         </Button>
                     </Form>

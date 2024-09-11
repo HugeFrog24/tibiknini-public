@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Button, Container, Col, FloatingLabel, Form, Row, Spinner } from "react-bootstrap";
+import { Container, Grid2, TextField, Button, CircularProgress, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import api from '../utils/api';
-import axios from 'axios';
 import * as Yup from 'yup';
 import { useFormik } from 'formik';
 import { REDIRECT_REASONS } from './constants/Constants';
@@ -64,11 +63,11 @@ function SetupWizard() {
             title: "Database Configuration",
             description: "Enter your database connection details.",
             fields: [
-                { id: "db_host", label: "Database Host", type: "text", placeholder: "Enter database host" },
-                { id: "db_port", label: "Database Port", type: "number", placeholder: "Enter database port" },
-                { id: "db_name", label: "Database Name", type: "text", placeholder: "Enter database name" },
-                { id: "db_user", label: "Database User", type: "text", placeholder: "Enter database user" },
-                { id: "db_password", label: "Database Password", type: "password", placeholder: "Enter database password" }
+                { id: "db_host", label: "Database Host", type: "text", required: true  },
+                { id: "db_port", label: "Database Port", type: "number", required: true  },
+                { id: "db_name", label: "Database Name", type: "text", required: true  },
+                { id: "db_user", label: "Database User", type: "text", required: true  },
+                { id: "db_password", label: "Database Password", type: "password", required: true  }
             ],
             validationSchema: Yup.object({
                 db_host: Yup.string().required("Required"),
@@ -83,10 +82,10 @@ function SetupWizard() {
             title: "Admin User",
             description: "Create an admin user for the application (if one doesn't exist).",
             fields: [
-                { id: "admin_username", label: "Admin Username", type: "text", placeholder: "Enter admin username" },
-                { id: "admin_email", label: "Admin Email", type: "email", placeholder: "Enter admin email" },
-                { id: "admin_password", label: "Admin Password", type: "password", placeholder: "Enter admin password" },
-                { id: "admin_password2", label: "Confirm Password", type: "password", placeholder: "Confirm admin password" }
+                { id: "admin_username", label: "Admin Username", type: "text", required: true  },
+                { id: "admin_email", label: "Admin Email", type: "email", required: true  },
+                { id: "admin_password", label: "Admin Password", type: "password", required: true  },
+                { id: "admin_password2", label: "Confirm Password", type: "password", required: true  }
             ],
             validationSchema: Yup.object({
                 admin_username: Yup.string().required("Required"),
@@ -100,7 +99,7 @@ function SetupWizard() {
             title: "Site Information",
             description: "Enter the site title.",
             fields: [
-                { id: "site_title", label: "Site Title", type: "text", placeholder: "Enter site title" }
+                { id: "site_title", label: "Site Title", type: "text" }
             ],
             validationSchema: Yup.object({
                 site_title: Yup.string().required("Required")
@@ -204,54 +203,67 @@ function SetupWizard() {
     if (!statusFetched) {
         return (
             <div className="text-center mt-5">
-                <Spinner animation="border" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                </Spinner>
+                <CircularProgress />
             </div>
         );
     }
 
     if (isLoading) {
-        return <Spinner animation="border" />;
+        return <CircularProgress />;
     }
 
     return (
         <Container>
-            <Row className="justify-content-md-center">
-                <Col xl={6} lg={6} md={6} sm={6}>
-                    <h2>{steps[currentStep].title}</h2>
-                    <p>{steps[currentStep].description}</p>
-                    <Form onSubmit={formik.handleSubmit} noValidate>
+            <Grid2 container justifyContent="center">
+                <Grid2 item xs={12} md={8} lg={6}>
+                    <Typography variant="h4" component="h2" gutterBottom>
+                        {steps[currentStep].title}
+                    </Typography>
+                    <Typography variant="body1" gutterBottom>
+                        {steps[currentStep].description}
+                    </Typography>
+                    <form onSubmit={formik.handleSubmit} noValidate>
                         {steps[currentStep].fields.map(field => (
-                            <FloatingLabel controlId={field.id} label={field.label} className="mb-3" key={field.id}>
-                                <Form.Control
-                                    type={field.type}
-                                    id={field.id}
-                                    name={field.id}
-                                    value={formik.values[field.id]}
-                                    onChange={formik.handleChange}
-                                    onBlur={formik.handleBlur}
-                                    placeholder={field.placeholder}
-                                    isInvalid={formik.errors[field.id] && formik.touched[field.id]}
-                                />
-                                <Form.Control.Feedback type="invalid">
-                                    {formik.errors[field.id]}
-                                </Form.Control.Feedback>
-                            </FloatingLabel>
+                            <TextField
+                                key={field.id}
+                                id={field.id}
+                                name={field.id}
+                                label={field.label}
+                                type={field.type}
+                                value={formik.values[field.id]}
+                                onChange={formik.handleChange}
+                                onBlur={formik.handleBlur}
+                                fullWidth
+                                margin="normal"
+                                error={formik.errors[field.id] && formik.touched[field.id]}
+                                helperText={formik.errors[field.id]}
+                                required={field.required} // Add this line
+                            />
                         ))}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             {currentStep > 0 && (
-                                <Button type="button" onClick={() => setCurrentStep(step => step - 1)} style={{ marginRight: '10px' }}>
+                                <Button
+                                    type="button"
+                                    onClick={() => setCurrentStep(step => step - 1)}
+                                    style={{ marginRight: '10px' }}
+                                    variant="outlined"
+                                >
                                     Back
                                 </Button>
                             )}
-                            <Button type="submit" disabled={isLoading}>
-                                {isLoading ? <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" /> : (currentStep < steps.length - 1 ? "Next" : "Finish")}
+                            <Button
+                                type="submit"
+                                variant="contained"
+                                color="primary"
+                                disabled={isLoading}
+                                startIcon={isLoading ? <CircularProgress size="1rem" /> : null}
+                            >
+                                {isLoading ? <CircularProgress size="1rem" /> : (currentStep < steps.length - 1 ? "Next" : "Finish")}
                             </Button>
                         </div>
-                    </Form>
-                </Col>
-            </Row>
+                    </form>
+                </Grid2>
+            </Grid2>
         </Container>
     );
 }

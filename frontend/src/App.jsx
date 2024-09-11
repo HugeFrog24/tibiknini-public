@@ -11,6 +11,7 @@ import ErrorComponent from "./components/ErrorComponent";
 import Navbar from "./components/Navbar";
 import Footer from './components/Footer';
 
+import { lightTheme, darkTheme } from './themes/theme';
 import { DarkModeProvider } from "./components/contexts/DarkModeContext";
 import ApiUrlContext from "./components/contexts/ApiUrlContext";
 import UserContext from "./components/contexts/UserContext";
@@ -33,12 +34,19 @@ const RegistrationWizard = React.lazy(() => import("./components/RegistrationWiz
 const SetupWizard = React.lazy(() => import("./components/SetupWizard"));
 const ProfileSettings = React.lazy(() => import("./components/ProfileSettings"));
 
+import { ThemeProvider, CssBaseline } from '@mui/material'; // Import CssBaseline here
+
 function App() {
     const [user, setUser] = useState(null);
     const [isDarkMode, setIsDarkMode] = useState(() => {
         const savedPreference = localStorage.getItem("darkMode");
         return savedPreference !== null ? JSON.parse(savedPreference) : window.matchMedia("(prefers-color-scheme: dark)").matches;
     });
+
+    const toggleDarkMode = () => {
+        setIsDarkMode(!isDarkMode);
+        localStorage.setItem("darkMode", JSON.stringify(!isDarkMode));
+    };
 
     // Fetch user's information when the application loads
     useEffect(() => {
@@ -82,13 +90,10 @@ function App() {
             });
     }, []);
 
-    // Apply the dark mode class at the top level based on isDarkMode state
-    useEffect(() => {
-        document.body.className = isDarkMode ? 'dark-mode' : 'light-mode';
-    }, [isDarkMode]);
-
     return (
         <HelmetProvider>
+            <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
+            <CssBaseline />
             <DarkModeProvider>
                 <ApiUrlContext.Provider value={apiUrl}>
                     <UserContext.Provider value={user}>
@@ -101,7 +106,7 @@ function App() {
                             <link rel="manifest" href="/manifest.json"/>
                             <title>{config.siteName}</title>
                         </Helmet>
-                        <Navbar/>
+                        <Navbar toggleDarkMode={toggleDarkMode}/>
                         <div className="App">
                             <ToastContainer position="top-right" />
                             <div
@@ -172,6 +177,7 @@ function App() {
                     </UserContext.Provider>
                 </ApiUrlContext.Provider>
             </DarkModeProvider>
+            </ThemeProvider>
         </HelmetProvider>
     );
 }
