@@ -11,17 +11,22 @@ import { showToast } from '../utils/toastUtils';
 function SetupWizard() {
     const [currentStep, setCurrentStep] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
+    const [superuserExists, setSuperuserExists] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
         const checkSetupStatus = async () => {
             try {
-                await api.get('/setup/status/');
-                // If we reach here, it means setup is incomplete (503 status)
+                const response = await api.get('/setup/status/');
+                if (response.data.status === 'complete') {
+                    navigate('/login');
+                } else if (response.data.status === 'database_configured') {
+                    setSuperuserExists(response.data.superuser_exists);
+                    setCurrentStep(1);
+                }
                 setIsLoading(false);
             } catch (error) {
-                if (error.response && error.response.status === 503) { // Change this line
-                    // Setup is incomplete, stop loading
+                if (error.response && error.response.status === 503) {
                     setIsLoading(false);
                 } else {
                     showToast('An error occurred while checking setup status.', 'error');
@@ -56,7 +61,7 @@ function SetupWizard() {
         {
             id: "admin_user",
             title: "Admin User",
-            description: "Create an admin user for the application.",
+            description: "Create an admin user for the application (if one doesn't exist).",
             fields: [
                 { id: "admin_username", label: "Admin Username", type: "text", placeholder: "Enter admin username" },
                 { id: "admin_email", label: "Admin Email", type: "email", placeholder: "Enter admin email" },
@@ -87,7 +92,7 @@ function SetupWizard() {
         validateOnBlur: false,
         validateOnChange: false,
         onSubmit: async (values) => {
-            setIsLoading(true); // Start loading
+            setIsLoading(true);
             const currentFields = steps[currentStep].fields.map(f => f.id);
             const currentValidationSchema = steps[currentStep].validationSchema;
             let errors = {};
@@ -100,15 +105,42 @@ function SetupWizard() {
             });
             formik.setErrors(errors);
             if (Object.keys(errors).length === 0) {
-                if (currentStep === steps.length - 1) {
+                if (currentStep === 0) {
                     try {
-                        await api.post('/setup/', values);
-                        navigate("/login", { state: { reason: REDIRECT_REASONS.SETUP_COMPLETE } }); // Navigate to login with reason
+                        const response = await api.post('/setup/', {
+                            db_host: values.db_host,
+                            db_port: values.db_port,
+                            db_name: values.db_name,
+                            db_user: values.db_user,
+                            db_password: values.db_password
+                        });
+                        if (response.data.superuser_exists) {
+                            showToast('Setup complete. A superuser already exists.', 'info');
+                            navigate("/login");
+                        } else {
+                            setCurrentStep(step => step + 1);
+                        }
                     } catch (error) {
-                        console.error("Error during setup:", error);
+                        console.error("Error during database setup:", error);
+                        showToast('An error occurred during database setup.', 'error');
                     }
-                } else {
-                    setCurrentStep(step => step + 1);
+                } else if (currentStep === 1) {
+                    try {
+                        const response = await api.post('/create-superuser/', {
+                            admin_username: values.admin_username,
+                            admin_email: values.admin_email,
+                            admin_password: values.admin_password
+                        });
+                        if (response.status === 201) {
+                            navigate("/login", { state: { reason: REDIRECT_REASONS.SETUP_COMPLETE } });
+                        } else {
+                            showToast('Setup complete. A superuser already exists.', 'info');
+                            navigate("/login");
+                        }
+                    } catch (error) {
+                        console.error("Error during superuser creation:", error);
+                        showToast('An error occurred during superuser creation.', 'error');
+                    }
                 }
             } else {
                 let touchedFields = currentFields.reduce((acc, field) => {
@@ -117,12 +149,19 @@ function SetupWizard() {
                 }, {});
                 formik.setTouched(touchedFields);
             }
-            setIsLoading(false); // Stop loading
+            setIsLoading(false);
         },
     });
 
     if (isLoading) {
         return <Spinner animation="border" />;
+    }
+
+    // If superuser exists and we're on step 1, redirect to login
+    if (superuserExists && currentStep === 1) {
+        showToast('Setup complete. A superuser already exists.', 'info');
+        navigate("/login");
+        return null;
     }
 
     return (

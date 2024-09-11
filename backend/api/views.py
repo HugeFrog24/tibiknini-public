@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from django.contrib.auth import authenticate
 from django.contrib.auth import login as auth_login
@@ -16,8 +17,6 @@ from django.conf import settings
 from django.core.management import call_command
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from users.models import Profile  # Import the Profile model
-from users.managers import CustomUserManager  # Import the custom manager
 
 User = get_user_model()
 
@@ -57,9 +56,6 @@ class SetupView(APIView):
         db_name = request.data.get('db_name')
         db_user = request.data.get('db_user')
         db_password = request.data.get('db_password')
-        admin_username = request.data.get('admin_username')
-        admin_email = request.data.get('admin_email')
-        admin_password = request.data.get('admin_password')
 
         # Write database settings to .env file
         env_path = Path(settings.BASE_DIR) / '.env'
@@ -87,30 +83,57 @@ class SetupView(APIView):
         try:
             # Run migrations
             call_command('migrate')
-
-            with transaction.atomic():
-                # Use the custom manager to create the superuser
-                User.objects.create_superuser(
-                    username=admin_username,
-                    email=admin_email,
-                    password=admin_password
-                )
-
-            return JsonResponse({'detail': 'Setup complete'}, status=status.HTTP_200_OK)
-
+            
+            # Check if a superuser exists
+            superuser_exists = User.objects.filter(is_superuser=True).exists()
+            
+            return JsonResponse({
+                'detail': 'Database setup complete',
+                'superuser_exists': superuser_exists
+            }, status=status.HTTP_200_OK)
         except Exception as e:
-            # Log the full error for debugging
-            import logging
-            logging.error(f"Error during setup: {str(e)}", exc_info=True)
+            logging.error(f"Error during database setup: {str(e)}", exc_info=True)
+            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class CreateSuperUserView(APIView):
+    def post(self, request, *args, **kwargs):
+        admin_username = request.data.get('admin_username')
+        admin_email = request.data.get('admin_email')
+        admin_password = request.data.get('admin_password')
+
+        try:
+            with transaction.atomic():
+                if not User.objects.filter(is_superuser=True).exists():
+                    User.objects.create_superuser(
+                        username=admin_username,
+                        email=admin_email,
+                        password=admin_password
+                    )
+                    return JsonResponse({'detail': 'Superuser created successfully'}, status=status.HTTP_201_CREATED)
+                else:
+                    return JsonResponse({'detail': 'Superuser already exists'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            logging.error(f"Error during superuser creation: {str(e)}", exc_info=True)
             return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class SetupStatusView(APIView):
     def get(self, request):
         env_path = os.path.join(settings.BASE_DIR, '.env')
+        database_configured = False
+        superuser_exists = False
+
         if os.path.exists(env_path):
             with open(env_path, 'r') as f:
                 for line in f:
                     if line.startswith('DATABASE_URL='):
-                        return JsonResponse({'status': 'complete'})
-        return JsonResponse({'status': 'incomplete'}, status=503)
+                        database_configured = True
+                        break
+
+        superuser_exists = User.objects.filter(is_superuser=True).exists()
+
+        if database_configured and superuser_exists:
+            return JsonResponse({'status': 'complete'})
+        elif database_configured:
+            return JsonResponse({'status': 'database_configured', 'superuser_exists': superuser_exists})
+        else:
+            return JsonResponse({'status': 'incomplete'}, status=503)

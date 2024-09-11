@@ -3,7 +3,7 @@ from django.urls import include, path
 
 from core.views import PrivacyPolicyView, TermsOfServiceView
 
-from .views import NavbarItemList, ReCaptchaLoginView, set_csrf_token, SetupView, SetupStatusView
+from .views import CreateSuperUserView, NavbarItemList, ReCaptchaLoginView, set_csrf_token, SetupView, SetupStatusView
 
 app_name = 'api'
 
@@ -12,8 +12,8 @@ urlpatterns = [
     path('blog/', include('blog.urls')),
     path('messages/', include('messages.urls')),
 
-    path('privacy_policy/', PrivacyPolicyView.as_view(), name='blog_posts_by_user'),
-    path('terms_of_service/', TermsOfServiceView.as_view(), name='blog_posts_by_user'),
+    path('privacy_policy/', PrivacyPolicyView.as_view(), name='privacy_policy'),
+    path('terms_of_service/', TermsOfServiceView.as_view(), name='terms_of_service'),
 
     path('users/', include('users.urls')),
     path('set-csrf-token/', set_csrf_token, name='set_csrf_token'),
@@ -22,4 +22,5 @@ urlpatterns = [
 
     path('setup/', SetupView.as_view(), name='setup'),
     path('setup/status/', SetupStatusView.as_view(), name='setup_status'),
+    path('create-superuser/', CreateSuperUserView.as_view(), name='create_superuser'),
 ]
