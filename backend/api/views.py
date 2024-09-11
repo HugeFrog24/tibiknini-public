@@ -1,3 +1,4 @@
+import json
 import logging
 from pathlib import Path
 from django.contrib.auth import authenticate
@@ -7,6 +8,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import generics, status
 from rest_framework.views import APIView
 
+from core.models import SiteInfo
 from navbar.models import NavbarItem
 
 from .serializers import NavbarItemSerializer
@@ -49,6 +51,34 @@ class ReCaptchaLoginView(APIView):
         else:
             return JsonResponse({'detail': 'Invalid login credentials.'}, status=status.HTTP_400_BAD_REQUEST)
 
+def get_setup_status():
+    env_path = Path(settings.BASE_DIR) / '.env'
+    database_configured = False
+    superuser_exists = False
+    site_title_set = False
+
+    # Check if the database is configured
+    if env_path.exists():
+        with env_path.open('r') as f:
+            for line in f:
+                if line.startswith('DATABASE_URL='):
+                    database_configured = True
+                    break
+
+    if database_configured:
+        # Check if a superuser exists
+        superuser_exists = User.objects.filter(is_superuser=True).exists()
+
+        # Check if the site title is set in the database
+        site_info = SiteInfo.objects.first()
+        site_title_set = bool(site_info and site_info.site_title)
+
+    return {
+        'database_configured': database_configured,
+        'superuser_exists': superuser_exists,
+        'site_title_set': site_title_set
+    }
+
 class SetupView(APIView):
     def post(self, request, *args, **kwargs):
         db_host = request.data.get('db_host')
@@ -84,15 +114,38 @@ class SetupView(APIView):
             # Run migrations
             call_command('migrate')
             
-            # Check if a superuser exists
-            superuser_exists = User.objects.filter(is_superuser=True).exists()
+            setup_status = get_setup_status()
             
             return JsonResponse({
                 'detail': 'Database setup complete',
-                'superuser_exists': superuser_exists
+                **setup_status
             }, status=status.HTTP_200_OK)
         except Exception as e:
             logging.error(f"Error during database setup: {str(e)}", exc_info=True)
+            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class SetupSiteInfoView(APIView):
+    def post(self, request, *args, **kwargs):
+        site_title = request.data.get('site_title')
+
+        try:
+            # Load the site_info fixture
+            call_command('loaddata', 'core/fixtures/site_info.json')
+
+            # Update the site_title in the database
+            site_info = SiteInfo.objects.first()
+            if site_info:
+                site_info.site_title = site_title
+                site_info.save()
+            
+            setup_status = get_setup_status()
+            
+            return JsonResponse({
+                'detail': 'Site info setup complete',
+                **setup_status
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            logging.error(f"Error during site info setup: {str(e)}", exc_info=True)
             return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class CreateSuperUserView(APIView):
@@ -109,31 +162,66 @@ class CreateSuperUserView(APIView):
                         email=admin_email,
                         password=admin_password
                     )
-                    return JsonResponse({'detail': 'Superuser created successfully'}, status=status.HTTP_201_CREATED)
+                    
+                    setup_status = get_setup_status()
+                    
+                    return JsonResponse({
+                        'detail': 'Superuser created successfully',
+                        **setup_status
+                    }, status=status.HTTP_201_CREATED)
                 else:
-                    return JsonResponse({'detail': 'Superuser already exists'}, status=status.HTTP_200_OK)
+                    setup_status = get_setup_status()
+                    
+                    return JsonResponse({
+                        'detail': 'Superuser already exists',
+                        **setup_status
+                    }, status=status.HTTP_200_OK)
         except Exception as e:
             logging.error(f"Error during superuser creation: {str(e)}", exc_info=True)
             return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class SetupStatusView(APIView):
     def get(self, request):
-        env_path = os.path.join(settings.BASE_DIR, '.env')
+        env_path = Path(settings.BASE_DIR) / '.env'
         database_configured = False
-        superuser_exists = False
+        superuser_exists = None  # Use None to indicate uncertainty
+        site_title_set = False
 
-        if os.path.exists(env_path):
-            with open(env_path, 'r') as f:
+        # Check if the database is configured
+        if env_path.exists():
+            with env_path.open('r') as f:
                 for line in f:
                     if line.startswith('DATABASE_URL='):
                         database_configured = True
                         break
 
-        superuser_exists = User.objects.filter(is_superuser=True).exists()
+        # Only check for superuser if the database is configured
+        if database_configured:
+            try:
+                superuser_exists = User.objects.filter(is_superuser=True).exists()
+            except Exception as e:
+                logging.error(f"Error checking for superuser: {str(e)}", exc_info=True)
+                superuser_exists = None  # Indicate that the check failed
 
-        if database_configured and superuser_exists:
-            return JsonResponse({'status': 'complete'})
-        elif database_configured:
-            return JsonResponse({'status': 'database_configured', 'superuser_exists': superuser_exists})
+        # Check if the site title is set
+        site_info_path = Path(settings.BASE_DIR) / 'core/fixtures/site_info.json'
+        if site_info_path.exists():
+            with site_info_path.open('r') as f:
+                site_info = json.load(f)
+                site_title_set = bool(site_info[0]['fields'].get('site_title'))
+
+        # Determine overall status
+        if database_configured and superuser_exists and site_title_set:
+            overall_status = 'complete'
+            status_code = status.HTTP_200_OK
         else:
-            return JsonResponse({'status': 'incomplete'}, status=503)
+            overall_status = 'incomplete'
+            status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+
+        # Return the detailed setup status
+        return JsonResponse({
+            'database_configured': database_configured,
+            'superuser_exists': superuser_exists,
+            'site_title_set': site_title_set,
+            'status': overall_status
+        }, status=status_code)

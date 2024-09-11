@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button, Container, Col, FloatingLabel, Form, Row, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import api from '../utils/api';
-import axios from 'axios'; // Add this import
+import axios from 'axios';
 import * as Yup from 'yup';
 import { useFormik } from 'formik';
 import { REDIRECT_REASONS } from './constants/Constants';
@@ -11,27 +11,47 @@ import { showToast } from '../utils/toastUtils';
 function SetupWizard() {
     const [currentStep, setCurrentStep] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
-    const [superuserExists, setSuperuserExists] = useState(false);
+    const [setupStatus, setSetupStatus] = useState({});
+    const [statusFetched, setStatusFetched] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
         const checkSetupStatus = async () => {
             try {
                 const response = await api.get('/setup/status/');
-                if (response.data.status === 'complete') {
-                    navigate('/login');
-                } else if (response.data.status === 'database_configured') {
-                    setSuperuserExists(response.data.superuser_exists);
+                const statusData = response.data;
+
+                setSetupStatus(statusData);
+
+                // Update currentStep based on setup status
+                if (!statusData.database_configured) {
+                    setCurrentStep(0);
+                } else if (!statusData.superuser_exists) {
                     setCurrentStep(1);
+                } else if (!statusData.site_title_set) {
+                    setCurrentStep(2);
                 }
-                setIsLoading(false);
             } catch (error) {
+                // Handle the case where the status code is 503
                 if (error.response && error.response.status === 503) {
-                    setIsLoading(false);
-                } else if (!axios.isCancel(error)) { // Check if the error is not due to the axios cancel
-                    showToast('An error occurred while checking setup status.', 'error');
-                    navigate('/');
+                    // Setup is incomplete, determine which step to show
+                    const statusData = error.response.data;
+                    setSetupStatus(statusData);
+                    if (!statusData.database_configured) {
+                        setCurrentStep(0);
+                    } else if (!statusData.superuser_exists) {
+                        setCurrentStep(1);
+                    } else if (!statusData.site_title_set) {
+                        setCurrentStep(2);
+                    }
+                } else {
+                    // Handle other errors or show a generic error message
+                    showToast('Failed to fetch setup status.', 'error');
                 }
+            } finally {
+                // Ensure loading is stopped and status is marked as fetched
+                setIsLoading(false);
+                setStatusFetched(true);
             }
         };
 
@@ -74,6 +94,17 @@ function SetupWizard() {
                 admin_password: Yup.string().min(8, "Password should be at least 8 characters").required("Required"),
                 admin_password2: Yup.string().oneOf([Yup.ref("admin_password")], "Passwords must match").required("Required")
             })
+        },
+        {
+            id: "site_info",
+            title: "Site Information",
+            description: "Enter the site title.",
+            fields: [
+                { id: "site_title", label: "Site Title", type: "text", placeholder: "Enter site title" }
+            ],
+            validationSchema: Yup.object({
+                site_title: Yup.string().required("Required")
+            })
         }
     ];
 
@@ -84,6 +115,7 @@ function SetupWizard() {
             db_name: "",
             db_user: "",
             db_password: "",
+            site_title: "",
             admin_username: "",
             admin_email: "",
             admin_password: "",
@@ -114,11 +146,14 @@ function SetupWizard() {
                             db_user: values.db_user,
                             db_password: values.db_password
                         });
-                        if (response.data.superuser_exists) {
-                            showToast('Setup complete. A superuser already exists.', 'info');
-                            navigate("/login");
+                        showToast(response.data.detail, 'success');
+                        setSetupStatus(response.data);
+                        if (!response.data.superuser_exists) {
+                            setCurrentStep(1);
+                        } else if (!response.data.site_title_set) {
+                            setCurrentStep(2);
                         } else {
-                            setCurrentStep(step => step + 1);
+                            navigate("/login", { state: { reason: 'SETUP_COMPLETE' } });
                         }
                     } catch (error) {
                         console.error("Error during database setup:", error);
@@ -131,15 +166,28 @@ function SetupWizard() {
                             admin_email: values.admin_email,
                             admin_password: values.admin_password
                         });
-                        if (response.status === 201) {
-                            navigate("/login", { state: { reason: REDIRECT_REASONS.SETUP_COMPLETE } });
+                        showToast(response.data.detail, response.status === 201 ? 'success' : 'info');
+                        setSetupStatus(response.data);
+                        if (!response.data.site_title_set) {
+                            setCurrentStep(2);
                         } else {
-                            showToast('Setup complete. A superuser already exists.', 'info');
-                            navigate("/login");
+                            navigate("/login", { state: { reason: 'SETUP_COMPLETE' } });
                         }
                     } catch (error) {
                         console.error("Error during superuser creation:", error);
                         showToast('An error occurred during superuser creation.', 'error');
+                    }
+                } else if (currentStep === 2) {
+                    try {
+                        const response = await api.post('/setup/site-info/', {
+                            site_title: values.site_title
+                        });
+                        showToast(response.data.detail, 'success');
+                        setSetupStatus(response.data);
+                        navigate("/login", { state: { reason: 'SETUP_COMPLETE' } });
+                    } catch (error) {
+                        console.error("Error during site info setup:", error);
+                        showToast('An error occurred during site info setup.', 'error');
                     }
                 }
             } else {
@@ -153,15 +201,18 @@ function SetupWizard() {
         },
     });
 
-    if (isLoading) {
-        return <Spinner animation="border" />;
+    if (!statusFetched) {
+        return (
+            <div className="text-center mt-5">
+                <Spinner animation="border" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                </Spinner>
+            </div>
+        );
     }
 
-    // If superuser exists and we're on step 1, redirect to login
-    if (superuserExists && currentStep === 1) {
-        showToast('Setup complete. A superuser already exists.', 'info');
-        navigate("/login");
-        return null;
+    if (isLoading) {
+        return <Spinner animation="border" />;
     }
 
     return (

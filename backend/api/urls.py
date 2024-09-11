@@ -3,7 +3,7 @@ from django.urls import include, path
 
 from core.views import PrivacyPolicyView, TermsOfServiceView
 
-from .views import CreateSuperUserView, NavbarItemList, ReCaptchaLoginView, set_csrf_token, SetupView, SetupStatusView
+from .views import CreateSuperUserView, NavbarItemList, ReCaptchaLoginView, set_csrf_token, SetupView, SetupStatusView, SetupSiteInfoView
 
 app_name = 'api'
 
@@ -22,5 +22,6 @@ urlpatterns = [
 
     path('setup/', SetupView.as_view(), name='setup'),
     path('setup/status/', SetupStatusView.as_view(), name='setup_status'),
+    path('setup/site-info/', SetupSiteInfoView.as_view(), name='setup_site_info'),
     path('create-superuser/', CreateSuperUserView.as_view(), name='create_superuser'),
 ]

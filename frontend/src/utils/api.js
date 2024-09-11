@@ -31,13 +31,16 @@ api.interceptors.response.use(
     response => {
         // Check if this is the setup status endpoint and status is complete
         if (response.config.url.endsWith('/setup/status/') && response.data.status === 'complete') {
-            showToast(TOAST_MESSAGES.SETUP_ALREADY, 'info'); // This will be the only place to show this toast
+            showToast(TOAST_MESSAGES.SETUP_ALREADY, 'info'); // Show setup complete toast
             navigate('/');
-            throw new axios.Cancel('Setup is already complete');
+            return response; // Return response to avoid further processing in error handling
         }
         return response;
     },
     error => {
+        if (axios.isCancel(error)) {
+            return new Promise(() => {}); // Return a never-resolving promise to stop error propagation after cancellation
+        }
         if (error.response && error.response.status === 503) {
             navigate('/setup');
         } else if (error.response && error.response.status === 401) {
