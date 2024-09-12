@@ -21,4 +21,4 @@ RUN python manage.py collectstatic --noinput
 EXPOSE 8000
 
 # define the default command to run when starting a container
-CMD python3 manage.py makemigrations --merge && python3 manage.py migrate && python3 manage.py collectstatic --no-input && gunicorn tibiknini.wsgi:application --workers 3 --bind 0.0.0.0:8000
+CMD ["sh", "-c", "python3 manage.py makemigrations --merge && python3 manage.py migrate && python3 manage.py collectstatic --no-input && gunicorn tibiknini.wsgi:application --workers 3 --bind 0.0.0.0:8000"]
