@@ -129,8 +129,8 @@ class SetupSiteInfoView(APIView):
         site_title = request.data.get('site_title')
 
         try:
-            # Load the site_info fixture
-            call_command('loaddata', 'core/fixtures/site_info.json')
+            # Run the custom load_site_info management command
+            call_command('load_site_info')
 
             # Update the site_title in the database
             site_info = SiteInfo.objects.first()

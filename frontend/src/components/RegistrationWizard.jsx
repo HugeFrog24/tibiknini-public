@@ -1,12 +1,22 @@
 import React, {useRef, useState} from "react";
-import {Button, Container, Col, FloatingLabel, Form, Row} from "react-bootstrap";
 import {useNavigate} from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
+import {
+  Button,
+  Container,
+  TextField,
+  Typography,
+  Box,
+  Alert,
+  Step,
+  StepLabel,
+  Stepper,
+  Divider
+} from "@mui/material";
 
 import api from '../utils/api';
-import { useDarkMode } from './contexts/DarkModeContext';
 import {REDIRECT_REASONS} from "./constants/Constants";
 
 function RegistrationWizard() {
@@ -56,20 +66,15 @@ function RegistrationWizard() {
             description: "Define how you'll appear to other users.",
             fields: [
                 {
-                    id: "username_description",
-                    type: "description",
-                    content: "Select a unique username that best represents you."
-                },
-                {
                     id: "username",
                     label: "Username",
                     type: "text",
                     placeholder: "Choose a username",
                 },
                 {
-                    id: "password_description",
+                    id: "username_description",
                     type: "description",
-                    content: "A strong password, known only to you, ensures your account's security and privacy."
+                    content: "Select a unique username that best represents you."
                 },
                 {
                     id: "password",
@@ -82,6 +87,11 @@ function RegistrationWizard() {
                     label: "Confirm Password",
                     type: "password",
                     placeholder: "Confirm your password",
+                },
+                {
+                    id: "password_description",
+                    type: "description",
+                    content: "A strong password, known only to you, ensures your account's security and privacy."
                 }
             ],
             validationSchema: Yup.object({
@@ -130,7 +140,6 @@ function RegistrationWizard() {
     const [currentStep, setCurrentStep] = useState(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
-    const { modeClasses } = useDarkMode();
     const navigate = useNavigate();
     const recaptchaRef = useRef(null);
     
@@ -173,64 +182,112 @@ function RegistrationWizard() {
     };
 
     return (
-        <Container>
-            <Row className="justify-content-md-center">
-                <Col xl={6} lg={6} md={6} sm={6}>
-                    <h2>
-                        {steps[currentStep].id === "platform_representation" && formik.values.first_name
-                            ? `Welcome, ${formik.values.first_name}.`
-                            : steps[currentStep].id === "contact_details" && formik.values.first_name
-                            ? `Let's get your contact details, ${formik.values.first_name}.`
+        <Container maxWidth="sm">
+            <Box mt={4} mb={4}>
+                <Stepper activeStep={currentStep}>
+                    {steps.map((step) => (
+                        <Step key={step.id}>
+                            <StepLabel>{step.title}</StepLabel>
+                        </Step>
+                    ))}
+                </Stepper>
+                
+                <Typography variant="h4" align="center" gutterBottom>
+                    {steps[currentStep].id === "platform_representation" && formik.values.first_name
+                        ? `Welcome, ${formik.values.first_name}.`
+                        : steps[currentStep].id === "contact_details" && formik.values.first_name
+                        ? `Let's get your contact details, ${formik.values.first_name}.`
                         : steps[currentStep].title}
-                    </h2>
-                    <p>{steps[currentStep].description}</p>
-                    {errorMessage && <div className="alert alert-danger" role="alert">{errorMessage}</div>}
-                    <Form onSubmit={formik.handleSubmit} noValidate>
-                        {steps[currentStep].fields.map(field => (
-                            <React.Fragment key={field.id}>
-                                {field.type !== "description" ? (
-                                    <FloatingLabel controlId={field.id} label={field.label} className="mb-3">
-                                        <Form.Control
-                                            type={field.type}
-                                            id={field.id}
-                                            name={field.id}
-                                            value={formik.values[field.id]}
-                                            onChange={formik.handleChange}
-                                            onBlur={formik.handleBlur}
-                                            placeholder={field.placeholder}
-                                            className={`${modeClasses.bgClass} ${modeClasses.textClass} shadow ${formik.touched[field.id] && !!formik.errors[field.id] ? "is-invalid" : ""}`}
-                                            autoComplete="off"
-                                        />
-                                        <Form.Control.Feedback type="invalid">
-                                            {formik.errors[field.id]}
-                                        </Form.Control.Feedback>
-                                    </FloatingLabel>
-                                ) : (
-                                    <p className="text-start">{field.content}</p>
-                                )}
-                            </React.Fragment>
-                            ))}
-                        <ReCAPTCHA
-                            ref={recaptchaRef}
-                            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-                            size="invisible"
-                            onChange={(recaptchaToken) => finalizeRegistration(recaptchaToken)}
-                        />
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            {currentStep > 0 && (
-                                <Button type="button" onClick={() => setCurrentStep(step => step - 1)} style={{ marginRight: '10px' }}>
-                                    Back
-                                </Button>
-                                )}
-                            <Button type="submit" disabled={isSubmitting}>
-                               {currentStep < steps.length - 1 ? "Next" : (isSubmitting ? "Submitting..." : "Finish")}
+                </Typography>
+                <Typography variant="subtitle1" align="center" component="p">
+                    {steps[currentStep].description}
+                </Typography>
+                {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
+                <form onSubmit={formik.handleSubmit} noValidate>
+                    {steps[currentStep].fields.map(field => (
+                        <React.Fragment key={field.id}>
+                            {field.type !== "description" && field.id !== "password" && field.id !== "password2" && (
+                                <TextField
+                                    fullWidth
+                                    variant="outlined"
+                                    margin="normal"
+                                    id={field.id}
+                                    name={field.id}
+                                    label={field.label}
+                                    type={field.type}
+                                    value={formik.values[field.id]}
+                                    onChange={formik.handleChange}
+                                    onBlur={formik.handleBlur}
+                                    error={formik.touched[field.id] && !!formik.errors[field.id]}
+                                    helperText={formik.touched[field.id] && formik.errors[field.id]}
+                                    autoComplete="off"
+                                />
+                            )}
+                            {field.id === "username_description" && (
+                                <>
+                                    <Typography variant="body1" component="p" sx={{ mt: 2 }}>{field.content}</Typography>
+                                    <Divider sx={{ my: 2 }} />
+                                </>
+                            )}
+                        </React.Fragment>
+                    ))}
+                    {steps[currentStep].id === "platform_representation" && (
+                        <>
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                margin="normal"
+                                id="password"
+                                name="password"
+                                label="Password"
+                                type="password"
+                                value={formik.values.password}
+                                onChange={formik.handleChange}
+                                onBlur={formik.handleBlur}
+                                error={formik.touched.password && !!formik.errors.password}
+                                helperText={formik.touched.password && formik.errors.password}
+                                autoComplete="off"
+                            />
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                margin="normal"
+                                id="password2"
+                                name="password2"
+                                label="Confirm Password"
+                                type="password"
+                                value={formik.values.password2}
+                                onChange={formik.handleChange}
+                                onBlur={formik.handleBlur}
+                                error={formik.touched.password2 && !!formik.errors.password2}
+                                helperText={formik.touched.password2 && formik.errors.password2}
+                                autoComplete="off"
+                            />
+                            <Typography variant="body1" component="p" sx={{ mt: 2 }}>
+                                A strong password, known only to you, ensures your account's security and privacy.
+                            </Typography>
+                        </>
+                    )}
+                    <ReCAPTCHA
+                        ref={recaptchaRef}
+                        sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                        size="invisible"
+                        onChange={(recaptchaToken) => finalizeRegistration(recaptchaToken)}
+                    />
+                    <Box display="flex" justifyContent="space-between" mt={2}>
+                        {currentStep > 0 && (
+                            <Button onClick={() => setCurrentStep(step => step - 1)}>
+                                Back
                             </Button>
-                        </div>
-                    </Form>
-                </Col>
-            </Row>
+                        )}
+                        <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>
+                            {currentStep < steps.length - 1 ? "Next" : (isSubmitting ? "Submitting..." : "Finish")}
+                        </Button>
+                    </Box>
+                </form>
+            </Box>
         </Container>
-        );
+    );
 }
 
 export default RegistrationWizard;

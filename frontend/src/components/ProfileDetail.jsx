@@ -54,9 +54,6 @@ function ProfileDetail() {
                 const followResponse = await api.get(`/users/${authenticatedUser.username}/follows/${username}/`);
                 setIsFollowing(followResponse.status === 200);
             } catch (error) {
-                if (error?.response?.status === 401) {
-                    navigate("/login", { state: { reason: REDIRECT_REASONS.VIEW_OWN_PROFILE } });
-                }
                 console.error(error);
             }
         }

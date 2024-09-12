@@ -28,10 +28,10 @@ class Command(BaseCommand):
         terms_of_service = self.read_file(terms_of_service_file)
 
         PrivacyPolicy.objects.update_or_create(
-            id=1, defaults={"content": privacy_policy, "title": "privacy_policy"}
+            id=1, defaults={"content": privacy_policy}
         )
         TermsOfService.objects.update_or_create(
-            id=1, defaults={"content": terms_of_service, "title": "terms_of_service"}
+            id=1, defaults={"content": terms_of_service}
         )
 
     @staticmethod

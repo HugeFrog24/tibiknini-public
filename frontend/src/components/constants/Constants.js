@@ -1,4 +1,8 @@
 export const REDIRECT_REASONS = {
+    AUTH_REQUIRED: {
+        message: 'You must be logged in to access this page.',
+        type: 'warning'
+    },
     AUTHENTICATED_ONLY: { message: 'Authenticated only', type: 'warning' },
     LIKE_POST: { message: 'Liked post', type: 'info' },
     CREATE_POST: { message: 'Created post', type: 'success' },

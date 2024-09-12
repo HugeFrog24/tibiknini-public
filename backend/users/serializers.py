@@ -20,12 +20,15 @@ class ProfileSerializer(serializers.ModelSerializer):
     is_authenticated = serializers.BooleanField()
     followers = serializers.SerializerMethodField()
     following = serializers.SerializerMethodField()
+    first_name = serializers.SerializerMethodField()
+    last_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
         fields = [
             'id', 'username', 'date_joined', 'image', 'is_anonymous', 'email',
-            'is_authenticated', 'is_staff', 'followers', 'following'
+            'is_authenticated', 'is_staff', 'followers', 'following',
+            'first_name', 'last_name'
         ]
 
     def to_representation(self, instance):
@@ -47,6 +50,18 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     def get_following(self, obj):
         return FollowSerializer(obj.following.all(), many=True).data
+
+    def get_first_name(self, obj):
+        user = self.context.get('request').user
+        if user == obj.profile.user:
+            return obj.profile.user.first_name
+        return None
+
+    def get_last_name(self, obj):
+        user = self.context.get('request').user
+        if user == obj.profile.user:
+            return obj.profile.user.last_name
+        return None
 
 
 class ProfileBioSerializer(serializers.ModelSerializer):

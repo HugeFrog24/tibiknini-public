@@ -1,20 +1,18 @@
 import React, {useContext, useEffect, useState} from 'react';
 
-import {Button, FloatingLabel, Form, Spinner} from "react-bootstrap";
 import {useNavigate, useParams} from "react-router-dom";
 import {toast} from "react-toastify";
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faSave, faTimes} from '@fortawesome/free-solid-svg-icons';
+import {Box, Button, Checkbox, FormControlLabel, TextField} from '@mui/material';
+import SaveIcon from '@mui/icons-material/Save';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 import UserContext from "./contexts/UserContext";
 import {REDIRECT_REASONS} from "./constants/Constants";
 import UseBlogPost from "./UseBlogPost";
-import { useDarkMode } from './contexts/DarkModeContext';
 
 const BlogPostForm = ({previousPath}) => {
     const navigate = useNavigate();
     const {fetchBlogPost, createBlogPost, updateBlogPost} = UseBlogPost();
-    const { modeClasses } = useDarkMode();
     const {postId} = useParams();
     const user = useContext(UserContext);
     // Add a new state for the fetched post
@@ -121,68 +119,54 @@ const BlogPostForm = ({previousPath}) => {
     }, [postId, fetchBlogPost, user, navigate]);
 
     return (
-        <div>
-            <div className="d-flex justify-content-end mb-3">
-                <div className="form-check form-switch me-2">
-                    <input
-                        className="form-check-input"
-                        type="checkbox"
-                        id={`isDraft-${postId || 'new'}`}
-                        checked={isDraft}
-                        onChange={handleToggleDraft}
-                    />
-                    <label
-                        className="form-check-label"
-                        htmlFor={`isDraft-${postId || 'new'}`}
-                    >
-                        Draft
-                    </label>
-                </div>
-                <Button variant={isSubmitting ? "secondary" : "outline-success"} className="me-2" onClick={() => handleSave(isDraft)} disabled={isSubmitting}>
-                {
-                    isSubmitting ?
-                        <Spinner
-                            as="span"
-                            animation="border"
-                            size="sm"
-                            role="status"
-                            aria-hidden="true"
-                        /> :
-                        <>
-                            <FontAwesomeIcon icon={faSave}/> Save
-                        </>
-                }
-                </Button>
-                <Button variant="outline-secondary" onClick={handleCancel}>
-                    <FontAwesomeIcon icon={faTimes}/> Cancel
-                </Button>
-            </div>
-            <FloatingLabel controlId="floatingTitle" label="Title">
-                <Form.Control
-                    className={`mb-3 ${modeClasses.textClass} ${modeClasses.bgClass}`}
-                    type="text"
-                    placeholder="Enter your title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
+        <Box>
+            <Box style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+                <FormControlLabel
+                    control={
+                        <Checkbox
+                            checked={isDraft}
+                            onChange={handleToggleDraft}
+                            color="primary"
+                        />
+                    }
+                    label="Draft"
                 />
-            </FloatingLabel>
-            <FloatingLabel controlId="floatingContent" label="Content">
-                <Form.Control
-                    className={`mb-3 ${modeClasses.textClass} ${modeClasses.bgClass}`}
-                    as="textarea"
-                    // Ideally, this would set the visible number of lines in the textarea to 15.
-                    // However, due to Bootstrap's styles for floating labels, this doesn't work on its own.
-                    rows="15"
-                    // Inline style to override Bootstrap's fixed height for form controls inside .form-floating.
-                    // By setting height to 'auto', we allow the textarea to respect the 'rows' attribute.
-                    // Additionally, resizing is disabled by setting 'resize' to 'none'.
-                    style={{height: 'auto', resize: 'none'}}
-                    placeholder="Enter your content"
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                />
-            </FloatingLabel>
-        </div>
+                <Button
+                    variant={isSubmitting ? 'text' : 'contained'}
+                    color="primary"
+                    startIcon={<SaveIcon />}
+                    onClick={() => handleSave(isDraft)}
+                    disabled={isSubmitting}
+                    style={{ marginRight: '0.5rem' }}
+                >
+                    {isSubmitting ? 'Saving...' : 'Save'}
+                </Button>
+                <Button
+                    variant="outlined"
+                    color="secondary"
+                    startIcon={<CancelIcon />}
+                    onClick={handleCancel}
+                >
+                    Cancel
+                </Button>
+            </Box>
+            <TextField
+                label="Title"
+                fullWidth
+                margin="normal"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+            />
+            <TextField
+                label="Content"
+                fullWidth
+                multiline
+                rows={15}
+                margin="normal"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+            />
+        </Box>
     );
 }
 

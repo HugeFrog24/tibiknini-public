@@ -41,10 +41,13 @@ api.interceptors.response.use(
         if (axios.isCancel(error)) {
             return new Promise(() => {}); // Return a never-resolving promise to stop error propagation after cancellation
         }
-        if (error.response && error.response.status === 503) {
-            navigate('/setup');
-        } else if (error.response && error.response.status === 401) {
-            navigate('/login');
+        if (error.response) {
+            if (error.response.status === 503) {
+                navigate('/setup');
+            } else if (error.response.status === 401 || error.response.status === 403) {
+                // Redirect to login for both 401 and 403 errors
+                navigate('/login', { state: { reason: 'AUTH_REQUIRED' } });
+            }
         }
         return Promise.reject(error);
     }
