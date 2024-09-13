@@ -22,11 +22,24 @@ import {
     Toolbar,
     Typography,
     useTheme,
+    Slide,
+    useScrollTrigger,
 } from "@mui/material";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
 
 import { handleLogout } from '../utils/auth';
+
+function HideOnScroll(props) {
+    const { children } = props;
+    const trigger = useScrollTrigger();
+
+    return (
+        <Slide appear={false} direction="down" in={!trigger}>
+            {children}
+        </Slide>
+    );
+}
 
 function NavigationBar({ toggleDarkMode }) {
     const theme = useTheme();
@@ -147,12 +160,14 @@ function NavigationBar({ toggleDarkMode }) {
     };
 
     return (
-        <AppBar position="static">
-            <Toolbar>
-                <Box sx={{ flexGrow: 1, display: "flex" }}>{renderNavLinks()}</Box>
-                {renderUserSection()}
-            </Toolbar>
-        </AppBar>
+        <HideOnScroll>
+            <AppBar>
+                <Toolbar>
+                    <Box sx={{ flexGrow: 1, display: "flex" }}>{renderNavLinks()}</Box>
+                    {renderUserSection()}
+                </Toolbar>
+         </AppBar>
+        </HideOnScroll>
     );
 }
 
