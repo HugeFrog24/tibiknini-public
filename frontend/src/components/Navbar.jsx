@@ -1,174 +1,248 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import UserContext from "./contexts/UserContext";
 import { Link, useLocation } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-    faBookOpen,
-    faEnvelope,
-    faGears,
-    faHome,
-    faSignInAlt,
-    faSignOutAlt,
-    faUser,
-} from "@fortawesome/free-solid-svg-icons";
-import {
-    AppBar,
-    Avatar,
-    Box,
-    Button,
-    IconButton,
-    Menu,
-    MenuItem,
-    Toolbar,
-    Typography,
-    useTheme,
-    Slide,
-    useScrollTrigger,
+  AppBar,
+  Box,
+  Button,
+  Drawer,
+  IconButton,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Toolbar,
+  Typography,
+  useTheme,
+  useMediaQuery,
+  Slide,
+  useScrollTrigger,
 } from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
+import HomeIcon from "@mui/icons-material/Home";
+import BookIcon from "@mui/icons-material/Book";
+import EmailIcon from "@mui/icons-material/Email";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import SettingsIcon from "@mui/icons-material/Settings";
+import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
-
+import config from '../config.json';
 import { handleLogout } from '../utils/auth';
 
 function HideOnScroll(props) {
-    const { children } = props;
-    const trigger = useScrollTrigger();
+  const { children } = props;
+  const trigger = useScrollTrigger();
 
-    return (
-        <Slide appear={false} direction="down" in={!trigger}>
-            {children}
-        </Slide>
-    );
+  return (
+    <Slide appear={false} direction="down" in={!trigger}>
+      {children}
+    </Slide>
+  );
 }
 
-function NavigationBar({ toggleDarkMode }) {
-    const theme = useTheme();
-    const user = useContext(UserContext);
-    const location = useLocation();
-    const [anchorEl, setAnchorEl] = React.useState(null);
+const NavigationBar = ({ toggleDarkMode }) => {
+  const theme = useTheme();
+  const user = useContext(UserContext);
+  const location = useLocation();
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-    const handleMenu = (event) => {
-        setAnchorEl(event.currentTarget);
-    };
+  const handleMenu = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
 
-    const handleClose = () => {
-        setAnchorEl(null);
-    };
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
 
-    const navItems = [
-        { path: "/", icon: faHome, label: "Home" },
-        { path: "/blog", icon: faBookOpen, label: "Blog" },
-        { path: "/contact", icon: faEnvelope, label: "Contact" },
-    ];
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
 
-    const renderNavLinks = () => {
-        return navItems.map((item) => (
+  const navItems = [
+    { path: "/", icon: <HomeIcon />, label: "Home" },
+    { path: "/blog", icon: <BookIcon />, label: "Blog" },
+    { path: "/contact", icon: <EmailIcon />, label: "Contact" },
+  ];
+
+  const renderNavLinks = () => (
+    <Box sx={{ display: { xs: 'none', sm: 'flex' } }}>
+      {navItems.map((item) => (
+        <Button
+          key={item.path}
+          component={Link}
+          to={item.path}
+          color="inherit"
+          sx={{
+            mx: 1,
+            color: 'white',
+            backgroundColor: location.pathname === item.path ? 'action.selected' : 'transparent',
+            '&:hover': {
+              backgroundColor: 'action.hover',
+            },
+          }}
+        >
+          {item.icon}
+          <Typography variant="button" sx={{ ml: 1 }}>{item.label}</Typography>
+        </Button>
+      ))}
+    </Box>
+  );
+
+  const renderUserSection = () => (
+    <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
+      <IconButton onClick={toggleDarkMode} color="inherit">
+        {theme.palette.mode === "dark" ? <Brightness7Icon /> : <Brightness4Icon />}
+      </IconButton>
+      {user ? (
+        <>
+          <IconButton
+            onClick={handleMenu}
+            color="inherit"
+            aria-label="account of current user"
+            aria-controls="menu-appbar"
+            aria-haspopup="true"
+          >
+            <AccountCircleIcon />
+          </IconButton>
+          <Menu
+            id="menu-appbar"
+            anchorEl={anchorEl}
+            anchorOrigin={{
+              vertical: "bottom",
+              horizontal: "right",
+            }}
+            keepMounted
+            transformOrigin={{
+              vertical: "top",
+              horizontal: "right",
+            }}
+            open={Boolean(anchorEl)}
+            onClose={handleClose}
+          >
+            <MenuItem disabled>{user.username}</MenuItem>
+            <MenuItem component={Link} to="/users/me" onClick={handleClose}>
+              <ListItemIcon>
+                <AccountCircleIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Profile</ListItemText>
+            </MenuItem>
+            {user.is_staff && (
+              <MenuItem component="a" href="/admin" onClick={handleClose}>
+                <ListItemIcon>
+                  <SettingsIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Admin console</ListItemText>
+              </MenuItem>
+            )}
+            <MenuItem component={Link} to="/settings" onClick={handleClose}>
+              <ListItemIcon>
+                <SettingsIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Settings</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={handleLogout}>
+              <ListItemIcon>
+                <ExitToAppIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Logout</ListItemText>
+            </MenuItem>
+          </Menu>
+        </>
+      ) : (
+        <Button
+          variant="outlined"
+          component={Link}
+          to="/login"
+          color="inherit"
+          startIcon={<ExitToAppIcon />}
+        >
+          Login
+        </Button>
+      )}
+    </Box>
+  );
+
+  const drawer = (
+    <Box onClick={handleDrawerToggle} sx={{ width: 250 }}>
+      <Typography variant="h6" sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+        {config.siteName}
+      </Typography>
+      <List>
+        {navItems.map((item) => (
+          <ListItem 
+            key={item.path} 
+            component={Link} 
+            to={item.path} 
+            disablePadding
+          >
             <Button
-                key={item.path}
-                component={Link}
-                to={item.path}
-                color="inherit"
-                sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    mx: 2,
-                    color: 'white',
-                    backgroundColor: location.pathname === item.path ? theme.palette.action.selected : 'transparent',
-                    '&:hover': {
-                        backgroundColor: theme.palette.action.hover,
-                    },
-                }}
+              fullWidth
+              sx={{
+                justifyContent: 'flex-start',
+                padding: 2,
+                color: 'text.primary',
+                '&:hover': {
+                  backgroundColor: 'action.hover',
+                },
+                '&.active': {
+                  backgroundColor: 'action.selected',
+                },
+              }}
+              startIcon={item.icon}
             >
-                <FontAwesomeIcon icon={item.icon} size="lg" color="white" />
-                <Typography variant="caption" style={{ color: 'white' }}>{item.label}</Typography>
+              {item.label}
             </Button>
-        ));
-    };
+          </ListItem>
+        ))}
+      </List>
+    </Box>
+  );
 
-    const renderUserSection = () => {
-        return (
-            <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
-                <IconButton onClick={toggleDarkMode} color="inherit">
-                    {theme.palette.mode === "dark" ? (
-                        <Brightness7Icon />
-                    ) : (
-                        <Brightness4Icon />
-                    )}
-                </IconButton>
-                {user ? (
-                    <>
-                        <IconButton
-                            size="large"
-                            aria-label="account of current user"
-                            aria-controls="menu-appbar"
-                            aria-haspopup="true"
-                            onClick={handleMenu}
-                            color="inherit"
-                        >
-                            <Avatar src={user.image} alt={user.username} />
-                        </IconButton>
-                        <Menu
-                            id="menu-appbar"
-                            anchorEl={anchorEl}
-                            anchorOrigin={{
-                                vertical: "bottom",
-                                horizontal: "right",
-                            }}
-                            keepMounted
-                            transformOrigin={{
-                                vertical: "top",
-                                horizontal: "right",
-                            }}
-                            open={Boolean(anchorEl)}
-                            onClose={handleClose}
-                        >
-                            <MenuItem disabled>{user.username}</MenuItem>
-                            <MenuItem component={Link} to="/users/me" onClick={handleClose}>
-                                <FontAwesomeIcon icon={faUser} className="me-2" color={theme.palette.mode === 'dark' ? 'white' : 'black'} />
-                                Profile
-                            </MenuItem>
-                            {user.is_staff && (
-                                <MenuItem component="a" href="/admin" onClick={handleClose}>
-                                    <FontAwesomeIcon icon={faGears} className="me-2" color={theme.palette.mode === 'dark' ? 'white' : 'black'} />
-                                    Admin console
-                                </MenuItem>
-                            )}
-                            <MenuItem component={Link} to="/settings" onClick={handleClose}>
-                                <FontAwesomeIcon icon={faGears} className="me-2" color={theme.palette.mode === 'dark' ? 'white' : 'black'} />
-                                Settings
-                            </MenuItem>
-                            <MenuItem onClick={handleLogout} sx={{ color: "error.main" }}>
-                                <FontAwesomeIcon icon={faSignOutAlt} className="me-2" color="error.main" />
-                                Logout
-                            </MenuItem>
-                        </Menu>
-                    </>
-                ) : (
-                    <Button
-                        variant="outlined"
-                        component={Link}
-                        to={"/login"}
-                        color="inherit"
-                        startIcon={<FontAwesomeIcon icon={faSignInAlt} color="white" />}
-                    >
-                        Login
-                    </Button>
-                )}
-            </Box>
-        );
-    };
-
-    return (
-        <HideOnScroll>
-            <AppBar>
-                <Toolbar>
-                    <Box sx={{ flexGrow: 1, display: "flex" }}>{renderNavLinks()}</Box>
-                    {renderUserSection()}
-                </Toolbar>
-         </AppBar>
-        </HideOnScroll>
-    );
-}
+  return (
+    <HideOnScroll>
+      <AppBar position="sticky">
+        <Toolbar sx={{ justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ mr: 2, display: { sm: 'none' } }}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Typography variant="h6" component="div" sx={{ display: { xs: 'none', sm: 'block' } }}>
+                {config.siteName}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {renderNavLinks()}
+            {renderUserSection()}
+          </Box>
+        </Toolbar>
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{
+            keepMounted: true,
+          }}
+          sx={{
+            display: { xs: 'block', sm: 'none' },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 250 },
+          }}
+        >
+          {drawer}
+        </Drawer>
+      </AppBar>
+    </HideOnScroll>
+  );
+};
 
 export default NavigationBar;
