@@ -1,7 +1,6 @@
 import api from './api';
 import FetchUser from './FetchUser';
 import { toast } from 'react-toastify';
-import { removeTokens } from './AccessToken'; // Import removeTokens
 
 export const handleLogin = async (username, password, recaptchaToken, onLogin, navigate, setIsLoading) => {
     setIsLoading(true);
@@ -36,7 +35,6 @@ export const handleLogin = async (username, password, recaptchaToken, onLogin, n
 export const handleLogout = async () => {
     try {
         await api.post(`/auth/logout/`, {}, { withCredentials: true });
-        removeTokens(); // Clear tokens on logout
         // Handle successful logout, e.g. redirect to login page
     } catch (err) {
         console.error('Error during logout:', err);
