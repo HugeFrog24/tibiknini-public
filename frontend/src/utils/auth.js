@@ -1,43 +1,50 @@
 import api from './api';
-import FetchUser from './FetchUser';
 import { toast } from 'react-toastify';
+
+export const fetchUser = async () => {
+    try {
+        const response = await api.get('/users/me/');
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching user data:', error);
+        throw error;
+    }
+};
 
 export const handleLogin = async (username, password, recaptchaToken, onLogin, navigate, setIsLoading) => {
     setIsLoading(true);
 
     try {
-        const response = await api.post(`/auth/login/`, {
+        await api.post(`/auth/login/`, {
             username,
             password,
             recaptcha: recaptchaToken
-          }, {
+        }, {
             withCredentials: true
-          });
-        await FetchUser(onLogin);
-        navigate("/"); // Redirect after login
-      } catch (err) {
+        });
+        const userData = await fetchUser();
+        onLogin(userData);
+        navigate("/");
+    } catch (err) {
         console.error(err);
         if (err.response && err.response.status === 401) {
-            // Authentication error
             toast.error('Invalid username or password.');
         } else if (!err.response) {
-            // Network error or client is offline
             toast.error('Network error. Please check your internet connection.');
         } else {
-            // Other server errors
             toast.error('An unexpected error occurred. Please try again later.');
         }
     } finally {
-        setIsLoading(false);  // Reset loading to false once login process completes
+        setIsLoading(false);
     }
 };
 
-export const handleLogout = async () => {
+export const handleLogout = async (navigate) => {
     try {
         await api.post(`/auth/logout/`, {}, { withCredentials: true });
-        // Handle successful logout, e.g. redirect to login page
+        navigate('/login');
     } catch (err) {
         console.error('Error during logout:', err);
-        // Handle errors
+        toast.error('An error occurred during logout. Please try again.');
     }
 };

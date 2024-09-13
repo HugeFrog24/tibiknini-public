@@ -140,12 +140,6 @@ function ProfileDetail() {
     }, [username, fetchProfile]);
 
     useEffect(() => {
-        if (username === "me" && !authenticatedUser && !loading) {
-            navigate("/login", { state: { reason: REDIRECT_REASONS.VIEW_OWN_PROFILE } });
-        }
-    }, [username, authenticatedUser, loading, navigate]);
-
-    useEffect(() => {
         // Fetch followers and following regardless of the active tab
         fetchFollowers(username);
         fetchFollowing(username);

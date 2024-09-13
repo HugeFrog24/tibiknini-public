@@ -34,10 +34,12 @@ const RegistrationWizard = React.lazy(() => import("./components/RegistrationWiz
 const SetupWizard = React.lazy(() => import("./components/SetupWizard"));
 const ProfileSettings = React.lazy(() => import("./components/ProfileSettings"));
 
+import { fetchUser } from "./utils/auth";
 import { ThemeProvider, CssBaseline } from '@mui/material'; // Import CssBaseline here
 
 function App() {
     const [user, setUser] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
     const [isDarkMode, setIsDarkMode] = useState(() => {
         const savedPreference = localStorage.getItem("darkMode");
         return savedPreference !== null ? JSON.parse(savedPreference) : window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -50,16 +52,24 @@ function App() {
 
     // Fetch user's information when the application loads
     useEffect(() => {
-        const fetchUser = async () => {
-        try {
-            const response = await api.get('/users/me/'); // Replace with your actual endpoint
-            setUser(response.data);
-        } catch (err) {
-            // Handle error
-        }
+        const initializeApp = async () => {
+            try {
+                // Check if user is authenticated (you might want to implement this in auth.js)
+                const isAuthenticated = document.cookie.includes('sessionid=');  // Adjust based on your actual cookie name
+                
+                if (isAuthenticated) {
+                    const userData = await fetchUser();
+                    setUser(userData);
+                }
+            } catch (error) {
+                console.error('Error initializing app:', error);
+                // Handle error (e.g., show a toast message)
+            } finally {
+                setIsLoading(false);
+            }
         };
 
-        fetchUser();
+        initializeApp();
     }, []);
 
     const location = useLocation();
@@ -89,6 +99,10 @@ function App() {
                 console.error('CSRF token fetch failed:', error.message);
             });
     }, []);
+
+    if (isLoading) {
+        return <Spinner />;  // Or a more elaborate loading screen
+    }
 
     return (
         <HelmetProvider>
