@@ -1,5 +1,4 @@
 import React, {useContext, useEffect, useState} from "react";
-import {Button} from "react-bootstrap";
 import {useNavigate, useParams} from "react-router-dom";
 import {toast, ToastContainer} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -9,11 +8,17 @@ import {Helmet} from 'react-helmet-async';
 import ReactMarkdown from "react-markdown";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
-import Avatar from '@mui/material/Avatar';
+import {
+    Avatar,
+    Button,
+    Grid2,
+    Typography,
+    Box,
+    Chip
+} from '@mui/material';
 
 import UserContext from "./contexts/UserContext";
 import UseBlogPost from "./UseBlogPost";
-import { useDarkMode } from './contexts/DarkModeContext';
 import {REDIRECT_REASONS} from "./constants/Constants";
 import BlogPostComments from "./BlogPostComments";
 import config from '../config.json';
@@ -21,7 +26,6 @@ import api from "../utils/api";
 
 const BlogPostDetail = ({previousPath}) => {
     const {postId} = useParams();
-    const { modeClasses } = useDarkMode();
     const {fetchBlogPost, deleteBlogPost} = UseBlogPost();
     const [postState, setPostState] = useState(null);
     const [likesCount, setLikesCount] = useState(0);
@@ -119,25 +123,23 @@ const BlogPostDetail = ({previousPath}) => {
         }
 
         return (
-            <>
-                <strong>Tags</strong>
-                <div>
+            <Box mt={2}>
+                <Typography variant="subtitle1" fontWeight="bold">Tags</Typography>
+                <Box>
                     {tags.map((tag, index) => (
-                        <span
+                        <Chip
                             key={index}
-                            className="badge me-2"
-                            style={{backgroundColor: tag.color, color: "#FFF"}}
-                        >
-                        #{tag.name}
-                    </span>
+                            label={`#${tag.name}`}
+                            style={{backgroundColor: tag.color, color: "#FFF", marginRight: 8}}
+                        />
                     ))}
-                </div>
-            </>
+                </Box>
+            </Box>
         );
     };
 
     return (
-        <>
+        <Box textAlign="left">
             <Helmet>
                 <title>{postState ? `${postState.title} - ${config.siteName}` : "Loading..."}</title>
                 <meta name="description" content={postState ? postState.summary : "Loading blog post..."}/>
@@ -147,85 +149,86 @@ const BlogPostDetail = ({previousPath}) => {
             </Helmet>
             <ToastContainer autoClose={3000}/>
             {postState ? (
-                <div
-                    className={`${modeClasses.textClass} text-start`}
-                    id={`post-${postState.id}`}
-                >
+                <Box id={`post-${postState.id}`}>
                     {user &&
                         user.is_authenticated &&
                         (user.is_staff || user.id === postState.author.id) && (
-                            <div className="d-flex justify-content-end mb-3">
+                            <Box display="flex" justifyContent="flex-end" mb={3}>
                                 <Button
-                                    variant="outline-primary" className="me-2 shadow"
+                                    variant="outlined" color="primary" sx={{mr: 2}}
                                     onClick={() => navigate(`/blog/posts/${postState.id}/edit`)}
+                                    startIcon={<FontAwesomeIcon icon={faPencilAlt} />}
                                 >
-                                    <FontAwesomeIcon icon={faPencilAlt}/> Edit
+                                    Edit
                                 </Button>
                                 <Button
-                                    variant="outline-danger" className="shadow"
+                                    variant="outlined" color="error"
                                     onClick={handleDelete}
+                                    startIcon={<FontAwesomeIcon icon={faTrash} />}
                                 >
-                                    <FontAwesomeIcon icon={faTrash}/> Remove
+                                    Remove
                                 </Button>
-                            </div>
+                            </Box>
                         )}
-                    <div className="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h2 className={`text-start ${modeClasses.textClass}`}>{postState.title}</h2>
-                            <a
-                                href={`/users/${postState.author.username}`}
-                                className={`${modeClasses.linkClass} text-decoration-none d-flex gap-3 align-items-center`}
-                            >
+                    <Grid2 container justifyContent="space-between" alignItems="flex-start">
+                        <Grid2>
+                            <Typography variant="h4" component="h2">{postState.title}</Typography>
+                            <Box component="a" href={`/users/${postState.author.username}`} sx={{textDecoration: 'none', display: 'flex', gap: 1, alignItems: 'center'}}>
                                 <Avatar
                                     src={postState.author.image}
                                     alt={postState.author.username}
                                     sx={{ width: 16, height: 16 }}
                                 />
-                                <span className="fs-6">{postState.author.username}</span>
-                            </a>
-                        </div>
-                        <span className="text-muted fs-6 align-self-end">
-                            {formatDate(postState.pub_date)}
-                        </span>
-                    </div>
-                    <hr/>
-                    <div className="text-start">
-                        {" "}
+                                <Typography variant="body2">{postState.author.username}</Typography>
+                            </Box>
+                        </Grid2>
+                        <Grid2 alignSelf="flex-end">
+                            <Typography variant="body2" color="text.secondary">
+                                {formatDate(postState.pub_date)}
+                            </Typography>
+                        </Grid2>
+                    </Grid2>
+                    <Box my={2}><hr/></Box>
+                    <Box>
                         <ReactMarkdown>{postState.content}</ReactMarkdown>
-                    </div>
-                    <div className="text-start">{renderTags(postState.tags)}</div>
-                    <div className="d-flex justify-content-end">
+                    </Box>
+                    {renderTags(postState.tags)}
+                    <Box display="flex" justifyContent="flex-end" mt={2}>
                         <Button
-                            variant="outline-primary"
-                            className="me-2 shadow"
+                            variant="outlined"
+                            color="primary"
+                            sx={{mr: 2}}
                             onClick={handleLike}
                             onMouseOver={() => setIsLikeButtonHovered(true)}
                             onMouseOut={() => setIsLikeButtonHovered(false)}
+                            startIcon={<FontAwesomeIcon icon={faHeart} color={isLiked || isLikeButtonHovered ? 'red' : 'gray'} />}
                         >
-                            <FontAwesomeIcon icon={faHeart} color={isLiked || isLikeButtonHovered ? 'red' : 'gray'}/> {likesCount}
+                            {likesCount}
                         </Button>
-                        <Button variant="outline-primary" className="me-2 shadow" onClick={handleShare}>
-                            <FontAwesomeIcon icon={faShareAlt}/> Share
+                        <Button variant="outlined" color="primary" onClick={handleShare} startIcon={<FontAwesomeIcon icon={faShareAlt} />}>
+                            Share
                         </Button>
-                    </div>
+                    </Box>
                     <BlogPostComments postId={postId} />
-                </div>
-                ) : (
+                </Box>
+            ) : (
                 // Skeleton placeholders for loading state
-                <div className="text-start">
-                    <Skeleton height={40} width={300} className="mb-3" />
-                    <div className="d-flex justify-content-between align-items-start">
-                        <div>
-                            <Skeleton circle={true} height={16} width={16} className="me-2" />
+                <Box>
+                    <Skeleton height={40} width={300} sx={{mb: 3}} />
+                    <Grid2 container justifyContent="space-between" alignItems="flex-start">
+                        <Grid2>
+                            <Skeleton variant="circular" height={16} width={16} sx={{mr: 1}} />
                             <Skeleton width={100} />
-                        </div>
-                        <Skeleton width={120} />
-                    </div>
-                    <hr />
+                        </Grid2>
+                        <Grid2>
+                            <Skeleton width={120} />
+                        </Grid2>
+                    </Grid2>
+                    <Box my={2}><hr /></Box>
                     <Skeleton count={5} />
-                </div>
-                )}
-        </>
+                </Box>
+            )}
+        </Box>
     );
 };
 
