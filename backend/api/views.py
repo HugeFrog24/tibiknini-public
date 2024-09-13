@@ -5,9 +5,11 @@ from django.contrib.auth import authenticate
 from django.contrib.auth import login as auth_login
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
+from dotenv import load_dotenv
 from rest_framework import generics, status
 from rest_framework.views import APIView
 
+from backend.database_router import DynamicDatabaseRouter
 from core.models import SiteInfo
 from navbar.models import NavbarItem
 
@@ -18,7 +20,8 @@ import os
 from django.conf import settings
 from django.core.management import call_command
 from django.contrib.auth import get_user_model
-from django.db import transaction
+from django.db import transaction, connections
+from django.db.utils import OperationalError
 
 User = get_user_model()
 
@@ -57,13 +60,16 @@ def get_setup_status():
     superuser_exists = False
     site_title_set = False
 
-    # Check if the database is configured
     if env_path.exists():
-        with env_path.open('r') as f:
-            for line in f:
-                if line.startswith('DATABASE_URL='):
-                    database_configured = True
-                    break
+        load_dotenv(env_path)
+        required_settings = ['POSTGRES_DB', 'POSTGRES_USER', 'POSTGRES_PASSWORD', 'POSTGRES_HOST', 'POSTGRES_PORT']
+        if all(os.getenv(setting) for setting in required_settings):
+            try:
+                connection = connections['default']
+                connection.ensure_connection()
+                database_configured = True
+            except OperationalError:
+                database_configured = False
 
     if database_configured:
         # Check if a superuser exists
@@ -92,25 +98,48 @@ class SetupView(APIView):
         if not env_path.exists():
             env_path.touch()
 
+        db_settings = {
+            'POSTGRES_HOST': db_host,
+            'POSTGRES_PORT': db_port,
+            'POSTGRES_DB': db_name,
+            'POSTGRES_USER': db_user,
+            'POSTGRES_PASSWORD': db_password,
+        }
+
         with env_path.open('r') as f:
             lines = f.readlines()
-        
-        # Update or add the DATABASE_URL line
+
         updated_lines = []
-        db_url_written = False
         for line in lines:
-            if line.startswith('DATABASE_URL='):
-                line = f'DATABASE_URL=postgres://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}\n'
-                db_url_written = True
-            updated_lines.append(line)
-        
-        if not db_url_written:
-            updated_lines.append(f'DATABASE_URL=postgres://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}\n')
+            key = line.split('=')[0] if '=' in line else None
+            if key in db_settings:
+                updated_lines.append(f"{key}={db_settings[key]}\n")
+                del db_settings[key]
+            else:
+                updated_lines.append(line)
+
+        # Add any remaining new settings
+        for key, value in db_settings.items():
+            updated_lines.append(f"{key}={value}\n")
 
         with env_path.open('w') as f:
             f.writelines(updated_lines)
 
         try:
+            # Reload database settings
+            load_dotenv(env_path)
+            
+            # Update Django's database configuration
+            settings.DATABASES['default'] = {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': os.getenv('POSTGRES_DB'),
+                'USER': os.getenv('POSTGRES_USER'),
+                'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+                'HOST': os.getenv('POSTGRES_HOST'),
+                'PORT': os.getenv('POSTGRES_PORT'),
+                "ATOMIC_REQUESTS": False,  # Disable atomic requests for setup
+            }
+
             # Run migrations
             call_command('migrate')
             
@@ -182,49 +211,11 @@ class CreateSuperUserView(APIView):
 
 class SetupStatusView(APIView):
     def get(self, request):
-        env_path = Path(settings.BASE_DIR) / '.env'
-        database_configured = False
-        superuser_exists = None  # Use None to indicate uncertainty
-        site_title_set = None
+        setup_status = get_setup_status()
+        overall_status = 'complete' if all(setup_status.values()) else 'incomplete'
+        status_code = status.HTTP_200_OK if overall_status == 'complete' else status.HTTP_503_SERVICE_UNAVAILABLE
 
-        # Check if the database is configured
-        if env_path.exists():
-            with env_path.open('r') as f:
-                for line in f:
-                    if line.startswith('DATABASE_URL='):
-                        database_configured = True
-                        break
-
-        if database_configured:
-            # Check if a superuser exists
-            try:
-                superuser_exists = User.objects.filter(is_superuser=True).exists()
-            except Exception as e:
-                logging.error(f"Error checking for superuser: {str(e)}", exc_info=True)
-                superuser_exists = None  # Indicate that the check failed
-
-            # Check if the site title is set in the database
-            try:
-                site_info = SiteInfo.objects.first()
-                if site_info and site_info.site_title.strip():
-                    site_title_set = True
-            except SiteInfo.DoesNotExist:
-                site_title_set = False
-            except Exception as e:
-                logging.error(f"Error retrieving site title: {str(e)}", exc_info=True)
-
-        # Determine overall status
-        if database_configured and superuser_exists and site_title_set:
-            overall_status = 'complete'
-            status_code = status.HTTP_200_OK
-        else:
-            overall_status = 'incomplete'
-            status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-
-        # Return the detailed setup status
         return JsonResponse({
-            'database_configured': database_configured,
-            'superuser_exists': superuser_exists,
-            'site_title_set': site_title_set,
+            **setup_status,
             'status': overall_status
         }, status=status_code)
