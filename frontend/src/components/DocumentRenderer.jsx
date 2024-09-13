@@ -1,19 +1,28 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import {Helmet} from 'react-helmet-async';
-import Skeleton from "react-loading-skeleton";
-import "react-loading-skeleton/dist/skeleton.css";
+import rehypeSlug from 'rehype-slug';
+import rehypeAutolinkHeadings from 'rehype-autolink-headings';
+import { Helmet } from 'react-helmet-async';
+import { 
+  Typography, 
+  Paper, 
+  Container, 
+  Skeleton,
+  useTheme,
+  Box,
+  Link
+} from '@mui/material';
+import LinkIcon from '@mui/icons-material/Link';
 
 import config from "../config.json";
 import api from "../utils/api";
-import { useDarkMode } from './contexts/DarkModeContext';
 
-function DocumentRenderer({endpoint, defaultTextClass}) {
+function DocumentRenderer({endpoint}) {
     const [title, setTitle] = useState('');
     const [lastUpdated, setLastUpdated] = useState('');
     const [content, setContent] = useState('');
     const [loading, setLoading] = useState(true);
-    const { modeClasses } = useDarkMode();
+    const theme = useTheme();
 
     useEffect(() => {
         const fetchDocument = async () => {
@@ -25,35 +34,71 @@ function DocumentRenderer({endpoint, defaultTextClass}) {
             } catch (error) {
                 console.error(`Error fetching document from ${endpoint}:`, error);
             } finally {
-                setLoading(false); // Set loading to false after data is fetched or if there's an error
+                setLoading(false);
             }
         };
-
 
         fetchDocument();
     }, [endpoint]);
 
     return (
-        <>
+        <Container maxWidth="md">
             <Helmet>
                 <title>{loading ? 'Loading...' : `${title} - ${config.siteName}`}</title>
                 <meta name="description" content={loading ? 'Loading...' : `Read ${title} at ${config.siteName}`}/>
             </Helmet>
-            <h1 className={modeClasses.textClass}>{loading ? <Skeleton width={200}/> : title}</h1>
-            <p className={modeClasses.textClass}>{loading ? <Skeleton width={150}/> : `Last updated: ${lastUpdated}`}</p>
-            {loading ? (
-                <div className="text-start">
-                    <Skeleton width="90%" height={30} /> {/* Headline */}
-                    <Skeleton width="95%" height={15} count={3} /> {/* Paragraph */}
-                    <Skeleton width="60%" height={30} /> {/* Headline */}
-                    <Skeleton width="85%" height={15} count={3} /> {/* Paragraph */}
-                    <Skeleton width="80%" height={30} /> {/* Headline */}
-                    <Skeleton width="90%" height={15} count={3} /> {/* Paragraph */}
-                </div>
-            ) : (
-                <ReactMarkdown className={`${modeClasses.textClass} text-start`}>{content}</ReactMarkdown>
-            )}
-        </>
+            <Paper elevation={3} sx={{ padding: theme.spacing(3), marginTop: theme.spacing(3) }}>
+                <Box sx={{ textAlign: 'left' }}>
+                    {loading ? (
+                        <>
+                            <Skeleton variant="text" width="60%" height={60} />
+                            <Skeleton variant="text" width="40%" height={30} />
+                            <Skeleton variant="rectangular" height={400} />
+                        </>
+                    ) : (
+                        <>
+                            <Typography variant="h3" gutterBottom>{title}</Typography>
+                            <Typography variant="subtitle1" gutterBottom>Last updated: {lastUpdated}</Typography>
+                            <ReactMarkdown 
+                                components={{
+                                    h1: ({node, ...props}) => <Typography variant="h4" gutterBottom {...props} />,
+                                    h2: ({node, ...props}) => <Typography variant="h5" gutterBottom {...props} />,
+                                    h3: ({node, ...props}) => <Typography variant="h6" gutterBottom {...props} />,
+                                    p: ({node, ...props}) => <Typography variant="body1" component="p" sx={{marginBottom: theme.spacing(2)}} {...props} />,
+                                    a: ({node, ...props}) => (
+                                        <Link 
+                                            {...props} 
+                                            color="textPrimary" 
+                                            underline="none" 
+                                            sx={{ 
+                                                '&:hover': { 
+                                                    color: 'primary.main', 
+                                                    '& .MuiSvgIcon-root': { opacity: 1 } 
+                                                },
+                                                '& .MuiSvgIcon-root': { 
+                                                    marginLeft: 1, 
+                                                    opacity: 0, 
+                                                    transition: 'opacity 0.2s' 
+                                                }
+                                            }}
+                                        >
+                                            {props.children}
+                                            <LinkIcon fontSize="small" />
+                                        </Link>
+                                    )
+                                }}
+                                rehypePlugins={[
+                                    rehypeSlug,
+                                    [rehypeAutolinkHeadings, { behavior: 'wrap' }]
+                                ]}
+                            >
+                                {content}
+                            </ReactMarkdown>
+                        </>
+                    )}
+                </Box>
+            </Paper>
+        </Container>
     );
 }
 

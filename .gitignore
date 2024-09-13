@@ -5,6 +5,7 @@ dumps/
 secrets/
 .env.prod
 .env.dev
+cloudflare/
 
 node_modules/
 
