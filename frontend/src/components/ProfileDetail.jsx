@@ -1,10 +1,13 @@
 import {useCallback, useContext, useEffect, useRef, useState} from "react";
-import {Link, useNavigate, useParams} from "react-router-dom";
-import {Button, Card, Col, Container, InputGroup, Form, Row, Tab, Tabs} from "react-bootstrap";
+import {Link, useNavigate, useParams, useLocation} from "react-router-dom";
+import {Button, Card, Col, Container, InputGroup, Form, Row} from "react-bootstrap";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faCheckCircle, faPencilAlt, faSave, faTimes} from "@fortawesome/free-solid-svg-icons";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import Box from '@mui/material/Box';
 
 import UserContext from "./contexts/UserContext";
 import {REDIRECT_REASONS} from "./constants/Constants";
@@ -15,15 +18,43 @@ import { useDarkMode } from './contexts/DarkModeContext';
 import {handleProfileImageError} from '../utils/ImageUtils';
 import api from '../utils/api';
 
+function TabPanel(props) {
+    const { children, value, index, ...other } = props;
+
+    return (
+        <div
+            role="tabpanel"
+            hidden={value !== index}
+            id={`simple-tabpanel-${index}`}
+            aria-labelledby={`simple-tab-${index}`}
+            {...other}
+        >
+            {value === index && (
+                <Box sx={{ p: 3 }}>
+                    {children}
+                </Box>
+            )}
+        </div>
+    );
+}
+
+function a11yProps(index) {
+    return {
+        id: `simple-tab-${index}`,
+        'aria-controls': `simple-tabpanel-${index}`,
+    };
+}
+
 function ProfileDetail() {
     const authenticatedUser = useContext(UserContext);
     const { username } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const { modeClasses } = useDarkMode();
     const [bio, setBio] = useState('');
     const [loading, setLoading] = useState(true);
 
-    const [activeTab, setActiveTab] = useState("posts");
+    const [activeTab, setActiveTab] = useState(0);
     const [profile, setProfile] = useState({});
     const [isFollowing, setIsFollowing] = useState(false);
     const [followers, setFollowers] = useState([]);
@@ -143,7 +174,14 @@ function ProfileDetail() {
         // Fetch followers and following regardless of the active tab
         fetchFollowers(username);
         fetchFollowing(username);
-        }, [username, fetchFollowers, fetchFollowing]);
+    }, [username, fetchFollowers, fetchFollowing]);
+
+    useEffect(() => {
+        const hash = location.hash.replace('#', '');
+        if (hash === 'posts') setActiveTab(0);
+        else if (hash === 'followers') setActiveTab(1);
+        else if (hash === 'following') setActiveTab(2);
+    }, [location]);
 
     const handleFollowToggle = async () => {
         if (!authenticatedUser) {
@@ -163,6 +201,11 @@ function ProfileDetail() {
         }
     };
 
+    const handleChange = (event, newValue) => {
+        setActiveTab(newValue);
+        const tabNames = ['posts', 'followers', 'following'];
+        navigate(`#${tabNames[newValue]}`, { replace: true });
+    };
 
     const formatDate = (date) => {
         return new Date(date).toLocaleDateString("en-US", {
@@ -255,13 +298,13 @@ function ProfileDetail() {
                                     </InputGroup>
                                     ) : (
                                         <>
-                                        <spaprn>
+                                        <span>
                                             {loading ? (
                                                 <Skeleton width={200} />
                                             ) : (
                                                 bio || `Hello, my name is ${profile.username} 👋`
                                             )}
-                                        </spaprn>
+                                        </span>
                                         {(isOwner || username === "me") && (
                                             <FontAwesomeIcon
                                                 icon={faPencilAlt}
@@ -277,11 +320,24 @@ function ProfileDetail() {
                     </Container>
                 </Col>
                 <Col lg={8} md={6} sm={12}>
-                    <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)} className="custom-tabs">
-                        <Tab eventKey="posts" title="Posts">
+                    <Box sx={{ width: '100%' }}>
+                        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                            <Tabs
+                                value={activeTab}
+                                onChange={handleChange}
+                                variant="scrollable"
+                                scrollButtons="auto"
+                                aria-label="profile tabs"
+                            >
+                                <Tab label="Posts" {...a11yProps(0)} component={Link} to="#posts" />
+                                <Tab label="Followers" {...a11yProps(1)} component={Link} to="#followers" />
+                                <Tab label="Following" {...a11yProps(2)} component={Link} to="#following" />
+                            </Tabs>
+                        </Box>
+                        <TabPanel value={activeTab} index={0}>
                             <BlogPostsTab username={username} />
-                        </Tab>
-                        <Tab eventKey="followers" title="Followers">
+                        </TabPanel>
+                        <TabPanel value={activeTab} index={1}>
                             {followers ? followers.map((follow, index) => (
                                 <Card key={follow.follower || index}
                                       className={`my-4 ${modeClasses.bgClass} shadow`}>
@@ -299,8 +355,8 @@ function ProfileDetail() {
                                     </Card.Body>
                                 </Card>
                             )) : 'Loading...'}
-                        </Tab>
-                        <Tab eventKey="following" title="Following">
+                        </TabPanel>
+                        <TabPanel value={activeTab} index={2}>
                             {following ? following.map((follow, index) => (
                                 <Card key={follow.following || index}
                                       className={`my-4 ${modeClasses.bgClass} shadow`}>
@@ -318,8 +374,8 @@ function ProfileDetail() {
                                     </Card.Body>
                                 </Card>
                             )) : 'Loading...'}
-                        </Tab>
-                    </Tabs>
+                        </TabPanel>
+                    </Box>
                 </Col>
             </Row>
         </Container>
