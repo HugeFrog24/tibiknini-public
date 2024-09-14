@@ -20,6 +20,9 @@ function ProfileImage({
     const [showDropdown, setShowDropdown] = useState(false);
     const [hideDropdownTimeout, setHideDropdownTimeout] = useState(null);
 
+    // Calculate font size based on avatar dimensions
+    const fontSize = Math.min(Number(width), Number(height)) / 2;
+
     const handleDocumentClick = (e) => {
         if (!e.target.closest("#profile-image-dropdown")) {
             setShowDropdown(false);
@@ -84,7 +87,12 @@ function ProfileImage({
                     <Avatar
                         src={imageSrc}
                         alt={imageAlt}
-                        sx={{ width, height }}
+                        sx={{
+                            width: width,
+                            height: height,
+                            fontSize: `${fontSize}px`,
+                            fontWeight: 'bold'
+                        }}
                         className={`shadow ${isHovered ? "opacity-50" : ""}`}
                     >
                         {imageAlt.charAt(0).toUpperCase()}

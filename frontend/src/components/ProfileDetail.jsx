@@ -8,6 +8,7 @@ import "react-loading-skeleton/dist/skeleton.css";
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
+import Avatar from '@mui/material/Avatar';
 
 import UserContext from "./contexts/UserContext";
 import {REDIRECT_REASONS} from "./constants/Constants";
@@ -229,8 +230,8 @@ function ProfileDetail() {
                                         <ProfileImage
                                             imageSrc={profile.image}
                                             imageAlt={profile.username}
-                                            width="120"
-                                            height="120"
+                                            width={120}
+                                            height={120}
                                             showOptions={isOwner}
                                             onImageUpload={handleImageUpload}
                                             onImageDelete={handleImageDelete}
@@ -296,8 +297,8 @@ function ProfileDetail() {
                                             Bio cannot exceed 256 characters.
                                         </Form.Control.Feedback>
                                     </InputGroup>
-                                    ) : (
-                                        <>
+                                ) : (
+                                    <>
                                         <span>
                                             {loading ? (
                                                 <Skeleton width={200} />
@@ -312,9 +313,9 @@ function ProfileDetail() {
                                                 style={{cursor: 'pointer'}}
                                                 onClick={handleEditBio}
                                             />
-                                            )}
-                                        </>
                                         )}
+                                    </>
+                                )}
                             </Col>
                         </Row>
                     </Container>
@@ -344,11 +345,10 @@ function ProfileDetail() {
                                     <Card.Body className="d-flex align-items-center">
                                         <Link to={`/users/${follow.follower}`}
                                               className="text-start text-info text-decoration-none d-flex align-items-center">
-                                            <Card.Img
-                                                variant="top" src={follow.follower_image}
-                                                className="rounded-circle me-3"
-                                                style={{width: '50px', height: '50px'}}
-                                                onError={handleProfileImageError}
+                                            <Avatar
+                                                src={follow.follower_image}
+                                                alt={follow.follower}
+                                                sx={{ width: 50, height: 50, marginRight: 2 }}
                                             />
                                             <Card.Title className="mb-0">{follow.follower}</Card.Title>
                                         </Link>
@@ -363,11 +363,10 @@ function ProfileDetail() {
                                     <Card.Body className="d-flex align-items-center">
                                         <Link to={`/users/${follow.following}`}
                                               className="text-start text-info text-decoration-none d-flex align-items-center">
-                                            <Card.Img
-                                                variant="top" src={follow.following_image}
-                                                className="rounded-circle me-3"
-                                                style={{width: '50px', height: '50px'}}
-                                                onError={handleProfileImageError}
+                                            <Avatar
+                                                src={follow.following_image}
+                                                alt={follow.following}
+                                                sx={{ width: 50, height: 50, marginRight: 2 }}
                                             />
                                             <Card.Title className="mb-0">{follow.following}</Card.Title>
                                         </Link>
