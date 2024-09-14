@@ -1,11 +1,11 @@
 import React, {useCallback, useContext, useEffect, useState} from "react";
-import Button from "react-bootstrap/Button";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {faPlus} from '@fortawesome/free-solid-svg-icons'
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Pagination from "react-bootstrap/Pagination";
 import { Helmet } from 'react-helmet-async';
-import { Typography } from '@mui/material'; // Import Typography from Material UI
+import { Typography, Button } from '@mui/material'; // Import Typography and Button from Material UI
+import { Warning as WarningIcon } from '@mui/icons-material';
 
 import config from "../config.json";
 import BlogPostCard from "./BlogPostCard";
@@ -108,8 +108,8 @@ const BlogPostsList = ({postId}) => {
             <div className="d-flex align-items-center justify-content-between">
                 <Typography variant="h4" component="h1">Blog</Typography>
                 {user && (
-                    <Button variant="success" className="shadow" onClick={handleAddPostClick}>
-                        <FontAwesomeIcon icon={faPlus}/> Add post
+                    <Button variant="contained" color="success" className="shadow" onClick={handleAddPostClick} startIcon={<FontAwesomeIcon icon={faPlus}/>}>
+                        Add post
                     </Button>
                 )}
             </div>
@@ -122,11 +122,9 @@ const BlogPostsList = ({postId}) => {
                 </div>
             ) : hasError ? (
                 <div>
-                    <h2 role="img" aria-label="Warning">
-                        ⚠️
-                    </h2>
-                    <p>Error retrieving data</p>
-                    <Button variant="primary" className="shadow" onClick={handleRetryClick}>
+                    <WarningIcon color="warning" fontSize="large" />
+                    <Typography variant="body1">Error retrieving data</Typography>
+                    <Button variant="contained" color="primary" onClick={handleRetryClick}>
                         Retry
                     </Button>
                 </div>
