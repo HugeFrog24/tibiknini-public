@@ -4,7 +4,7 @@ from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
 from PIL import Image
 
-ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif'}
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif"}
 
 
 def validate_image_extension(ext):
@@ -20,9 +20,11 @@ def validate_image_file(image_path):
 
 
 username_validator = RegexValidator(
-    r'^[a-z0-9\.\-_]+$',
-    _('Enter a valid username. This value may contain only lowercase letters, '
-      'numbers, and ./-/_ characters.')
+    r"^[a-z0-9\.\-_]+$",
+    _(
+        "Enter a valid username. This value may contain only lowercase letters, "
+        "numbers, and ./-/_ characters."
+    ),
 )
 
 
@@ -32,7 +34,16 @@ def validate_image_file_size(image):
 
 
 def validate_reserved_username(value):
-    reserved_usernames = ["me", "none", "null", "undefined", "bot", "root", "support", "system"]
+    reserved_usernames = [
+        "me",
+        "none",
+        "null",
+        "undefined",
+        "bot",
+        "root",
+        "support",
+        "system",
+    ]
     if value.lower() in reserved_usernames:
         raise ValidationError("This username is reserved and cannot be used")
 

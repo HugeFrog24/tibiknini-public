@@ -2,7 +2,8 @@ import json
 from pathlib import Path
 
 from django.core.management.base import BaseCommand
-from core.models import SiteInfo, PrivacyPolicy, TermsOfService
+
+from core.models import PrivacyPolicy, SiteInfo, TermsOfService
 
 
 class Command(BaseCommand):
@@ -11,13 +12,16 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # Load the initial JSON data
         with open("core/fixtures/site_info.json") as json_file:
-            initial_data = json.load(json_file)[0]  # Access the first object in the array
+            initial_data = json.load(json_file)[
+                0
+            ]  # Access the first object in the array
             site_title = initial_data["fields"]["site_title"]
             site_description = initial_data["fields"]["site_description"]
 
         # Update SiteInfo
         SiteInfo.objects.update_or_create(
-            id=1, defaults={"site_title": site_title, "site_description": site_description}
+            id=1,
+            defaults={"site_title": site_title, "site_description": site_description},
         )
 
         # Update Privacy Policy and Terms of Service

@@ -9,7 +9,7 @@ User = get_user_model()
 
 @receiver(post_save, sender=User)
 def create_profile(sender, instance, created, **kwargs):
-    if created and not hasattr(instance, 'profile'):
+    if created and not hasattr(instance, "profile"):
         Profile.objects.create(user=instance)
 
 

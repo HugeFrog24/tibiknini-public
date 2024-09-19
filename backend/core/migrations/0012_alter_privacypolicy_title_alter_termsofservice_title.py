@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0011_rename_document_type_privacypolicy_title'),
+        ("core", "0011_rename_document_type_privacypolicy_title"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='privacypolicy',
-            name='title',
-            field=models.CharField(default='Privacy Policy', max_length=50),
+            model_name="privacypolicy",
+            name="title",
+            field=models.CharField(default="Privacy Policy", max_length=50),
         ),
         migrations.AlterField(
-            model_name='termsofservice',
-            name='title',
-            field=models.CharField(default='Terms of Service', max_length=50),
+            model_name="termsofservice",
+            name="title",
+            field=models.CharField(default="Terms of Service", max_length=50),
         ),
     ]

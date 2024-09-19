@@ -5,41 +5,78 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    replaces = [('core', '0001_initial'), ('core', '0002_siteinfo_tos_version'), ('core', '0003_alter_siteinfo_tos_version'), ('core', '0004_siteinfo_type'), ('core', '0005_rename_privacy_policy_siteinfo_content_and_more'), ('core', '0006_siteinfo_last_updated'), ('core', '0007_privacypolicy_termsofservice_remove_siteinfo_content_and_more'), ('core', '0008_alter_siteinfo_last_updated'), ('core', '0009_alter_siteinfo_last_updated'), ('core', '0010_privacypolicy_document_type_termsofservice_title')]
+    replaces = [
+        ("core", "0001_initial"),
+        ("core", "0002_siteinfo_tos_version"),
+        ("core", "0003_alter_siteinfo_tos_version"),
+        ("core", "0004_siteinfo_type"),
+        ("core", "0005_rename_privacy_policy_siteinfo_content_and_more"),
+        ("core", "0006_siteinfo_last_updated"),
+        ("core", "0007_privacypolicy_termsofservice_remove_siteinfo_content_and_more"),
+        ("core", "0008_alter_siteinfo_last_updated"),
+        ("core", "0009_alter_siteinfo_last_updated"),
+        ("core", "0010_privacypolicy_document_type_termsofservice_title"),
+    ]
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='SiteInfo',
+            name="SiteInfo",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('site_title', models.CharField(max_length=255)),
-                ('site_description', models.TextField()),
-                ('last_updated', models.DateTimeField(auto_now_add=True, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("site_title", models.CharField(max_length=255)),
+                ("site_description", models.TextField()),
+                ("last_updated", models.DateTimeField(auto_now_add=True, null=True)),
             ],
         ),
         migrations.CreateModel(
-            name='PrivacyPolicy',
+            name="PrivacyPolicy",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('content', models.TextField()),
-                ('version', models.IntegerField(default=1)),
-                ('last_updated', models.DateTimeField(auto_now=True)),
-                ('document_type', models.CharField(default='privacy_policy', max_length=50)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("content", models.TextField()),
+                ("version", models.IntegerField(default=1)),
+                ("last_updated", models.DateTimeField(auto_now=True)),
+                (
+                    "document_type",
+                    models.CharField(default="privacy_policy", max_length=50),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='TermsOfService',
+            name="TermsOfService",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('content', models.TextField()),
-                ('version', models.IntegerField(default=1)),
-                ('last_updated', models.DateTimeField(auto_now=True)),
-                ('title', models.CharField(default='terms_of_service', max_length=50)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("content", models.TextField()),
+                ("version", models.IntegerField(default=1)),
+                ("last_updated", models.DateTimeField(auto_now=True)),
+                ("title", models.CharField(default="terms_of_service", max_length=50)),
             ],
         ),
     ]

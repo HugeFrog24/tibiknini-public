@@ -10,18 +10,27 @@ import blog.utils
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('blog', '0002_blogpost_accent_color'),
+        ("blog", "0002_blogpost_accent_color"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='comment',
-            old_name='user',
-            new_name='author',
+            model_name="comment",
+            old_name="user",
+            new_name="author",
         ),
         migrations.AlterField(
-            model_name='blogpost',
-            name='accent_color',
-            field=blog.fields.HexColorField(default=blog.utils.get_random_accent_color, max_length=7, validators=[django.core.validators.RegexValidator(message="Please provide a valid HEX color code. HEX color codes consist of a hash sign (#) followed by 3 or 6 hexadecimal digits (0-9, A-F). Examples: '#FF5733' or '#F53'.", regex='^#(?:[0-9a-fA-F]{3}){1,2}$')]),
+            model_name="blogpost",
+            name="accent_color",
+            field=blog.fields.HexColorField(
+                default=blog.utils.get_random_accent_color,
+                max_length=7,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        message="Please provide a valid HEX color code. HEX color codes consist of a hash sign (#) followed by 3 or 6 hexadecimal digits (0-9, A-F). Examples: '#FF5733' or '#F53'.",
+                        regex="^#(?:[0-9a-fA-F]{3}){1,2}$",
+                    )
+                ],
+            ),
         ),
     ]

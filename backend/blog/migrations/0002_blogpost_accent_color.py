@@ -8,13 +8,15 @@ import blog.utils
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('blog', '0001_initial'),
+        ("blog", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='blogpost',
-            name='accent_color',
-            field=models.CharField(default=blog.utils.get_random_accent_color, max_length=7),
+            model_name="blogpost",
+            name="accent_color",
+            field=models.CharField(
+                default=blog.utils.get_random_accent_color, max_length=7
+            ),
         ),
     ]

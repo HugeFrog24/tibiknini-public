@@ -1,7 +1,11 @@
 from rest_framework import generics
 
-from .models import SiteInfo, PrivacyPolicy, TermsOfService
-from .serializers import SiteInfoSerializer, PrivacyPolicySerializer, TermsOfServiceSerializer
+from .models import PrivacyPolicy, SiteInfo, TermsOfService
+from .serializers import (
+    PrivacyPolicySerializer,
+    SiteInfoSerializer,
+    TermsOfServiceSerializer,
+)
 
 
 class SiteInfoView(generics.RetrieveAPIView):

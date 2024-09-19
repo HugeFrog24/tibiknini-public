@@ -10,13 +10,13 @@ User = get_user_model()
 
 class ProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(
-        source='profile.user.username'
+        source="profile.user.username"
     )  # Access the username field of the related User model through the 'profile' related name
     email = serializers.SerializerMethodField()
     image = serializers.ImageField(source="profile.image")
-    date_joined = serializers.CharField(source='profile.user.date_joined')
+    date_joined = serializers.CharField(source="profile.user.date_joined")
     is_anonymous = serializers.BooleanField()
-    is_staff = serializers.BooleanField(source='profile.user.is_staff')
+    is_staff = serializers.BooleanField(source="profile.user.is_staff")
     is_authenticated = serializers.BooleanField()
     followers = serializers.SerializerMethodField()
     following = serializers.SerializerMethodField()
@@ -26,21 +26,32 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = [
-            'id', 'username', 'date_joined', 'image', 'is_anonymous', 'email',
-            'is_authenticated', 'is_staff', 'followers', 'following',
-            'first_name', 'last_name'
+            "id",
+            "username",
+            "date_joined",
+            "image",
+            "is_anonymous",
+            "email",
+            "is_authenticated",
+            "is_staff",
+            "followers",
+            "following",
+            "first_name",
+            "last_name",
         ]
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
         if not instance.profile.image:
-            request = self.context.get('request')
-            ret['image'] = request.build_absolute_uri(f'{settings.MEDIA_URL}profile_pics/default.png')
+            request = self.context.get("request")
+            ret["image"] = request.build_absolute_uri(
+                f"{settings.MEDIA_URL}profile_pics/default.png"
+            )
         return ret
 
     def get_email(self, obj):
         # Check if the request user has administrative permissions
-        user = self.context.get('request').user
+        user = self.context.get("request").user
         if user.is_staff:
             return obj.profile.user.email
         return None
@@ -52,13 +63,13 @@ class ProfileSerializer(serializers.ModelSerializer):
         return FollowSerializer(obj.following.all(), many=True).data
 
     def get_first_name(self, obj):
-        user = self.context.get('request').user
+        user = self.context.get("request").user
         if user == obj.profile.user:
             return obj.profile.user.first_name
         return None
 
     def get_last_name(self, obj):
-        user = self.context.get('request').user
+        user = self.context.get("request").user
         if user == obj.profile.user:
             return obj.profile.user.last_name
         return None
@@ -84,44 +95,57 @@ class FollowSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Follow
-        fields = ['follower', 'following', 'created_at', 'follower_image', 'following_image']
+        fields = [
+            "follower",
+            "following",
+            "created_at",
+            "follower_image",
+            "following_image",
+        ]
 
     def get_follower_image(self, obj):
-        if hasattr(obj.follower, 'profile') and obj.follower.profile.image:
+        if hasattr(obj.follower, "profile") and obj.follower.profile.image:
             return obj.follower.profile.image.url
         return None
 
     def get_following_image(self, obj):
-        if hasattr(obj.following, 'profile') and obj.following.profile.image:
+        if hasattr(obj.following, "profile") and obj.following.profile.image:
             return obj.following.profile.image.url
         return None
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    password2 = serializers.CharField(style={'input_type': 'password'}, write_only=True)
+    password2 = serializers.CharField(style={"input_type": "password"}, write_only=True)
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name', 'password', 'password2']
+        fields = [
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "password",
+            "password2",
+        ]
         extra_kwargs = {
-            'first_name': {'required': True},
-            'last_name': {'required': True},
-            'password': {'write_only': True},
+            "first_name": {"required": True},
+            "last_name": {"required": True},
+            "password": {"write_only": True},
         }
 
     def validate(self, attrs):
-        if attrs['password'] != attrs['password2']:
-            raise serializers.ValidationError({'password': 'Passwords must match.'})
-        validate_password(attrs['password'])  # Use Django's password validation
+        if attrs["password"] != attrs["password2"]:
+            raise serializers.ValidationError({"password": "Passwords must match."})
+        validate_password(attrs["password"])  # Use Django's password validation
         return attrs
 
     def create(self, validated_data):
         user = User(
-            email=validated_data['email'],
-            username=validated_data['username'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name']
+            email=validated_data["email"],
+            username=validated_data["username"],
+            first_name=validated_data["first_name"],
+            last_name=validated_data["last_name"],
         )
-        user.set_password(validated_data['password'])
+        user.set_password(validated_data["password"])
         user.save()
         return user

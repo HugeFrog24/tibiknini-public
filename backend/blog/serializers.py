@@ -22,14 +22,12 @@ class BlogPostAuthorSerializer(serializers.ModelSerializer):
 
 
 class LikeSerializer(serializers.ModelSerializer):
-    user = serializers.HiddenField(
-        default=serializers.CurrentUserDefault()
-    )
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
         model = Like
-        fields = ('user', 'created')
-        read_only_fields = ('created',)
+        fields = ("user", "created")
+        read_only_fields = ("created",)
 
 
 class BlogPostSerializer(serializers.ModelSerializer):

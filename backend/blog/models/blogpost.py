@@ -10,7 +10,7 @@ User = get_user_model()
 
 class Tag(models.Model):
     name = models.CharField(max_length=50, unique=True, validators=[tag_name_validator])
-    color = HexColorField(default='#000000')
+    color = HexColorField(default="#000000")
 
     def __str__(self):
         return self.name
@@ -26,7 +26,7 @@ class BlogPost(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField()
     pub_date = models.DateTimeField(auto_now_add=True)
-    image = models.ImageField(upload_to='blog_images/', blank=True)
+    image = models.ImageField(upload_to="blog_images/", blank=True)
     is_draft = models.BooleanField(default=True)
     hidden = models.BooleanField(default=False)
     tags = models.ManyToManyField(Tag, blank=True)

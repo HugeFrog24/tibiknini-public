@@ -5,7 +5,7 @@ from blog.utils import get_random_accent_color
 
 
 class Command(BaseCommand):
-    help = 'Assigns a random hex color to each existing blog post'
+    help = "Assigns a random hex color to each existing blog post"
 
     def handle(self, *args, **kwargs):
         # Loop over each blog post
@@ -14,4 +14,6 @@ class Command(BaseCommand):
             post.accent_color = get_random_accent_color()
             post.save()
 
-        self.stdout.write(self.style.SUCCESS('Successfully updated accent colors for all blog posts!'))
+        self.stdout.write(
+            self.style.SUCCESS("Successfully updated accent colors for all blog posts!")
+        )

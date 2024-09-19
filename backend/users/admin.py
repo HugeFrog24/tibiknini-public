@@ -10,15 +10,15 @@ from .validators import validate_unique_username
 class CustomUserChangeForm(UserChangeForm):
     class Meta(UserChangeForm.Meta):
         model = CustomUser
-        fields = '__all__'
+        fields = "__all__"
 
     def clean_username(self):
-        username = self.cleaned_data['username']
+        username = self.cleaned_data["username"]
 
         try:
             validate_unique_username(username, user_instance=self.instance)
         except ValidationError as e:
-            self.add_error('username', e)
+            self.add_error("username", e)
 
         return username
 
@@ -30,9 +30,9 @@ class CustomUserChangeForm(UserChangeForm):
 @admin.register(CustomUser)
 class CustomUserAdmin(BaseUserAdmin):
     form = CustomUserChangeForm
-    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff')
-    search_fields = ('username', 'email', 'first_name', 'last_name')
-    ordering = ('username',)
+    list_display = ("username", "email", "first_name", "last_name", "is_staff")
+    search_fields = ("username", "email", "first_name", "last_name")
+    ordering = ("username",)
 
 
 @admin.register(Profile)

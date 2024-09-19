@@ -4,7 +4,9 @@ from django.db import models
 class SiteInfo(models.Model):
     site_title = models.CharField(max_length=255)
     site_description = models.TextField()
-    last_updated = models.DateTimeField(auto_now_add=True, null=True)  # Allow null values
+    last_updated = models.DateTimeField(
+        auto_now_add=True, null=True
+    )  # Allow null values
 
     def __str__(self):
         return self.site_title

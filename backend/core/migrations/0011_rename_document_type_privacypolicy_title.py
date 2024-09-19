@@ -6,13 +6,13 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0010_privacypolicy_document_type_termsofservice_title'),
+        ("core", "0010_privacypolicy_document_type_termsofservice_title"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='privacypolicy',
-            old_name='document_type',
-            new_name='title',
+            model_name="privacypolicy",
+            old_name="document_type",
+            new_name="title",
         ),
     ]

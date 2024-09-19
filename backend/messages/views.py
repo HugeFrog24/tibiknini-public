@@ -11,7 +11,9 @@ class ContactMessageView(APIView):
 
     def post(self, request, format=None):
         data = request.data.copy()  # Make a mutable copy of the data
-        data['ip_address'] = request.META.get('REMOTE_ADDR')  # Get the client IP address
+        data["ip_address"] = request.META.get(
+            "REMOTE_ADDR"
+        )  # Get the client IP address
         serializer = ContactMessageSerializer(data=data)
         if serializer.is_valid():
             serializer.save()

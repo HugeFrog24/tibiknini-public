@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('users', '0001_initial_squashed_0008_alter_customuser_username'),
+        ("users", "0001_initial_squashed_0008_alter_customuser_username"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='customuser',
-            name='password_changed_date',
+            model_name="customuser",
+            name="password_changed_date",
             field=models.DateTimeField(auto_now_add=True),
         ),
     ]

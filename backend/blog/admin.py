@@ -15,14 +15,14 @@ class LikeAdmin(admin.ModelAdmin):
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
-    list_display = ('name', 'color')
-    search_fields = ('name',)
+    list_display = ("name", "color")
+    search_fields = ("name",)
 
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
-    list_display = ('blog_post', 'author', 'content', 'pub_date')
-    search_fields = ('content',)
-    list_filter = ('blog_post', 'author', 'pub_date')
-    date_hierarchy = 'pub_date'
-    ordering = ('-pub_date',)
+    list_display = ("blog_post", "author", "content", "pub_date")
+    search_fields = ("content",)
+    list_filter = ("blog_post", "author", "pub_date")
+    date_hierarchy = "pub_date"
+    ordering = ("-pub_date",)

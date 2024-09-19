@@ -8,25 +8,30 @@ from django.utils.translation import gettext_lazy as _
 
 from .managers import CustomUserManager
 from .utils import process_profile_image, rename_profile_picture
-from .validators import (username_validator, validate_image_file_size,
-                         validate_reserved_username)
+from .validators import (
+    username_validator,
+    validate_image_file_size,
+    validate_reserved_username,
+)
 
 
 class CustomUser(AbstractUser):
-    REQUIRED_FIELDS = ['email']
+    REQUIRED_FIELDS = ["email"]
 
     username = models.CharField(
-        _('username'),
+        _("username"),
         max_length=30,
         unique=True,
-        help_text=_('Required. 30 characters or fewer. Lowercase letters, digits and ./-/_ only.'),
+        help_text=_(
+            "Required. 30 characters or fewer. Lowercase letters, digits and ./-/_ only."
+        ),
         validators=[username_validator, validate_reserved_username],
         error_messages={
-            'unique': _("A user with that username already exists."),
+            "unique": _("A user with that username already exists."),
         },
     )
 
-    email = models.EmailField(_('email address'), unique=True, blank=False, null=False)
+    email = models.EmailField(_("email address"), unique=True, blank=False, null=False)
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     agreed_tos_version = models.IntegerField(default=0)
     password_change_required = models.BooleanField(default=False)
@@ -43,16 +48,19 @@ class CustomUser(AbstractUser):
 
 
 class Profile(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile"
+    )
     image = models.ImageField(
         upload_to=rename_profile_picture,
-        null=True, blank=True,
-        validators=[validate_image_file_size]
+        null=True,
+        blank=True,
+        validators=[validate_image_file_size],
     )
     bio = models.CharField(max_length=256, blank=True)
 
     def __str__(self):
-        return f'{self.user.username} Profile'
+        return f"{self.user.username} Profile"
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -72,12 +80,16 @@ class Profile(models.Model):
 
 
 class Follow(models.Model):
-    follower = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='following')
-    following = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='followers')
+    follower = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="following"
+    )
+    following = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="followers"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('follower', 'following')
+        unique_together = ("follower", "following")
 
     def __str__(self):
-        return f'{self.follower} follows {self.following}'
+        return f"{self.follower} follows {self.following}"

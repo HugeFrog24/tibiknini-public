@@ -11,46 +11,53 @@ from api.permissions import IsAuthorOrAdmin
 from api.utils.recaptcha import verify_recaptcha
 
 from .models import CustomUser, Follow
-from .serializers import (FollowSerializer, ProfileBioSerializer,
-                          ProfileImageSerializer, ProfileSerializer,
-                          UserRegistrationSerializer)
+from .serializers import (
+    FollowSerializer,
+    ProfileBioSerializer,
+    ProfileImageSerializer,
+    ProfileSerializer,
+    UserRegistrationSerializer,
+)
 from .utils import process_profile_image
-from .validators import (username_validator, validate_reserved_username,
-                         validate_unique_username)
+from .validators import (
+    username_validator,
+    validate_reserved_username,
+    validate_unique_username,
+)
 
 User = get_user_model()
 
 
 class ProfileListView(generics.ListAPIView):
-    queryset = CustomUser.objects.select_related('profile').all()
+    queryset = CustomUser.objects.select_related("profile").all()
     serializer_class = ProfileSerializer
 
 
 class ProfileDetailView(generics.RetrieveAPIView):
-    queryset = CustomUser.objects.select_related('profile').all()
+    queryset = CustomUser.objects.select_related("profile").all()
     serializer_class = ProfileSerializer
-    lookup_field = 'username'
+    lookup_field = "username"
 
 
 class CheckUsernameView(APIView):
     def get(self, request, username, format=None):
-        data = {'username': username}
+        data = {"username": username}
         try:
             validate_unique_username(username)
             username_validator(username)
             validate_reserved_username(username)
-            data['status'] = 'ok'
+            data["status"] = "ok"
             return JsonResponse(data, status=status.HTTP_200_OK)
         except ValidationError as e:
-            if 'already taken' in str(e):
-                data['status'] = 'taken'
+            if "already taken" in str(e):
+                data["status"] = "taken"
                 return JsonResponse(data, status=status.HTTP_409_CONFLICT)
-            elif 'reserved' in str(e):
-                data['status'] = 'reserved'
+            elif "reserved" in str(e):
+                data["status"] = "reserved"
                 return JsonResponse(data, status=status.HTTP_403_FORBIDDEN)
             else:
-                data['status'] = 'error'
-                data['message'] = str(e)
+                data["status"] = "error"
+                data["message"] = str(e)
                 return JsonResponse(data, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -66,9 +73,10 @@ class UserBioRetrieveUpdateView(generics.RetrieveUpdateAPIView):
     """
     Retrieve or update the bio of the specified user.
     """
-    queryset = CustomUser.objects.select_related('profile').all()
+
+    queryset = CustomUser.objects.select_related("profile").all()
     serializer_class = ProfileBioSerializer
-    lookup_field = 'username'
+    lookup_field = "username"
 
     def get_object(self):
         if self.kwargs[self.lookup_field] == "me":
@@ -112,8 +120,8 @@ class FollowView(APIView):
     def get_object(self, follower_username, following_username):
         queryset = Follow.objects.all()
         filter_kwargs = {
-            'follower__username': follower_username,
-            'following__username': following_username,
+            "follower__username": follower_username,
+            "following__username": following_username,
         }
         try:
             obj = queryset.get(**filter_kwargs)
@@ -132,13 +140,18 @@ class FollowView(APIView):
     def post(self, request, follower_username, following_username, format=None):
         follower = generics.get_object_or_404(CustomUser, username=follower_username)
         followee = generics.get_object_or_404(CustomUser, username=following_username)
-        follow, created = Follow.objects.get_or_create(follower=follower, following=followee)
+        follow, created = Follow.objects.get_or_create(
+            follower=follower, following=followee
+        )
 
         if created:
             serializer = FollowSerializer(follow)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            return Response({"detail": "Follow relationship already exists."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Follow relationship already exists."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
     def delete(self, request, follower_username, following_username, format=None):
         follow = self.get_object(follower_username, following_username)
@@ -171,7 +184,7 @@ class UserRegistrationView(generics.CreateAPIView):
     serializer_class = UserRegistrationSerializer
 
     def create(self, request, *args, **kwargs):
-        recaptcha_token = request.data.get('recaptcha')
+        recaptcha_token = request.data.get("recaptcha")
         is_valid, response = verify_recaptcha(recaptcha_token)
 
         if not is_valid:

@@ -9,18 +9,33 @@ import users.validators
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('users', '0012_alter_profile_image'),
+        ("users", "0012_alter_profile_image"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='customuser',
-            name='email',
-            field=models.EmailField(max_length=254, unique=True, verbose_name='email address'),
+            model_name="customuser",
+            name="email",
+            field=models.EmailField(
+                max_length=254, unique=True, verbose_name="email address"
+            ),
         ),
         migrations.AlterField(
-            model_name='customuser',
-            name='username',
-            field=models.CharField(error_messages={'unique': 'A user with that username already exists.'}, help_text='Required. 30 characters or fewer. Lowercase letters, digits and ./-/_ only.', max_length=30, unique=True, validators=[django.core.validators.RegexValidator('^[a-z0-9\\.\\-_]+$', 'Enter a valid username. This value may contain only lowercase letters, numbers, and ./-/_ characters.'), users.validators.validate_reserved_username], verbose_name='username'),
+            model_name="customuser",
+            name="username",
+            field=models.CharField(
+                error_messages={"unique": "A user with that username already exists."},
+                help_text="Required. 30 characters or fewer. Lowercase letters, digits and ./-/_ only.",
+                max_length=30,
+                unique=True,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        "^[a-z0-9\\.\\-_]+$",
+                        "Enter a valid username. This value may contain only lowercase letters, numbers, and ./-/_ characters.",
+                    ),
+                    users.validators.validate_reserved_username,
+                ],
+                verbose_name="username",
+            ),
         ),
     ]

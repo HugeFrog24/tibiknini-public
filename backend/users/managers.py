@@ -1,8 +1,8 @@
 from django.apps import apps
 from django.contrib.auth.base_user import BaseUserManager
+from django.contrib.auth.models import BaseUserManager
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
-from django.contrib.auth.models import BaseUserManager
 
 
 class CustomUserManager(BaseUserManager):
@@ -10,6 +10,7 @@ class CustomUserManager(BaseUserManager):
     Custom user model manager where email is the unique identifiers
     for authentication instead of usernames.
     """
+
     @transaction.atomic
     def create_user(self, username, email, password, **extra_fields):
         """

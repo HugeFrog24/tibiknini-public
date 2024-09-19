@@ -1,8 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, mixins, status, viewsets
-from rest_framework.permissions import (IsAuthenticated,
-                                        IsAuthenticatedOrReadOnly)
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 
 from api.permissions import IsAuthorOrAdmin, IsNotHidden
@@ -59,7 +58,10 @@ class BlogPostLikeView(
     def post(self, request, *args, **kwargs):
         # Check if the like already exists
         if self.get_queryset().filter(user=request.user).exists():
-            return Response({"detail": "You have already liked this post"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "You have already liked this post"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         else:
             # Proceed to create the like using the perform_create method logic
             return self.create(request, *args, **kwargs)
@@ -75,7 +77,9 @@ class BlogPostLikeView(
             return Response(status=status.HTTP_204_NO_CONTENT)
         else:
             # If no like instance is found, return a 404 response
-            return Response({"detail": "Like not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": "Like not found"}, status=status.HTTP_404_NOT_FOUND
+            )
 
 
 class BlogPostsByUserView(generics.ListAPIView):
@@ -101,7 +105,7 @@ class BlogPostsByUserView(generics.ListAPIView):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
-    queryset = Comment.objects.all().order_by('-pub_date')
+    queryset = Comment.objects.all().order_by("-pub_date")
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, (IsNotHidden | IsAuthorOrAdmin)]
     lookup_field = "pk"

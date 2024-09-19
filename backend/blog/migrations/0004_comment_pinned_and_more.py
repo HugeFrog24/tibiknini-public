@@ -6,17 +6,21 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('blog', '0003_rename_user_comment_author_and_more'),
+        ("blog", "0003_rename_user_comment_author_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='comment',
-            name='pinned',
+            model_name="comment",
+            name="pinned",
             field=models.BooleanField(default=False),
         ),
         migrations.AddConstraint(
-            model_name='comment',
-            constraint=models.UniqueConstraint(condition=models.Q(('pinned', True)), fields=('blog_post', 'pinned'), name='unique_pinned_comment_per_post'),
+            model_name="comment",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("pinned", True)),
+                fields=("blog_post", "pinned"),
+                name="unique_pinned_comment_per_post",
+            ),
         ),
     ]
