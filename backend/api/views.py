@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 from pathlib import Path
@@ -15,7 +14,6 @@ from dotenv import load_dotenv
 from rest_framework import generics, status
 from rest_framework.views import APIView
 
-from backend.database_router import DynamicDatabaseRouter
 from core.models import SiteInfo
 from navbar.models import NavbarItem
 
@@ -99,6 +97,7 @@ def get_setup_status():
 
 
 class SetupView(APIView):
+    @transaction.non_atomic_requests
     def post(self, request, *args, **kwargs):
         db_host = request.data.get("db_host")
         db_port = request.data.get("db_port")
