@@ -39,11 +39,18 @@ function Login({onLogin}) {
     };
 
     const handleRecaptcha = (token) => {
-        handleLogin(username, password, token, onLogin, navigate, setIsLoading);
+        handleLogin(
+            username, 
+            password, 
+            token, 
+            onLogin, 
+            (to) => navigate(to, { state: location.state }), 
+            setIsLoading
+        );
     };
 
     useEffect(() => {
-        if (location.state && location.state.reason) {
+        if (location.state?.reason) {
             const reason = location.state.reason;
             if (reason && REDIRECT_REASONS[reason]) {
                 const { message, type } = REDIRECT_REASONS[reason];

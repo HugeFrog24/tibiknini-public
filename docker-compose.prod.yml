@@ -1,10 +1,14 @@
 services:
   django:
+    image: ghcr.io/${OWNER_LC}/tibiknini:latest
     environment:
       DEBUG: "False"
       DOMAIN_NAME: boger.dev
       MEDIA_PATH: /var/www/media
+    restart: always
+
   nginx:
+    image: ghcr.io/${OWNER_LC}/nginx:latest
     volumes:
-      # Change the host path (left side) to point to your desired storage pool for media files
       - /var/www/media:/var/www/media
+    restart: always

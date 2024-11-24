@@ -21,6 +21,11 @@ class DynamicDatabaseRouter:
             "HOST": os.getenv("POSTGRES_HOST"),
             "PORT": os.getenv("POSTGRES_PORT"),
             "ATOMIC_REQUESTS": True,
+            "TIME_ZONE": "UTC",
+            "CONN_HEALTH_CHECKS": True,
+            "CONN_MAX_AGE": None,
+            "OPTIONS": {},
+            "AUTOCOMMIT": True,
         }
 
     def db_for_read(self, model, **hints):

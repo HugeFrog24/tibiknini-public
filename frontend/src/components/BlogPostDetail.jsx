@@ -27,12 +27,12 @@ import api from "../utils/api";
 const BlogPostDetail = ({previousPath}) => {
     const {postId} = useParams();
     const {fetchBlogPost, deleteBlogPost} = UseBlogPost();
+    const navigate = useNavigate();
+    const { user, isAuthenticated } = useContext(UserContext);
     const [postState, setPostState] = useState(null);
     const [likesCount, setLikesCount] = useState(0);
     const [isLiked, setIsLiked] = useState(false);
     const [isLikeButtonHovered, setIsLikeButtonHovered] = useState(false);
-    const navigate = useNavigate();
-    const user = useContext(UserContext);
 
     const handleShare = () => {
         const url = window.location.href;
@@ -79,7 +79,7 @@ const BlogPostDetail = ({previousPath}) => {
     }, [postId, fetchBlogPost, navigate]);
 
     const handleLike = async () => {
-        if (!user) {
+        if (!isAuthenticated) {
             navigate("/login", { state: { reason: REDIRECT_REASONS.LIKE_POST } });
             return;
         }
@@ -150,8 +150,7 @@ const BlogPostDetail = ({previousPath}) => {
             <ToastContainer autoClose={3000}/>
             {postState ? (
                 <Box id={`post-${postState.id}`}>
-                    {user &&
-                        user.is_authenticated &&
+                    {isAuthenticated &&
                         (user.is_staff || user.id === postState.author.id) && (
                             <Box display="flex" justifyContent="flex-end" mb={3}>
                                 <Button

@@ -1,24 +1,30 @@
-# start from an official Python image
-FROM python:3
-
-# arbitrary location choice: you can change the directory
+# Base stage for shared dependencies
+FROM python:3.11-slim AS base
 WORKDIR /usr/src/app
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH=/root/.local/bin:$PATH
 
-# install our dependencies
-# we use --system flag because we don't need an extra virtualenv
-COPY requirements.txt .
-RUN pip install -r /usr/src/app/requirements.txt
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# copy our project code
-COPY . /usr/src/app/
+# Builder stage
+FROM base AS builder
+COPY backend/requirements.txt .
+RUN pip install --user -r requirements.txt
 
-# Collect static files during build time
-# This ensures that static files are available when the container starts,
-# and prevents issues with empty volumes when the container is first run
+# Development stage
+FROM base AS development
+COPY --from=builder /root/.local /root/.local
+COPY . .
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+
+# Production stage
+FROM base AS production
+COPY --from=builder /root/.local /root/.local
+COPY . .
 RUN python manage.py collectstatic --noinput
-
-# expose the port 8000
-EXPOSE 8000
-
-# define the default command to run when starting a container
-CMD ["sh", "-c", "python3 manage.py makemigrations --merge && python3 manage.py migrate && python3 manage.py collectstatic --no-input && gunicorn tibiknini.wsgi:application --workers 3 --bind 0.0.0.0:8000"]
+CMD ["gunicorn", "tibiknini.wsgi:application", "--workers", "3", "--bind", "0.0.0.0:8000"]

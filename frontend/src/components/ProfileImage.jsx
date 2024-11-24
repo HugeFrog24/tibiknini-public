@@ -140,7 +140,7 @@ function ProfileImage({
                     ref={fileInputRef}
                     onChange={handleFileInputChange}
                     accept="image/*"
-                    style={{display: "none"}} // Add this line to hide the input element
+                    style={{display: "none"}}
                 />
                 </>
                 )}

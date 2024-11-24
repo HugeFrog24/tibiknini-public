@@ -1,0 +1,8 @@
+Hi {{ username }},
+
+Welcome to {{ site_title }}! We're excited to have you join our community.
+
+Your account has been successfully created. You can now log in and start exploring our platform.
+
+Best regards,  
+The {{ site_title }} Team

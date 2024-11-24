@@ -47,7 +47,7 @@ function a11yProps(index) {
 }
 
 function ProfileDetail() {
-    const authenticatedUser = useContext(UserContext);
+    const { user: authenticatedUser, isAuthenticated } = useContext(UserContext);
     const { username } = useParams();
     const navigate = useNavigate();
     const location = useLocation();

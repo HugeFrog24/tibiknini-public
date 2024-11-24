@@ -1,64 +1,229 @@
-import React, {useEffect, useState} from "react";
-import {Spinner} from "react-bootstrap";
+import React, { useEffect, useState, useContext } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCommentAlt } from "@fortawesome/free-solid-svg-icons";
-import api from '../utils/api';  // Import the api instance
+import { faCommentAlt, faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
+import {
+  Box,
+  TextField,
+  Button,
+  Typography,
+  Card,
+  CardContent,
+  Avatar,
+  IconButton,
+  Stack,
+  Paper,
+  CircularProgress,
+  Alert,
+  Link
+} from '@mui/material';
+import UserContext from "./contexts/UserContext";
+import api from '../utils/api';
+import { showToast } from '../utils/toastUtils';
 
 const BlogPostComments = ({ postId }) => {
     const [comments, setComments] = useState([]);
     const [loadingComments, setLoadingComments] = useState(false);
+    const [newComment, setNewComment] = useState("");
+    const [submitting, setSubmitting] = useState(false);
+    const [editingCommentId, setEditingCommentId] = useState(null);
+    const [editContent, setEditContent] = useState("");
+    const { user, isAuthenticated } = useContext(UserContext);
 
     useEffect(() => {
-        const fetchComments = async () => {
-            setLoadingComments(true);
-            try {
-                // Use the api instance for the GET request
-                const response = await api.get(`/blog/posts/id/${postId}/comments/`);
-
-                if (response.status === 200) {
-                    setComments(response.data.results);  // Extract results from the response
-                } else {
-                    console.error("Failed to fetch comments:", response.statusText);
-                }
-            } catch (error) {
-                console.error("Failed to fetch comments:", error);
-            } finally {
-                setLoadingComments(false);
-            }
-        };
-
-        if (postId) {
-            fetchComments();
-        }
+        fetchComments();
     }, [postId]);
 
+    const fetchComments = async () => {
+        setLoadingComments(true);
+        try {
+            const response = await api.get(`/blog/posts/id/${postId}/comments/`);
+            if (response.status === 200) {
+                setComments(response.data.results);
+            }
+        } catch (error) {
+            showToast('error', 'Failed to load comments');
+        } finally {
+            setLoadingComments(false);
+        }
+    };
+
+    const handleSubmitComment = async (e) => {
+        e.preventDefault();
+        if (!newComment.trim()) return;
+
+        setSubmitting(true);
+        try {
+            const response = await api.post(`/blog/posts/id/${postId}/comments/`, {
+                content: newComment.trim()
+            });
+            if (response.status === 201) {
+                setComments([response.data, ...comments]);
+                setNewComment("");
+                showToast('success', 'Comment posted successfully');
+            }
+        } catch (error) {
+            showToast('error', 'Failed to post comment');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleEditComment = async (commentId) => {
+        if (!editContent.trim()) return;
+
+        try {
+            const response = await api.patch(`/blog/posts/id/${postId}/comments/${commentId}/`, {
+                content: editContent.trim()
+            });
+            if (response.status === 200) {
+                setComments(comments.map(comment => 
+                    comment.id === commentId ? response.data : comment
+                ));
+                setEditingCommentId(null);
+                showToast('success', 'Comment updated successfully');
+            }
+        } catch (error) {
+            showToast('error', 'Failed to update comment');
+        }
+    };
+
+    const handleDeleteComment = async (commentId) => {
+        try {
+            await api.delete(`/blog/posts/id/${postId}/comments/${commentId}/`);
+            setComments(comments.filter(comment => comment.id !== commentId));
+            showToast('success', 'Comment deleted successfully');
+        } catch (error) {
+            showToast('error', 'Failed to delete comment');
+        }
+    };
+
+    const startEditing = (comment) => {
+        setEditingCommentId(comment.id);
+        setEditContent(comment.content);
+    };
+
     return (
-        <>
-            <h3 className="mt-4">Comments</h3>
-            <hr/>
-            {loadingComments ? (
-                <div className="d-flex justify-content-center">
-                    <Spinner animation="border" role="status">
-                        <span className="visually-hidden">Loading comments...</span>
-                    </Spinner>
-                </div>
-            ) : (
-                comments.length > 0 ? (
-                    comments.map(comment => (
-                        <div key={comment.id} className="mb-3">
-                            <strong>{comment.author.username}</strong>
-                            <p>{comment.content}</p>
-                        </div>
-                    ))
-                ) : (
-                    <div className="text-center">
-                        <FontAwesomeIcon icon={faCommentAlt} size="3x" className="mb-3" />
-                        <p>No comments yet. Be the first to share your thoughts!</p>
-                    </div>
-                )
+        <Box sx={{ mt: 4 }}>
+            <Typography variant="h5" gutterBottom>
+                <FontAwesomeIcon icon={faCommentAlt} /> Comments
+            </Typography>
+
+            {isAuthenticated && (
+                <Paper sx={{ p: 2, mb: 3 }}>
+                    <form onSubmit={handleSubmitComment}>
+                        <TextField
+                            fullWidth
+                            multiline
+                            rows={3}
+                            variant="outlined"
+                            placeholder="Write a comment..."
+                            value={newComment}
+                            onChange={(e) => setNewComment(e.target.value)}
+                            disabled={submitting}
+                        />
+                        <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-end' }}>
+                            <Button
+                                variant="contained"
+                                type="submit"
+                                disabled={submitting || !newComment.trim()}
+                                startIcon={submitting ? <CircularProgress size={20} /> : null}
+                            >
+                                Post Comment
+                            </Button>
+                        </Box>
+                    </form>
+                </Paper>
             )}
-        </>
+
+            {loadingComments ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+                    <CircularProgress />
+                </Box>
+            ) : (
+                <Stack spacing={2}>
+                    {comments.length === 0 && (
+                        <Box>
+                            <Alert severity="info">
+                                No comments yet. Be the first one to share your thoughts!
+                                {!isAuthenticated && (
+                                    <Box sx={{ mt: 1 }}>
+                                        <Link href="/login" underline="hover">Log in</Link> to leave a comment.
+                                    </Box>
+                                )}
+                            </Alert>
+                        </Box>
+                    )}
+                    {comments.map((comment) => (
+                        <Card key={comment.id}>
+                            <CardContent>
+                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                    <Avatar src={comment.author.avatar} alt={comment.author.username} />
+                                    <Box sx={{ ml: 1 }}>
+                                        <Typography variant="subtitle1">
+                                            {comment.author.username}
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                            {new Date(comment.pub_date).toLocaleString()}
+                                        </Typography>
+                                    </Box>
+                                    {isAuthenticated && user && (user.username === comment.author.username || user.is_staff) && (
+                                        <Box sx={{ ml: 'auto' }}>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => startEditing(comment)}
+                                                disabled={editingCommentId === comment.id}
+                                            >
+                                                <FontAwesomeIcon icon={faEdit} />
+                                            </IconButton>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => handleDeleteComment(comment.id)}
+                                                color="error"
+                                            >
+                                                <FontAwesomeIcon icon={faTrash} />
+                                            </IconButton>
+                                        </Box>
+                                    )}
+                                </Box>
+                                
+                                {editingCommentId === comment.id ? (
+                                    <Box>
+                                        <TextField
+                                            fullWidth
+                                            multiline
+                                            rows={2}
+                                            variant="outlined"
+                                            value={editContent}
+                                            onChange={(e) => setEditContent(e.target.value)}
+                                            sx={{ mb: 1 }}
+                                        />
+                                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                                            <Button
+                                                size="small"
+                                                onClick={() => setEditingCommentId(null)}
+                                            >
+                                                Cancel
+                                            </Button>
+                                            <Button
+                                                variant="contained"
+                                                size="small"
+                                                onClick={() => handleEditComment(comment.id)}
+                                                disabled={!editContent.trim()}
+                                            >
+                                                Save
+                                            </Button>
+                                        </Box>
+                                    </Box>
+                                ) : (
+                                    <Typography variant="body1">{comment.content}</Typography>
+                                )}
+                            </CardContent>
+                        </Card>
+                    ))}
+                </Stack>
+            )}
+        </Box>
     );
-}
+};
 
 export default BlogPostComments;

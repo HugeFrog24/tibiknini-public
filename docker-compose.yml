@@ -2,32 +2,20 @@ services:
     nginx:
         build:
             context: .
-            dockerfile: ./nginx/Dockerfile
-            args:
-                ENVIRONMENT: ${ENV:-prod}
-        develop:
-            watch: # for hot reload during development
-                - action: rebuild
-                  path: ./frontend
+            dockerfile: nginx/Dockerfile
         volumes:
             - static_volume:/var/www/staticfiles
-            - ./cloudflare:/etc/nginx/ssl
+            - media_volume:/var/www/media
         ports:
             - "80:80"
             - "443:443"
         depends_on:
             - django
-        restart: always
 
     django:
-        build: ./backend
-        command: gunicorn backend.wsgi:application --workers 3 --bind 0.0.0.0:8000
-        ports:
-            - "8000:8000"
-        restart: always
         volumes:
-            - ./backend:/usr/src/app
             - static_volume:/usr/src/app/staticfiles
+            - media_volume:/var/www/media
         secrets:
             - django_secret_key
             - recaptcha_secret_key
@@ -35,6 +23,10 @@ services:
             - email_port
             - email_host_user
             - email_host_password
+
+volumes:
+    static_volume:
+    media_volume:
 
 secrets:
     django_secret_key:
@@ -49,7 +41,3 @@ secrets:
         file: ./secrets/email_host_user.txt
     email_host_password:
         file: ./secrets/email_host_password.txt
-
-volumes:
-    static_volume:
-        name: tibiknini-static-volume

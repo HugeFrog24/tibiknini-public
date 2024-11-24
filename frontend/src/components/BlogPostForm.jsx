@@ -14,7 +14,7 @@ const BlogPostForm = ({previousPath}) => {
     const navigate = useNavigate();
     const {fetchBlogPost, createBlogPost, updateBlogPost} = UseBlogPost();
     const {postId} = useParams();
-    const user = useContext(UserContext);
+    const { user, isAuthenticated } = useContext(UserContext);
     // Add a new state for the fetched post
     const [post, setPost] = useState(null);
 
@@ -31,7 +31,7 @@ const BlogPostForm = ({previousPath}) => {
         setIsSubmitting(true);  // Set loading to true when save process starts
 
         // Ensure user is authenticated
-        if (!user || !user.is_authenticated) {
+        if (!isAuthenticated) {
             toast.warning("You must be logged in to save this post.");
             setIsSubmitting(false);  // Reset loading to false
             return;
@@ -95,7 +95,7 @@ const BlogPostForm = ({previousPath}) => {
                 try {
                     const fetchedPost = await fetchBlogPost(postId);
                     // If user is not authenticated, redirect to login page with a reason for the redirection
-                    if (!user || !user.is_authenticated) {
+                    if (!isAuthenticated) {
                         navigate("/login", {state: {reason: REDIRECT_REASONS.EDIT_POST}});
                         return;  // Exit early to prevent further execution
                     }
@@ -116,7 +116,7 @@ const BlogPostForm = ({previousPath}) => {
         };
 
         fetchPostForEditing();
-    }, [postId, fetchBlogPost, user, navigate]);
+    }, [postId, fetchBlogPost, user, navigate, isAuthenticated]);
 
     return (
         <Box>

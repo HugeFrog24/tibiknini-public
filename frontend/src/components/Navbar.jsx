@@ -45,7 +45,7 @@ function HideOnScroll(props) {
 
 const NavigationBar = ({ toggleDarkMode }) => {
   const theme = useTheme();
-  const user = useContext(UserContext);
+  const { user, isAuthenticated } = useContext(UserContext);
   const location = useLocation();
   const [anchorEl, setAnchorEl] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -98,7 +98,7 @@ const NavigationBar = ({ toggleDarkMode }) => {
       <IconButton onClick={toggleDarkMode} color="inherit">
         {theme.palette.mode === "dark" ? <Brightness7Icon /> : <Brightness4Icon />}
       </IconButton>
-      {user ? (
+      {isAuthenticated ? (
         <>
           <IconButton
             onClick={handleMenu}

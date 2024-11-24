@@ -19,7 +19,7 @@ const BlogPostsList = ({postId}) => {
     const [hasError, setHasError] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
-    const user = useContext(UserContext);
+    const { user, isAuthenticated } = useContext(UserContext);
     const { modeClasses } = useDarkMode();
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(0);
@@ -107,7 +107,7 @@ const BlogPostsList = ({postId}) => {
             </Helmet>
             <div className="d-flex align-items-center justify-content-between">
                 <Typography variant="h4" component="h1">Blog</Typography>
-                {user && (
+                {isAuthenticated && (
                     <Button variant="contained" color="success" className="shadow" onClick={handleAddPostClick} startIcon={<FontAwesomeIcon icon={faPlus}/>}>
                         Add post
                     </Button>

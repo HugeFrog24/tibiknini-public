@@ -5,6 +5,40 @@ import argparse  # Import argparse for better argument parsing
 def collect_static():
     subprocess.run(['python', 'backend/manage.py', 'collectstatic', '--noinput'])
 
+def dev_environment():
+    # Clean up any old containers/builds first
+    subprocess.run([
+        'docker-compose',
+        '-f', 'docker-compose.yml',
+        '-f', 'docker-compose.dev.yml',
+        'down', '--remove-orphans'
+    ])
+    
+    # Build and start development environment
+    subprocess.run([
+        'docker-compose',
+        '-f', 'docker-compose.yml',
+        '-f', 'docker-compose.dev.yml',
+        'up', '--build'
+    ])
+
+def prod_environment():
+    # Pull latest images
+    subprocess.run([
+        'docker-compose',
+        '-f', 'docker-compose.yml',
+        '-f', 'docker-compose.prod.yml',
+        'pull'
+    ])
+    
+    # Restart services with new images
+    subprocess.run([
+        'docker-compose',
+        '-f', 'docker-compose.yml',
+        '-f', 'docker-compose.prod.yml',
+        'up', '-d', '--remove-orphans'
+    ])
+
 def main():
     # Create the argument parser
     parser = argparse.ArgumentParser(description="Manage Docker environments. Allows starting up or shutting down services. In development, 'up' will execute 'watch'.")
@@ -31,10 +65,9 @@ def main():
     compose_files = ['-f', base_compose_file, '-f', override_compose_file]
     match (operation, env):
         case ('up', 'dev'):
-            subprocess.run(['docker-compose', *compose_files, 'build'], env=subprocess_env)
-            subprocess.run(['docker-compose', *compose_files, 'watch'], env=subprocess_env)
+            dev_environment()
         case ('up', _):
-            subprocess.run(['docker-compose', *compose_files, 'up', '--build', '-d'], env=subprocess_env)
+            prod_environment()
         case ('down', _):
             subprocess.run(['docker-compose', *compose_files, 'down'], env=subprocess_env)
         case ('collectstatic', _):

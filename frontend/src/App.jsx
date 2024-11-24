@@ -39,7 +39,6 @@ import { ThemeProvider, CssBaseline } from '@mui/material'; // Import CssBaselin
 
 function App() {
     const [user, setUser] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
     const [isDarkMode, setIsDarkMode] = useState(() => {
         const savedPreference = localStorage.getItem("darkMode");
         return savedPreference !== null ? JSON.parse(savedPreference) : window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -50,22 +49,22 @@ function App() {
         localStorage.setItem("darkMode", JSON.stringify(!isDarkMode));
     };
 
-    // Fetch user's information when the application loads
+    // Fetch user's information in the background
     useEffect(() => {
         const initializeApp = async () => {
             try {
-                // Check if user is authenticated (you might want to implement this in auth.js)
-                const isAuthenticated = document.cookie.includes('sessionid=');  // Adjust based on your actual cookie name
-                
-                if (isAuthenticated) {
-                    const userData = await fetchUser();
+                const userData = await fetchUser();
+                if (userData) {
                     setUser(userData);
                 }
             } catch (error) {
-                console.error('Error initializing app:', error);
-                // Handle error (e.g., show a toast message)
-            } finally {
-                setIsLoading(false);
+                // Only clear user state if it's an authentication error
+                if (error?.response?.status === 401 || error?.response?.status === 403) {
+                    setUser(null);
+                } else {
+                    // For other errors (network, server, etc.), keep the current state
+                    console.error('Error initializing app:', error);
+                }
             }
         };
 
@@ -100,17 +99,13 @@ function App() {
             });
     }, []);
 
-    if (isLoading) {
-        return <Spinner />;  // Or a more elaborate loading screen
-    }
-
     return (
         <HelmetProvider>
             <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
             <CssBaseline />
             <DarkModeProvider>
                 <ApiUrlContext.Provider value={apiUrl}>
-                    <UserContext.Provider value={user}>
+                    <UserContext.Provider value={{ user, isAuthenticated: !!user }}>
                         <Helmet>
                             <meta name="viewport" content="width=device-width, initial-scale=1"/>
                             <meta name="theme-color" content="#000000"/>

@@ -10,6 +10,8 @@ import {
   LinearProgress,
   Typography,
   Box,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 import api from '../utils/api';
 import UserContext from './contexts/UserContext';
@@ -19,14 +21,15 @@ const ProfileSettings = () => {
   const [open, setOpen] = useState(false);
   const [deleteInProgress, setDeleteInProgress] = useState(false);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
-  const user = useContext(UserContext);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const { user, isAuthenticated } = useContext(UserContext);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user) {
+    if (!isAuthenticated) {
       navigate('/login');
     }
-  }, [user, navigate]);
+  }, [isAuthenticated, navigate]);
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -34,9 +37,10 @@ const ProfileSettings = () => {
 
   const handleClose = async () => {
     setOpen(false);
+    setConfirmDelete(false);
     if (deleteSuccess) {
-      await handleLogout(); // Log out the user
-      navigate('/login'); // Redirect to login page
+      await handleLogout();
+      navigate('/login');
     }
   };
 
@@ -52,7 +56,7 @@ const ProfileSettings = () => {
     setDeleteInProgress(false);
   };
 
-  if (!user) {
+  if (!isAuthenticated) {
     return null; // Optionally, you can return a loading spinner or a message here
   }
 
@@ -75,12 +79,23 @@ const ProfileSettings = () => {
           ) : deleteSuccess ? (
             <DialogContentText>Profile deleted successfully!</DialogContentText>
           ) : (
-            <DialogContentText>
+            <>
+              <DialogContentText>
               Are you sure you want to delete your profile, {user.first_name}?
-              <Typography variant="body1" fontWeight="bold" component="div" gutterBottom>
-                This action cannot be undone.
-              </Typography>
-            </DialogContentText>
+                <Typography variant="body1" fontWeight="bold" component="div" gutterBottom>
+                  This action is permanent and cannot be undone.
+                </Typography>
+              </DialogContentText>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={confirmDelete}
+                    onChange={(e) => setConfirmDelete(e.target.checked)}
+                  />
+                }
+                label="I understand the consequences of this action"
+              />
+            </>
           )}
         </DialogContent>
         <DialogActions>
@@ -88,7 +103,11 @@ const ProfileSettings = () => {
             {deleteSuccess ? 'Close' : 'Cancel'}
           </Button>
           {!deleteSuccess && (
-            <Button onClick={handleDeleteProfile} color="error" disabled={deleteInProgress}>
+            <Button 
+              onClick={handleDeleteProfile} 
+              color="error" 
+              disabled={deleteInProgress || !confirmDelete}
+            >
               Delete
             </Button>
           )}

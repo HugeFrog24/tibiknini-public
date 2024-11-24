@@ -14,6 +14,7 @@ class Comment(models.Model):
     content = models.TextField()
     pub_date = models.DateTimeField(auto_now_add=True)
     pinned = models.BooleanField(default=False)
+    hidden = models.BooleanField(default=False)
 
     class Meta:
         constraints = [

@@ -38,8 +38,15 @@ jobs:
       with:
         context: ./backend
         file: ./backend/Dockerfile
+        target: production
         push: true
-        tags: ghcr.io/${{ env.OWNER_LC }}/tibiknini:latest
+        tags: |
+          ghcr.io/${{ env.OWNER_LC }}/tibiknini:latest
+          ghcr.io/${{ env.OWNER_LC }}/tibiknini:${{ github.sha }}
+        cache-from: |
+          type=registry,ref=ghcr.io/${{ env.OWNER_LC }}/tibiknini:buildcache
+          type=registry,ref=ghcr.io/${{ env.OWNER_LC }}/tibiknini:latest
+        cache-to: type=registry,ref=ghcr.io/${{ env.OWNER_LC }}/tibiknini:buildcache,mode=max
 
     - name: Build Frontend
       run: |

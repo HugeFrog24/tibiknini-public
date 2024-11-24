@@ -111,6 +111,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "backend.wsgi.application"
 
+TIME_ZONE = "UTC"
+USE_TZ = True
+
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
@@ -123,6 +126,7 @@ DATABASES = {
         "HOST": os.getenv("POSTGRES_HOST"),
         "PORT": os.getenv("POSTGRES_PORT"),
         "ATOMIC_REQUESTS": False,  # Set to False initially
+        "TIME_ZONE": TIME_ZONE,
     }
 }
 
@@ -151,11 +155,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
-
 USE_I18N = True
-
-USE_TZ = True
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
@@ -186,9 +186,11 @@ MEDIA_URL = "/media/"  # Public URL at the browser
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = get_secret("email_host")
 EMAIL_PORT = get_secret("email_port")
-EMAIL_USE_SSL = True
+EMAIL_USE_TLS = True  # Use STARTTLS for encryption
+EMAIL_USE_SSL = False  # Ensure SSL is not used as STARTTLS is preferred
 EMAIL_HOST_USER = get_secret("email_host_user")
 EMAIL_HOST_PASSWORD = get_secret("email_host_password")
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER  # Default "from" email address
 
 RECAPTCHA_SECRET_KEY = get_secret("recaptcha_secret_key")
 

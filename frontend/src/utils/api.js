@@ -27,26 +27,48 @@ api.interceptors.request.use(request => {
     return request;
 });
 
+// List of endpoints that don't require authentication
+const PUBLIC_ENDPOINTS = [
+    '/auth/login/',
+    '/auth/register/',
+    '/setup/status/',
+    '/blog/posts/',  // Assuming this is your public blog posts endpoint
+    '/users/me/',    // We'll allow this to fail silently
+];
+
+const isPublicEndpoint = (url) => {
+    return PUBLIC_ENDPOINTS.some(endpoint => url.includes(endpoint));
+};
+
 api.interceptors.response.use(
     response => {
         // Check if this is the setup status endpoint and status is complete
         if (response.config.url.endsWith('/setup/status/') && response.data.status === 'complete') {
-            showToast(TOAST_MESSAGES.SETUP_ALREADY, 'info'); // Show setup complete toast
+            showToast(TOAST_MESSAGES.SETUP_ALREADY, 'info');
             navigate('/');
-            return response; // Return response to avoid further processing in error handling
+            return response;
         }
         return response;
     },
     error => {
         if (axios.isCancel(error)) {
-            return new Promise(() => {}); // Return a never-resolving promise to stop error propagation after cancellation
+            return new Promise(() => {});
         }
+
+        const isPublic = isPublicEndpoint(error.config.url);
+
         if (error.response) {
             if (error.response.status === 503) {
                 navigate('/setup');
-            } else if (error.response.status === 401 || error.response.status === 403) {
-                // Redirect to login for both 401 and 403 errors
-                navigate('/login', { state: { reason: 'AUTH_REQUIRED' } });
+            } else if ((error.response.status === 401 || error.response.status === 403) && !isPublic) {
+                // Only redirect to login for protected routes
+                const currentPath = window.location.pathname;
+                navigate('/login', { 
+                    state: { 
+                        reason: 'AUTH_REQUIRED',
+                        from: currentPath // Store the path user was trying to access
+                    } 
+                });
             }
         }
         return Promise.reject(error);

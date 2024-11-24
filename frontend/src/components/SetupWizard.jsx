@@ -1,11 +1,78 @@
 import React, { useState, useEffect } from "react";
-import { Container, Grid2, TextField, Button, CircularProgress, Typography } from "@mui/material";
+import { Container, TextField, Button, CircularProgress, Typography, Box, styled, LinearProgress } from "@mui/material";
+import Stepper from '@mui/material/Stepper';
+import Step from '@mui/material/Step';
+import StepLabel from '@mui/material/StepLabel';
+import StepConnector, { stepConnectorClasses } from '@mui/material/StepConnector';
 import { useNavigate } from "react-router-dom";
 import api from '../utils/api';
 import * as Yup from 'yup';
 import { useFormik } from 'formik';
-import { REDIRECT_REASONS } from './constants/Constants';
 import { showToast } from '../utils/toastUtils';
+import Check from '@mui/icons-material/Check';
+import SettingsIcon from '@mui/icons-material/Settings';
+import GroupAddIcon from '@mui/icons-material/GroupAdd';
+import TitleIcon from '@mui/icons-material/Title';
+
+// Custom connector styling
+const ColorlibConnector = styled(StepConnector)(({ theme }) => ({
+  [`&.${stepConnectorClasses.alternativeLabel}`]: {
+    top: 22,
+  },
+  [`&.${stepConnectorClasses.active}`]: {
+    [`& .${stepConnectorClasses.line}`]: {
+      backgroundImage: 'linear-gradient(95deg, #2196f3 0%, #1976d2 100%)',
+    },
+  },
+  [`&.${stepConnectorClasses.completed}`]: {
+    [`& .${stepConnectorClasses.line}`]: {
+      backgroundImage: 'linear-gradient(95deg, #2196f3 0%, #1976d2 100%)',
+    },
+  },
+  [`& .${stepConnectorClasses.line}`]: {
+    height: 3,
+    border: 0,
+    backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#eaeaf0',
+    borderRadius: 1,
+  },
+}));
+
+// Custom step icon styling
+const ColorlibStepIconRoot = styled('div')(({ theme, ownerState }) => ({
+  backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[700] : '#ccc',
+  zIndex: 1,
+  color: '#fff',
+  width: 50,
+  height: 50,
+  display: 'flex',
+  borderRadius: '50%',
+  justifyContent: 'center',
+  alignItems: 'center',
+  ...(ownerState.active && {
+    backgroundImage: 'linear-gradient(136deg, #2196f3 0%, #1976d2 100%)',
+    boxShadow: '0 4px 10px 0 rgba(0,0,0,.25)',
+  }),
+  ...(ownerState.completed && {
+    backgroundImage: 'linear-gradient(136deg, #2196f3 0%, #1976d2 100%)',
+  }),
+}));
+
+// Custom step icon component
+function ColorlibStepIcon(props) {
+  const { active, completed, className } = props;
+
+  const icons = {
+    1: <SettingsIcon />,
+    2: <GroupAddIcon />,
+    3: <TitleIcon />,
+  };
+
+  return (
+    <ColorlibStepIconRoot ownerState={{ completed, active }} className={className}>
+      {completed ? <Check /> : icons[String(props.icon)]}
+    </ColorlibStepIconRoot>
+  );
+}
 
 function SetupWizard() {
     const [currentStep, setCurrentStep] = useState(0);
@@ -22,7 +89,6 @@ function SetupWizard() {
 
                 setSetupStatus(statusData);
 
-                // Update currentStep based on setup status
                 if (!statusData.database_configured) {
                     setCurrentStep(0);
                 } else if (!statusData.superuser_exists) {
@@ -31,9 +97,7 @@ function SetupWizard() {
                     setCurrentStep(2);
                 }
             } catch (error) {
-                // Handle the case where the status code is 503
                 if (error.response && error.response.status === 503) {
-                    // Setup is incomplete, determine which step to show
                     const statusData = error.response.data;
                     setSetupStatus(statusData);
                     if (!statusData.database_configured) {
@@ -44,11 +108,9 @@ function SetupWizard() {
                         setCurrentStep(2);
                     }
                 } else {
-                    // Handle other errors or show a generic error message
                     showToast('Failed to fetch setup status.', 'error');
                 }
             } finally {
-                // Ensure loading is stopped and status is marked as fetched
                 setIsLoading(false);
                 setStatusFetched(true);
             }
@@ -57,17 +119,38 @@ function SetupWizard() {
         checkSetupStatus();
     }, [navigate]);
 
+    useEffect(() => {
+        if (!statusFetched) return;
+
+        // Determine the required step based on setup status
+        let requiredStep;
+        if (!setupStatus.database_configured) {
+            requiredStep = 0; // Database setup needed
+        } else if (!setupStatus.superuser_exists) {
+            requiredStep = 1; // Admin user needed
+        } else if (!setupStatus.site_title_set) {
+            requiredStep = 2; // Site title needed
+        }
+
+        // If we're on a step that's not required (either too early or too late), move to the required step
+        if (requiredStep !== undefined && currentStep !== requiredStep) {
+            setCurrentStep(requiredStep);
+            const stepNames = ['database configuration', 'admin user creation', 'site information'];
+            showToast(`Redirected to ${stepNames[requiredStep]} - this step needs to be completed`, 'info');
+        }
+    }, [currentStep, setupStatus, statusFetched]);
+
     const steps = [
         {
             id: "db_config",
             title: "Database Configuration",
             description: "Enter your database connection details.",
             fields: [
-                { id: "db_host", label: "Database Host", type: "text", required: true  },
-                { id: "db_port", label: "Database Port", type: "number", required: true  },
-                { id: "db_name", label: "Database Name", type: "text", required: true  },
-                { id: "db_user", label: "Database User", type: "text", required: true  },
-                { id: "db_password", label: "Database Password", type: "password", required: true  }
+                { id: "db_host", label: "Database Host", type: "text", required: true },
+                { id: "db_port", label: "Database Port", type: "number", required: true },
+                { id: "db_name", label: "Database Name", type: "text", required: true },
+                { id: "db_user", label: "Database User", type: "text", required: true },
+                { id: "db_password", label: "Database Password", type: "password", required: true }
             ],
             validationSchema: Yup.object({
                 db_host: Yup.string().required("Required"),
@@ -82,10 +165,10 @@ function SetupWizard() {
             title: "Admin User",
             description: "Create an admin user for the application (if one doesn't exist).",
             fields: [
-                { id: "admin_username", label: "Admin Username", type: "text", required: true  },
-                { id: "admin_email", label: "Admin Email", type: "email", required: true  },
-                { id: "admin_password", label: "Admin Password", type: "password", required: true  },
-                { id: "admin_password2", label: "Confirm Password", type: "password", required: true  }
+                { id: "admin_username", label: "Admin Username", type: "text", required: true },
+                { id: "admin_email", label: "Admin Email", type: "email", required: true },
+                { id: "admin_password", label: "Admin Password", type: "password", required: true },
+                { id: "admin_password2", label: "Confirm Password", type: "password", required: true }
             ],
             validationSchema: Yup.object({
                 admin_username: Yup.string().required("Required"),
@@ -202,27 +285,40 @@ function SetupWizard() {
 
     if (!statusFetched) {
         return (
-            <div className="text-center mt-5">
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
                 <CircularProgress />
-            </div>
+            </Box>
         );
-    }
-
-    if (isLoading) {
-        return <CircularProgress />;
     }
 
     return (
         <Container>
-            <Grid2 container justifyContent="center">
-                <Grid2 item xs={12} md={8} lg={6}>
+            <Box sx={{ width: '100%', mt: 4 }}>
+                <Stepper alternativeLabel activeStep={currentStep} connector={<ColorlibConnector />}>
+                    {steps.map((step) => (
+                        <Step key={step.id}>
+                            <StepLabel StepIconComponent={ColorlibStepIcon}>{step.title}</StepLabel>
+                        </Step>
+                    ))}
+                </Stepper>
+
+                {isLoading && (
+                    <Box sx={{ width: '100%', mt: 2 }}>
+                        <LinearProgress />
+                    </Box>
+                )}
+
+                <Box sx={{ mt: 4, mb: 2 }}>
                     <Typography variant="h4" component="h2" gutterBottom>
                         {steps[currentStep].title}
                     </Typography>
                     <Typography variant="body1" gutterBottom>
                         {steps[currentStep].description}
                     </Typography>
-                    <form onSubmit={formik.handleSubmit} noValidate>
+                </Box>
+
+                <form onSubmit={formik.handleSubmit} noValidate>
+                    <Box sx={{ mb: 4 }}>
                         {steps[currentStep].fields.map(field => (
                             <TextField
                                 key={field.id}
@@ -236,34 +332,36 @@ function SetupWizard() {
                                 fullWidth
                                 margin="normal"
                                 error={formik.errors[field.id] && formik.touched[field.id]}
-                                helperText={formik.errors[field.id]}
-                                required={field.required} // Add this line
+                                helperText={formik.touched[field.id] && formik.errors[field.id]}
+                                required={field.required}
+                                disabled={isLoading}
                             />
                         ))}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            {currentStep > 0 && (
-                                <Button
-                                    type="button"
-                                    onClick={() => setCurrentStep(step => step - 1)}
-                                    style={{ marginRight: '10px' }}
-                                    variant="outlined"
-                                >
-                                    Back
-                                </Button>
-                            )}
+                    </Box>
+
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
+                        {currentStep > 0 && (
                             <Button
-                                type="submit"
-                                variant="contained"
-                                color="primary"
+                                variant="outlined"
+                                onClick={() => setCurrentStep(step => step - 1)}
+                                sx={{ mr: 1 }}
                                 disabled={isLoading}
-                                startIcon={isLoading ? <CircularProgress size="1rem" /> : null}
                             >
-                                {isLoading ? <CircularProgress size="1rem" /> : (currentStep < steps.length - 1 ? "Next" : "Finish")}
+                                Back
                             </Button>
-                        </div>
-                    </form>
-                </Grid2>
-            </Grid2>
+                        )}
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            color="primary"
+                            disabled={isLoading}
+                            sx={{ ml: 'auto' }}
+                        >
+                            {currentStep < steps.length - 1 ? "Next" : "Finish"}
+                        </Button>
+                    </Box>
+                </form>
+            </Box>
         </Container>
     );
 }

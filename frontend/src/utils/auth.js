@@ -11,31 +11,37 @@ export const fetchUser = async () => {
     }
 };
 
-export const handleLogin = async (username, password, recaptchaToken, onLogin, navigate, setIsLoading) => {
-    setIsLoading(true);
-
+export const handleLogin = async (
+    username,
+    password,
+    recaptchaToken,
+    onLoginSuccess,
+    navigate,
+    setLoading
+) => {
+    setLoading(true);
     try {
-        await api.post(`/auth/login/`, {
+        const response = await api.post('/auth/login/', {
             username,
             password,
             recaptcha: recaptchaToken
-        }, {
-            withCredentials: true
         });
-        const userData = await fetchUser();
-        onLogin(userData);
-        navigate("/");
-    } catch (err) {
-        console.error(err);
-        if (err.response && err.response.status === 401) {
-            toast.error('Invalid username or password.');
-        } else if (!err.response) {
-            toast.error('Network error. Please check your internet connection.');
-        } else {
-            toast.error('An unexpected error occurred. Please try again later.');
+
+        if (response.status === 200) {
+            const userData = await fetchUser();
+            onLoginSuccess(userData);
+            
+            // Get the redirect path from storage or default to home
+            const redirectTo = sessionStorage.getItem('redirectPath') || '/';
+            sessionStorage.removeItem('redirectPath');
+            
+            navigate(redirectTo);
         }
+    } catch (error) {
+        const errorMessage = error.response?.data?.detail || 'Login failed. Please try again.';
+        toast.error(errorMessage);
     } finally {
-        setIsLoading(false);
+        setLoading(false);
     }
 };
 
