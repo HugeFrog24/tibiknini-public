@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from django.contrib.contenttypes.models import ContentType
 from .models import ReportReason, ContentReport
 from .serializers import ReportReasonSerializer, ContentReportSerializer
+from rest_framework import status
 
 # Create your views here.
 
@@ -33,6 +34,43 @@ class ContentReportViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save(reporter=self.request.user)
+
+    @action(detail=True, methods=['post'])
+    def review(self, request, pk=None):
+        """
+        Review a report with a verdict and optional note.
+        Only staff members can review reports.
+        """
+        if not request.user.is_staff:
+            return Response(
+                {"detail": "You do not have permission to review reports."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        report = self.get_object()
+        verdict = request.data.get('verdict')
+        note = request.data.get('note', '')
+
+        if not verdict:
+            return Response(
+                {"verdict": ["This field is required."]},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if verdict not in dict(ContentReport.VERDICT_CHOICES):
+            return Response(
+                {"verdict": ["Invalid verdict choice."]},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            report.review(reviewer=request.user, verdict=verdict, note=note)
+            return Response({"detail": "Report reviewed successfully."})
+        except Exception as e:
+            return Response(
+                {"detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(detail=False, methods=['get'])
     def content_types(self, request):
