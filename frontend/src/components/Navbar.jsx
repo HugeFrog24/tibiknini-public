@@ -1,6 +1,6 @@
 import React, { useContext, useState } from "react";
 import UserContext from "./contexts/UserContext";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   AppBar,
   Box,
@@ -45,8 +45,9 @@ function HideOnScroll(props) {
 
 const NavigationBar = ({ toggleDarkMode }) => {
   const theme = useTheme();
-  const { user, isAuthenticated } = useContext(UserContext);
+  const { user, isAuthenticated, updateUser } = useContext(UserContext);
   const location = useLocation();
+  const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -145,7 +146,7 @@ const NavigationBar = ({ toggleDarkMode }) => {
               </ListItemIcon>
               <ListItemText>Settings</ListItemText>
             </MenuItem>
-            <MenuItem onClick={handleLogout}>
+            <MenuItem onClick={onLogout}>
               <ListItemIcon>
                 <ExitToAppIcon fontSize="small" />
               </ListItemIcon>
@@ -166,6 +167,11 @@ const NavigationBar = ({ toggleDarkMode }) => {
       )}
     </Box>
   );
+
+  const onLogout = async () => {
+    handleClose();
+    await handleLogout(navigate, updateUser);
+  };
 
   const drawer = (
     <Box onClick={handleDrawerToggle} sx={{ width: 250 }}>

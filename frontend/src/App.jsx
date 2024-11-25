@@ -105,7 +105,7 @@ function App() {
             <CssBaseline />
             <DarkModeProvider>
                 <ApiUrlContext.Provider value={apiUrl}>
-                    <UserContext.Provider value={{ user, isAuthenticated: !!user }}>
+                    <UserContext.Provider value={{ user, isAuthenticated: !!user, updateUser }}>
                         <Helmet>
                             <meta name="viewport" content="width=device-width, initial-scale=1"/>
                             <meta name="theme-color" content="#000000"/>

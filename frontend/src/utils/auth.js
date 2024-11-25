@@ -45,9 +45,12 @@ export const handleLogin = async (
     }
 };
 
-export const handleLogout = async (navigate) => {
+export const handleLogout = async (navigate, updateUser = null) => {
     try {
-        await api.post(`/auth/logout/`, {}, { withCredentials: true });
+        const response = await api.post(`/auth/logout/`, {}, { withCredentials: true });
+        if (response.status === 200 && typeof updateUser === 'function') {
+            updateUser(null);
+        }
         navigate('/login');
     } catch (err) {
         console.error('Error during logout:', err);
