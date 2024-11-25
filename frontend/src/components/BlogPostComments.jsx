@@ -18,7 +18,6 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
   Select,
   MenuItem,
   FormControl,
@@ -27,6 +26,7 @@ import {
 import UserContext from "./contexts/UserContext";
 import api from '../utils/api';
 import { showToast } from '../utils/toastUtils';
+import { useNavigate } from 'react-router-dom';
 
 const BlogPostComments = ({ postId }) => {
   const [comments, setComments] = useState([]);
@@ -45,28 +45,23 @@ const BlogPostComments = ({ postId }) => {
   const [reportingCommentId, setReportingCommentId] = useState(null);
   const [loadingReasons, setLoadingReasons] = useState(false);
   const [contentTypes, setContentTypes] = useState(null);
+  const [dialog, setDialog] = useState({ open: false, title: '', content: '', actions: [] });
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchComments();
-    // Fetch content types once when component mounts
-    fetchContentTypes();
   }, [postId]);
-
-  useEffect(() => {
-    // Fetch report reasons when the report dialog is opened
-    if (reportDialogOpen && reportReasons.length === 0) {
-      fetchReportReasons();
-    }
-  }, [reportDialogOpen]);
 
   const fetchContentTypes = async () => {
     try {
       const response = await api.get('/moderation/reports/content_types/');
       if (response.status === 200) {
         setContentTypes(response.data);
+        return response.data;
       }
     } catch (error) {
-      console.error('Failed to fetch content types:', error);
+      showToast('error', 'Failed to fetch content types');
+      return null;
     }
   };
 
@@ -75,29 +70,119 @@ const BlogPostComments = ({ postId }) => {
     try {
       const response = await api.get('/moderation/reasons/');
       if (response.status === 200) {
-        // Ensure we're setting an array, even if empty
-        setReportReasons(response.data.results || []);
-        console.log('Report reasons:', response.data); // Debug log
+        const reasons = response.data;
+        console.log('Received reasons:', reasons);
+        setReportReasons(reasons);
+        return reasons;
       }
     } catch (error) {
-      console.error('Failed to load report reasons:', error);
-      showToast('error', 'Failed to load report reasons');
-      setReportReasons([]); // Set empty array on error
+      showToast('error', 'Failed to fetch report reasons');
+      return null;
     } finally {
       setLoadingReasons(false);
     }
   };
 
-  const handleReportClick = (commentId) => {
-    if (!contentTypes) {
+  const handleReportClick = async (commentId) => {
+    if (!isAuthenticated) {
+      setDialog({
+        open: true,
+        title: "Login Required",
+        content: "Please log in to report this comment. We value your feedback in keeping our community safe.",
+        actions: [
+          {
+            text: "Cancel",
+            onClick: () => setDialog({ ...dialog, open: false }),
+            color: "primary"
+          },
+          {
+            text: "Login",
+            onClick: () => {
+              setDialog({ ...dialog, open: false });
+              navigate('/login');
+            },
+            color: "primary",
+            variant: "contained"
+          }
+        ]
+      });
+      return;
+    }
+
+    // Reset states
+    setSelectedReason('');
+    setReportDescription('');
+    setReportingCommentId(commentId);
+    
+    // Fetch content types and reasons
+    const types = await fetchContentTypes();
+    if (!types) {
       showToast('error', 'Unable to report comment at this time');
       return;
     }
-    setReportingCommentId(commentId);
-    setReportDialogOpen(true);
+    
+    const reasons = await fetchReportReasons();
+    if (!reasons || !Array.isArray(reasons)) {
+      showToast('error', 'Unable to load report reasons');
+      return;
+    }
+
+    // Now that we have the data, show the dialog
+    setDialog({
+      open: true,
+      title: "Report Comment",
+      content: (
+        <Box sx={{ mt: 2 }}>
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Reason</InputLabel>
+            <Select
+              value={selectedReason}
+              onChange={(e) => setSelectedReason(e.target.value)}
+              label="Reason"
+            >
+              {loadingReasons ? (
+                <MenuItem disabled>Loading reasons...</MenuItem>
+              ) : (
+                reasons && reasons.map((reason) => (
+                  <MenuItem key={reason.id} value={reason.id}>
+                    {reason.name}
+                  </MenuItem>
+                ))
+              )}
+            </Select>
+          </FormControl>
+          <TextField
+            fullWidth
+            multiline
+            rows={4}
+            label="Additional Details (Optional)"
+            value={reportDescription}
+            onChange={(e) => setReportDescription(e.target.value)}
+          />
+        </Box>
+      ),
+      actions: [
+        {
+          text: "Cancel",
+          onClick: () => {
+            setDialog({ ...dialog, open: false });
+            setSelectedReason('');
+            setReportDescription('');
+            setReportingCommentId(null);
+          },
+          color: "primary"
+        },
+        {
+          text: "Submit Report",
+          onClick: () => handleSubmitReport(commentId),
+          color: "primary",
+          variant: "contained"
+        }
+      ]
+    });
   };
 
-  const handleReportSubmit = async () => {
+  const handleSubmitReport = async (commentId) => {
     if (!selectedReason) {
       showToast('error', 'Please select a reason for reporting');
       return;
@@ -111,25 +196,18 @@ const BlogPostComments = ({ postId }) => {
     try {
       const response = await api.post('/moderation/reports/', {
         content_type: contentTypes.comment,
-        object_id: reportingCommentId,
+        object_id: commentId,
         reason: selectedReason,
         description: reportDescription
       });
       
       if (response.status === 201) {
         showToast('success', 'Report submitted successfully');
-        handleReportDialogClose();
+        setDialog({ ...dialog, open: false });
       }
     } catch (error) {
       showToast('error', 'Failed to submit report');
     }
-  };
-
-  const handleReportDialogClose = () => {
-    setReportDialogOpen(false);
-    setSelectedReason('');
-    setReportDescription('');
-    setReportingCommentId(null);
   };
 
   const fetchComments = async () => {
@@ -265,8 +343,8 @@ const BlogPostComments = ({ postId }) => {
                       {new Date(comment.pub_date).toLocaleString()}
                     </Typography>
                   </Box>
-                  {(isAuthenticated && user && user.username === comment.author.username) && (
-                    <Box sx={{ ml: 'auto' }}>
+                  <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
+                    {(isAuthenticated && user && user.username === comment.author.username) && (
                       <IconButton
                         size="small"
                         onClick={() => startEditing(comment)}
@@ -275,10 +353,8 @@ const BlogPostComments = ({ postId }) => {
                       >
                         <FontAwesomeIcon icon={faEdit} />
                       </IconButton>
-                    </Box>
-                  )}
-                  {isAuthenticated && user && (user.username === comment.author.username || user.is_staff) && (
-                    <Box sx={{ ml: 'auto' }}>
+                    )}
+                    {isAuthenticated && user && (user.username === comment.author.username || user.is_staff) && (
                       <IconButton
                         size="small"
                         onClick={() => handleDeleteComment(comment.id)}
@@ -286,19 +362,15 @@ const BlogPostComments = ({ postId }) => {
                       >
                         <FontAwesomeIcon icon={faTrash} />
                       </IconButton>
-                    </Box>
-                  )}
-                  {isAuthenticated && user && user.username !== comment.author.username && (
-                    <Box sx={{ ml: 'auto' }}>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleReportClick(comment.id)}
-                        color="warning"
-                      >
-                        <FontAwesomeIcon icon={faFlag} />
-                      </IconButton>
-                    </Box>
-                  )}
+                    )}
+                    <IconButton
+                      size="small"
+                      onClick={() => handleReportClick(comment.id)}
+                      color="warning"
+                    >
+                      <FontAwesomeIcon icon={faFlag} />
+                    </IconButton>
+                  </Box>
                 </Box>
                 
                 {editingCommentId === comment.id ? (
@@ -338,46 +410,27 @@ const BlogPostComments = ({ postId }) => {
         </Stack>
       )}
       {/* Report Dialog */}
-      <Dialog open={reportDialogOpen} onClose={handleReportDialogClose}>
-        <DialogTitle>Report Comment</DialogTitle>
+      <Dialog open={dialog.open} onClose={() => setDialog({ ...dialog, open: false })}>
+        <DialogTitle>{dialog.title}</DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 2 }}>
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Reason</InputLabel>
-              <Select
-                value={selectedReason}
-                onChange={(e) => setSelectedReason(e.target.value)}
-                label="Reason"
-              >
-                {loadingReasons ? (
-                  <MenuItem disabled>Loading reasons...</MenuItem>
-                ) : (
-                  Array.isArray(reportReasons) ? reportReasons.map((reason) => (
-                    <MenuItem key={reason.id} value={reason.id}>
-                      {reason.name}
-                    </MenuItem>
-                  )) : (
-                    <MenuItem disabled>No reasons available</MenuItem>
-                  )
-                )}
-              </Select>
-            </FormControl>
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              label="Additional Details (Optional)"
-              value={reportDescription}
-              onChange={(e) => setReportDescription(e.target.value)}
-            />
+            {dialog.content}
+            {dialog.actions.length > 0 && (
+              <Box sx={{ mt: 2 }}>
+                {dialog.actions.map((action, index) => (
+                  <Button
+                    key={index}
+                    onClick={action.onClick}
+                    color={action.color}
+                    variant={action.variant}
+                  >
+                    {action.text}
+                  </Button>
+                ))}
+              </Box>
+            )}
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleReportDialogClose}>Cancel</Button>
-          <Button onClick={handleReportSubmit} color="primary" variant="contained">
-            Submit Report
-          </Button>
-        </DialogActions>
       </Dialog>
     </Box>
   );

@@ -16,6 +16,7 @@ class ReportReasonViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ReportReason.objects.filter(is_active=True)
     serializer_class = ReportReasonSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
 
 class ContentReportViewSet(viewsets.ModelViewSet):
     """
