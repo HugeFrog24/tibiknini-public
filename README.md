@@ -31,6 +31,20 @@ This project is a multi-user blog platform, utilizing Django for the backend and
     - Platform- and environment-agnostic.
     - Dark Mode support.
 
+## Running the Application
+
+The application uses Docker Compose profiles to manage different environments:
+
+### Development Environment
+```bash
+docker compose --profile dev up
+```
+
+### Production Environment
+```bash
+docker compose --profile prod up
+```
+
 ## TODO
 - [ ] Test the project in different configurations and environments to improve stability.
 - [ ] Create an Out of Box Experience (OOBE) for the site’s first launch.
