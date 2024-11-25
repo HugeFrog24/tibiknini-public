@@ -25,10 +25,6 @@ services:
         secrets:
             - django_secret_key
             - recaptcha_secret_key
-            - email_host
-            - email_port
-            - email_host_user
-            - email_host_password
         depends_on:
             - redis
 
