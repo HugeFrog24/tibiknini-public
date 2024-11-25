@@ -239,16 +239,23 @@ const BlogPostComments = ({ postId }) => {
       {isAuthenticated && (
         <Paper sx={{ p: 2, mb: 3 }}>
           <form onSubmit={handleSubmitComment}>
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              variant="outlined"
-              placeholder="Write a comment..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              disabled={submitting}
-            />
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+              <Avatar
+                src={user?.image}
+                alt={user?.username}
+                sx={{ width: 40, height: 40 }}
+              />
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                variant="outlined"
+                placeholder="Write a comment..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                disabled={submitting}
+              />
+            </Box>
             <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-end' }}>
               <Button
                 variant="contained"
@@ -285,7 +292,7 @@ const BlogPostComments = ({ postId }) => {
             <Card key={comment.id}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Avatar src={comment.author.avatar} alt={comment.author.username} />
+                  <Avatar src={comment.author.image} alt={comment.author.username} />
                   <Box sx={{ ml: 1 }}>
                     <Typography variant="subtitle1">
                       {comment.author.username}
