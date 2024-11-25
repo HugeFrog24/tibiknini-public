@@ -167,7 +167,8 @@ class SetupView(APIView):
         except Exception as e:
             logging.error(f"Error during database setup: {str(e)}", exc_info=True)
             return JsonResponse(
-                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": "An internal server error occurred. Please try again later."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
 
@@ -194,7 +195,8 @@ class SetupSiteInfoView(APIView):
         except Exception as e:
             logging.error(f"Error during site info setup: {str(e)}", exc_info=True)
             return JsonResponse(
-                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": "An internal server error occurred. Please try again later."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
 
@@ -229,7 +231,8 @@ class CreateSuperUserView(APIView):
         except Exception as e:
             logging.error(f"Error during superuser creation: {str(e)}", exc_info=True)
             return JsonResponse(
-                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": "An internal server error occurred. Please try again later."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
 
