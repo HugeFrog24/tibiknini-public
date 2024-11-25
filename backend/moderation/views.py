@@ -5,6 +5,9 @@ from rest_framework.response import Response
 
 from .models import ContentReport, ReportReason
 from .serializers import ContentReportSerializer, ReportReasonSerializer
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 
@@ -72,7 +75,11 @@ class ContentReportViewSet(viewsets.ModelViewSet):
             report.review(reviewer=request.user, verdict=verdict, note=note)
             return Response({"detail": "Report reviewed successfully."})
         except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            logger.error(f"Error reviewing report: {str(e)}", exc_info=True)
+            return Response(
+                {"detail": "An error occurred while reviewing the report."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(detail=False, methods=["get"])
     def content_types(self, request):

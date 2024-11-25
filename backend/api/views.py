@@ -257,7 +257,7 @@ class SetupEmailView(APIView):
         except Exception as e:
             logging.error(f"Error during email setup: {str(e)}", exc_info=True)
             return JsonResponse(
-                {"detail": f"Failed to configure email: {str(e)}"},
+                {"detail": "Failed to configure email settings. Please check your configuration."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -281,7 +281,12 @@ def send_test_email(request):
         )
         return Response({"detail": "Test email has been queued"}, status=200)
     except Exception as e:
-        return Response({"detail": f"Failed to send test email: {str(e)}"}, status=500)
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to send test email: {str(e)}")
+        return Response(
+            {"detail": "Failed to send test email. Please check your email configuration."}, 
+            status=500
+        )
 
 
 class SetupStatusView(APIView):
