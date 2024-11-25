@@ -22,6 +22,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  FormHelperText
 } from '@mui/material';
 import UserContext from "./contexts/UserContext";
 import api from '../utils/api';
@@ -46,6 +47,7 @@ const BlogPostComments = ({ postId }) => {
   const [loadingReasons, setLoadingReasons] = useState(false);
   const [contentTypes, setContentTypes] = useState(null);
   const [dialog, setDialog] = useState({ open: false, title: '', content: '', actions: [] });
+  const [reportReasonError, setReportReasonError] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -131,9 +133,11 @@ const BlogPostComments = ({ postId }) => {
 
   const handleSubmitReport = async (commentId) => {
     if (!selectedReason) {
+      setReportReasonError(true);
       showToast('error', 'Please select a reason for reporting');
       return;
     }
+    setReportReasonError(false);
 
     if (!contentTypes?.comment) {
       showToast('error', 'Unable to report comment at this time');
@@ -361,12 +365,16 @@ const BlogPostComments = ({ postId }) => {
         <DialogTitle>Report Comment</DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 2, minWidth: 400 }}>
-            <FormControl fullWidth sx={{ mb: 2 }}>
+            <FormControl fullWidth sx={{ mb: 2 }} error={reportReasonError}>
               <InputLabel>Reason</InputLabel>
               <Select
                 value={selectedReason}
-                onChange={(e) => setSelectedReason(e.target.value)}
+                onChange={(e) => {
+                  setSelectedReason(e.target.value);
+                  setReportReasonError(false);
+                }}
                 label="Reason"
+                required
               >
                 {loadingReasons ? (
                   <MenuItem disabled>Loading reasons...</MenuItem>
@@ -378,6 +386,9 @@ const BlogPostComments = ({ postId }) => {
                   ))
                 )}
               </Select>
+              {reportReasonError && (
+                <FormHelperText>Please select a reason for reporting</FormHelperText>
+              )}
             </FormControl>
             <TextField
               fullWidth
