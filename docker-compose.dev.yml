@@ -10,7 +10,7 @@ services:
       MEDIA_PATH: ./media
     volumes:
       - ./backend:/usr/src/app
-      - /usr/src/app/staticfiles
+      - static_volume:/usr/src/app/staticfiles
     command: python manage.py runserver 0.0.0.0:8000
 
   nginx:
@@ -22,3 +22,7 @@ services:
     volumes:
       - ./media:/var/www/media
       - ./frontend/dist:/var/www/html
+      - static_volume:/var/www/staticfiles
+
+volumes:
+  static_volume:

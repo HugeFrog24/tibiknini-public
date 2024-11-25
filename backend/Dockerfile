@@ -19,12 +19,13 @@ RUN pip install --user -r requirements.txt
 # Development stage
 FROM base AS development
 COPY --from=builder /root/.local /root/.local
-COPY . .
+COPY backend/ .
+RUN python manage.py collectstatic --noinput
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
 # Production stage
 FROM base AS production
 COPY --from=builder /root/.local /root/.local
-COPY . .
+COPY backend/ .
 RUN python manage.py collectstatic --noinput
 CMD ["gunicorn", "tibiknini.wsgi:application", "--workers", "3", "--bind", "0.0.0.0:8000"]

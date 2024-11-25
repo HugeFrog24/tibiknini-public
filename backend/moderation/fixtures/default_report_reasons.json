@@ -1,0 +1,42 @@
+[
+    {
+        "model": "moderation.reportreason",
+        "fields": {
+            "name": "Spam",
+            "description": "Content that is commercial, promotional, or repetitive in nature",
+            "is_active": true
+        }
+    },
+    {
+        "model": "moderation.reportreason",
+        "fields": {
+            "name": "Harassment",
+            "description": "Content that contains harassment, hate speech, or personal attacks",
+            "is_active": true
+        }
+    },
+    {
+        "model": "moderation.reportreason",
+        "fields": {
+            "name": "Inappropriate Content",
+            "description": "Content that is explicit, offensive, or violates community guidelines",
+            "is_active": true
+        }
+    },
+    {
+        "model": "moderation.reportreason",
+        "fields": {
+            "name": "Misinformation",
+            "description": "Content that contains false or misleading information",
+            "is_active": true
+        }
+    },
+    {
+        "model": "moderation.reportreason",
+        "fields": {
+            "name": "Copyright Violation",
+            "description": "Content that violates intellectual property rights",
+            "is_active": true
+        }
+    }
+]

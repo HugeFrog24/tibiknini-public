@@ -155,6 +155,9 @@ class SetupView(APIView):
             # Run migrations
             call_command("migrate")
 
+            # Initialize default report reasons
+            call_command("init_report_reasons")
+
             setup_status = get_setup_status()
 
             return JsonResponse(
