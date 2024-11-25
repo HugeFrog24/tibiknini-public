@@ -1,6 +1,4 @@
 import React, { useEffect, useState, useContext } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCommentAlt, faEdit, faTrash, faFlag } from "@fortawesome/free-solid-svg-icons";
 import {
   Box,
   TextField,
@@ -22,8 +20,12 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  FormHelperText
+  FormHelperText,
+  Tooltip
 } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import FlagIcon from '@mui/icons-material/Flag';
 import UserContext from "./contexts/UserContext";
 import api from '../utils/api';
 import { showToast } from '../utils/toastUtils';
@@ -232,9 +234,7 @@ const BlogPostComments = ({ postId }) => {
 
   return (
     <Box sx={{ mt: 4 }}>
-      <Typography variant="h5" gutterBottom>
-        <FontAwesomeIcon icon={faCommentAlt} /> Comments
-      </Typography>
+      <Typography variant="h5" gutterBottom>Comments</Typography>
 
       {isAuthenticated && (
         <Paper sx={{ p: 2, mb: 3 }}>
@@ -296,31 +296,37 @@ const BlogPostComments = ({ postId }) => {
                   </Box>
                   <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
                     {(isAuthenticated && user && user.username === comment.author.username) && (
-                      <IconButton
-                        size="small"
-                        onClick={() => startEditing(comment)}
-                        disabled={editingCommentId === comment.id}
-                        color="primary"
-                      >
-                        <FontAwesomeIcon icon={faEdit} />
-                      </IconButton>
+                      <Tooltip title="Edit">
+                        <IconButton
+                          size="small"
+                          onClick={() => startEditing(comment)}
+                          disabled={editingCommentId === comment.id}
+                          color="primary"
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
                     )}
                     {isAuthenticated && user && (user.username === comment.author.username || user.is_staff) && (
+                      <Tooltip title="Delete">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDeleteComment(comment.id)}
+                          color="error"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    <Tooltip title="Report">
                       <IconButton
                         size="small"
-                        onClick={() => handleDeleteComment(comment.id)}
-                        color="error"
+                        onClick={() => handleReportClick(comment.id)}
+                        color="warning"
                       >
-                        <FontAwesomeIcon icon={faTrash} />
+                        <FlagIcon />
                       </IconButton>
-                    )}
-                    <IconButton
-                      size="small"
-                      onClick={() => handleReportClick(comment.id)}
-                      color="warning"
-                    >
-                      <FontAwesomeIcon icon={faFlag} />
-                    </IconButton>
+                    </Tooltip>
                   </Box>
                 </Box>
                 
