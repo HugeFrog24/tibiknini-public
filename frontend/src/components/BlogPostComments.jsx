@@ -265,15 +265,20 @@ const BlogPostComments = ({ postId }) => {
                       {new Date(comment.pub_date).toLocaleString()}
                     </Typography>
                   </Box>
-                  {isAuthenticated && user && (user.username === comment.author.username || user.is_staff) && (
+                  {(isAuthenticated && user && user.username === comment.author.username) && (
                     <Box sx={{ ml: 'auto' }}>
                       <IconButton
                         size="small"
                         onClick={() => startEditing(comment)}
                         disabled={editingCommentId === comment.id}
+                        color="primary"
                       >
                         <FontAwesomeIcon icon={faEdit} />
                       </IconButton>
+                    </Box>
+                  )}
+                  {isAuthenticated && user && (user.username === comment.author.username || user.is_staff) && (
+                    <Box sx={{ ml: 'auto' }}>
                       <IconButton
                         size="small"
                         onClick={() => handleDeleteComment(comment.id)}
