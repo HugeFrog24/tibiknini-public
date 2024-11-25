@@ -1,94 +1,202 @@
-version: '3.8'
-
 services:
-    nginx:
-        build:
-            context: .
-            dockerfile: nginx/Dockerfile
-        volumes:
-            - static_volume:/var/www/staticfiles
-            - media_volume:/var/www/media
-        ports:
-            - "80:80"
-            - "443:443"
-        depends_on:
-            - django
+  nginx:
+    image: ghcr.io/${OWNER_LC}/nginx:latest
+    profiles: ["prod"]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - static_volume:/var/www/staticfiles
+      - media_volume:/var/www/media
+    depends_on:
+      - django
+    restart: always
 
-    django:
-        volumes:
-            - static_volume:/usr/src/app/staticfiles
-            - media_volume:/var/www/media
-        environment:
-            CELERY_BROKER_URL: "redis://redis:6379/0"
-            CELERY_RESULT_BACKEND: "redis://redis:6379/0"
-            REDIS_HOST: "redis"
-        secrets:
-            - django_secret_key
-            - recaptcha_secret_key
-        depends_on:
-            - redis
+  nginx-dev:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+      args:
+        ENVIRONMENT: dev
+    profiles: ["dev"]
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend/dist:/var/www/html
+      - ./media:/var/www/media
+    depends_on:
+      - django-dev
+    networks:
+      - app_network
 
-    celery_worker:
-        build:
-            context: .
-            dockerfile: backend/Dockerfile
-        volumes:
-            - media_volume:/var/www/media
-        environment:
-            CELERY_BROKER_URL: "redis://redis:6379/0"
-            CELERY_RESULT_BACKEND: "redis://redis:6379/0"
-        command: celery -A backend worker -l info --uid=1000 --gid=1000
-        secrets:
-            - django_secret_key
-            - email_host
-            - email_port
-            - email_host_user
-            - email_host_password
-        depends_on:
-            - redis
-            - django
+  django:
+    image: ghcr.io/${OWNER_LC}/tibiknini:latest
+    profiles: ["prod"]
+    volumes:
+      - static_volume:/usr/src/app/staticfiles
+      - media_volume:/var/www/media
+    environment:
+      CELERY_BROKER_URL: "redis://redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/0"
+      REDIS_HOST: "redis"
+      DEBUG: "False"
+      DOMAIN_NAME: boger.dev
+      MEDIA_PATH: /var/www/media
+    secrets:
+      - django_secret_key
+      - recaptcha_secret_key
+    depends_on:
+      - redis
+    restart: always
 
-    celery_beat:
-        build:
-            context: .
-            dockerfile: backend/Dockerfile
-        volumes:
-            - media_volume:/var/www/media
-        environment:
-            CELERY_BROKER_URL: "redis://redis:6379/0"
-            CELERY_RESULT_BACKEND: "redis://redis:6379/0"
-        command: celery -A backend beat -l info
-        secrets:
-            - django_secret_key
-            - email_host
-            - email_port
-            - email_host_user
-            - email_host_password
-        depends_on:
-            - redis
-            - django
+  django-dev:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: development
+    profiles: ["dev"]
+    environment:
+      DEBUG: "True"
+      DOMAIN_NAME: localhost
+      MEDIA_PATH: ./media
+      DJANGO_SETTINGS_MODULE: "backend.settings"
+      CELERY_BROKER_URL: "redis://redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/0"
+      REDIS_HOST: "redis"
+    volumes:
+      - ./backend:/usr/src/app
+    command: daphne -b 0.0.0.0 -p 8000 backend.asgi:application
+    networks:
+      - app_network
+    depends_on:
+      - redis
+    secrets:
+      - django_secret_key
+      - recaptcha_secret_key
 
-    redis:
-        image: redis:7-alpine
-        volumes:
-            - redis_data:/data
-        command: redis-server --appendonly yes
+  celery_worker:
+    image: ghcr.io/${OWNER_LC}/tibiknini:latest
+    profiles: ["prod"]
+    volumes:
+      - media_volume:/var/www/media
+    environment:
+      CELERY_BROKER_URL: "redis://redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/0"
+    command: celery -A backend worker -l info --uid=1000 --gid=1000
+    secrets:
+      - django_secret_key
+      - email_host
+      - email_port
+      - email_host_user
+      - email_host_password
+    depends_on:
+      - redis
+      - django
+    restart: always
+
+  celery_worker-dev:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: development
+    profiles: ["dev"]
+    volumes:
+      - ./backend:/usr/src/app
+    environment:
+      DEBUG: "True"
+      DJANGO_SETTINGS_MODULE: "backend.settings"
+      CELERY_BROKER_URL: "redis://redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/0"
+    command: celery -A backend worker -l info
+    user: celery
+    networks:
+      - app_network
+    depends_on:
+      - redis
+      - django-dev
+    secrets:
+      - django_secret_key
+      - email_host
+      - email_port
+      - email_host_user
+      - email_host_password
+
+  celery_beat:
+    image: ghcr.io/${OWNER_LC}/tibiknini:latest
+    profiles: ["prod"]
+    volumes:
+      - media_volume:/var/www/media
+    environment:
+      CELERY_BROKER_URL: "redis://redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/0"
+    command: celery -A backend beat -l info
+    secrets:
+      - django_secret_key
+      - email_host
+      - email_port
+      - email_host_user
+      - email_host_password
+    depends_on:
+      - redis
+      - django
+    restart: always
+
+  celery_beat-dev:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: development
+    profiles: ["dev"]
+    volumes:
+      - ./backend:/usr/src/app
+    environment:
+      DEBUG: "True"
+      DJANGO_SETTINGS_MODULE: "backend.settings"
+      CELERY_BROKER_URL: "redis://redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/0"
+    command: celery -A backend beat -l info
+    user: celery
+    networks:
+      - app_network
+    depends_on:
+      - redis
+      - django-dev
+    secrets:
+      - django_secret_key
+      - email_host
+      - email_port
+      - email_host_user
+      - email_host_password
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    networks:
+      - app_network
 
 volumes:
-    static_volume:
-    media_volume:
-    redis_data:
+  static_volume:
+  media_volume:
+  redis_data:
+
+networks:
+  app_network:
+    driver: bridge
 
 secrets:
-    django_secret_key:
-        file: ./secrets/django_secret_key.txt
-    recaptcha_secret_key:
-        file: ./secrets/recaptcha_secret_key.txt
-    email_host:
-        file: ./secrets/email_host.txt
-    email_port:
-        file: ./secrets/email_port.txt
-    email_host_user:
-        file: ./secrets/email_host_user.txt
-    email_host_password:
-        file: ./secrets/email_host_password.txt
+  django_secret_key:
+    file: ./secrets/django_secret_key.txt
+  recaptcha_secret_key:
+    file: ./secrets/recaptcha_secret_key.txt
+  email_host:
+    file: ./secrets/email_host.txt
+  email_port:
+    file: ./secrets/email_port.txt
+  email_host_user:
+    file: ./secrets/email_host_user.txt
+  email_host_password:
+    file: ./secrets/email_host_password.txt

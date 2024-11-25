@@ -15,7 +15,7 @@ class CoreConfig(AppConfig):
 
             # Try to get SMTP settings from database
             smtp_settings = SMTPSettings.objects.first()
-            if smtp_settings and smtp_settings.is_configured:
+            if smtp_settings:
                 # Update Django's email settings
                 settings.EMAIL_HOST = smtp_settings.host
                 settings.EMAIL_PORT = smtp_settings.port

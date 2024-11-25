@@ -216,14 +216,14 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_ROOT = "/usr/src/app/media"  # Directory where uploaded media is saved.
 MEDIA_URL = "/media/"  # Public URL at the browser
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = get_secret("email_host")
-EMAIL_PORT = get_secret("email_port")
-EMAIL_USE_TLS = True  # Use STARTTLS for encryption
-EMAIL_USE_SSL = False  # Ensure SSL is not used as STARTTLS is preferred
-EMAIL_HOST_USER = get_secret("email_host_user")
-EMAIL_HOST_PASSWORD = get_secret("email_host_password")
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER  # Default "from" email address
+# Default email settings - will be configured by CoreConfig when Django is ready
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_HOST = ''
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+DEFAULT_FROM_EMAIL = ''
 
 RECAPTCHA_SECRET_KEY = get_secret("recaptcha_secret_key")
 
