@@ -94,6 +94,7 @@ function Login({onLogin}) {
                             error={passwordInvalid}
                             helperText={passwordInvalid ? "Please fill your password." : ""}
                             className="mb-3"
+                            autoComplete="true"
                         />
                         <ReCAPTCHA
                             ref={recaptchaRef}
