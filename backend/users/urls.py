@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    ChangePasswordView,
     CheckUsernameView,
     CurrentUserView,
     FollowView,
@@ -9,6 +10,8 @@ from .views import (
     ProfileImageDeleteView,
     ProfileImageUpdateView,
     ProfileListView,
+    RequestPasswordResetView,
+    ResetPasswordView,
     UserBioRetrieveUpdateView,
     UserFollowersListView,
     UserFollowingListView,
@@ -20,6 +23,9 @@ app_name = "users"
 urlpatterns = [
     path("me/", CurrentUserView.as_view(), name="current_user"),
     path("me/delete/", ProfileDeleteView.as_view(), name="profile-delete"),
+    path("me/change-password/", ChangePasswordView.as_view(), name="change-password"),
+    path("password-reset/request/", RequestPasswordResetView.as_view(), name="password-reset-request"),
+    path("password-reset/confirm/", ResetPasswordView.as_view(), name="password-reset-confirm"),
     path(
         "me/image/update/",
         ProfileImageUpdateView.as_view(),

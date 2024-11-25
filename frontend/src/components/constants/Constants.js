@@ -11,5 +11,9 @@ export const REDIRECT_REASONS = {
     FOLLOW_USER: { message: 'Followed user', type: 'info' },
     REGISTRATION_SUCCESSFUL: { message: 'Registration successful', type: 'success' },
     SETUP_COMPLETE: { message: 'Setup complete. Please login', type: 'success' }, // Updated reason
+    PASSWORD_RESET_SUCCESS: {
+        message: 'Your password has been reset successfully. Please log in with your new password.',
+        type: 'success'
+    },
     // Add more standardized reasons as needed
 };

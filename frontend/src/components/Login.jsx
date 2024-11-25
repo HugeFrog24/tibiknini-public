@@ -96,6 +96,14 @@ function Login({onLogin}) {
                             className="mb-3"
                             autoComplete="true"
                         />
+                        <Button
+                            variant="text"
+                            fullWidth
+                            onClick={() => navigate('/forgot-password')}
+                            className="mb-3"
+                        >
+                            Forgot Password?
+                        </Button>
                         <ReCAPTCHA
                             ref={recaptchaRef}
                             sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}

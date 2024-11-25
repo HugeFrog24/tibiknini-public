@@ -27,10 +27,12 @@ const BlogPostForm = React.lazy(() => import("./components/BlogPostForm"));
 const BlogPostsList = React.lazy(() => import("./components/BlogPostsList"));
 const BlogPostDetail = React.lazy(() => import("./components/BlogPostDetail"));
 const Contact = React.lazy(() => import("./components/Contact"));
+const ForgotPassword = React.lazy(() => import("./components/ForgotPassword"));
 const Home = React.lazy(() => import("./components/Home"));
 const Login = React.lazy(() => import("./components/Login"));
 const ProfileDetail = React.lazy(() => import("./components/ProfileDetail"));
 const RegistrationWizard = React.lazy(() => import("./components/RegistrationWizard"));
+const ResetPassword = React.lazy(() => import("./components/ResetPassword"));
 const SetupWizard = React.lazy(() => import("./components/SetupWizard"));
 const ProfileSettings = React.lazy(() => import("./components/ProfileSettings"));
 
@@ -156,6 +158,14 @@ function App() {
                                             element={
                                                 <Login onLogin={updateUser}/>
                                             }
+                                        />
+                                        <Route
+                                            path="/forgot-password"
+                                            element={<ForgotPassword />}
+                                        />
+                                        <Route
+                                            path="/reset-password"
+                                            element={<ResetPassword />}
                                         />
                                         <Route
                                             path="/register"

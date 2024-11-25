@@ -61,6 +61,42 @@ def send_welcome_email(sender, instance, created, **kwargs):
             logger.error(f"Failed to send welcome email to {instance.email}: {e}")
 
 
+@receiver(post_save, sender=User)
+def send_password_change_notification(sender, instance, created, **kwargs):
+    """
+    Signal to send an email notification when a user changes their password.
+    """
+    if not created and instance.has_usable_password():  # Only for password changes, not new users
+        try:
+            # Get site information for email context
+            site_info = SiteInfo.objects.first()
+            site_title = site_info.site_title if site_info else "Our Platform"
+
+            # Ensure DEFAULT_FROM_EMAIL is properly set
+            from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None)
+            if not from_email:
+                raise ImproperlyConfigured("DEFAULT_FROM_EMAIL must be set in your Django settings.")
+
+            # Prepare email content
+            subject = f'Password Changed - {site_title}'
+            message = render_to_string('emails/password_change_notification.txt', {
+                'username': instance.username,
+                'site_title': site_title,
+            })
+            recipient_list = [instance.email]
+
+            # Send the email
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=from_email,
+                recipient_list=recipient_list,
+                fail_silently=False,
+            )
+        except Exception as e:
+            logger.error(f"Failed to send password change notification email: {str(e)}")
+
+
 @receiver(post_delete, sender=Profile)
 def delete_profile_picture(sender, instance, **kwargs):
     """
