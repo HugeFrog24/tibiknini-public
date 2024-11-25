@@ -19,6 +19,7 @@ urlpatterns = [
     path("navbar/", NavbarItemList.as_view(), name="navbar_api"),
     path("blog/", include("blog.urls")),
     path("messages/", include("messages.urls")),
+    path("moderation/", include("moderation.urls")),
     path("privacy_policy/", PrivacyPolicyView.as_view(), name="privacy_policy"),
     path("terms_of_service/", TermsOfServiceView.as_view(), name="terms_of_service"),
     path("users/", include("users.urls")),

@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     "blog",
     "core",
     "messages.apps.MessagesConfig",
+    "moderation",
     "navbar",
     "users",
     "corsheaders",
