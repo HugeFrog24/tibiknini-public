@@ -113,6 +113,7 @@ const BlogPostComments = ({ postId }) => {
     setSelectedReason('');
     setReportDescription('');
     setReportingCommentId(commentId);
+    setReportDialogOpen(true);
     
     // Fetch content types and reasons
     const types = await fetchContentTypes();
@@ -126,60 +127,6 @@ const BlogPostComments = ({ postId }) => {
       showToast('error', 'Unable to load report reasons');
       return;
     }
-
-    // Now that we have the data, show the dialog
-    setDialog({
-      open: true,
-      title: "Report Comment",
-      content: (
-        <Box sx={{ mt: 2 }}>
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Reason</InputLabel>
-            <Select
-              value={selectedReason}
-              onChange={(e) => setSelectedReason(e.target.value)}
-              label="Reason"
-            >
-              {loadingReasons ? (
-                <MenuItem disabled>Loading reasons...</MenuItem>
-              ) : (
-                reasons && reasons.map((reason) => (
-                  <MenuItem key={reason.id} value={reason.id}>
-                    {reason.name}
-                  </MenuItem>
-                ))
-              )}
-            </Select>
-          </FormControl>
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
-            label="Additional Details (Optional)"
-            value={reportDescription}
-            onChange={(e) => setReportDescription(e.target.value)}
-          />
-        </Box>
-      ),
-      actions: [
-        {
-          text: "Cancel",
-          onClick: () => {
-            setDialog({ ...dialog, open: false });
-            setSelectedReason('');
-            setReportDescription('');
-            setReportingCommentId(null);
-          },
-          color: "primary"
-        },
-        {
-          text: "Submit Report",
-          onClick: () => handleSubmitReport(commentId),
-          color: "primary",
-          variant: "contained"
-        }
-      ]
-    });
   };
 
   const handleSubmitReport = async (commentId) => {
@@ -203,7 +150,7 @@ const BlogPostComments = ({ postId }) => {
       
       if (response.status === 201) {
         showToast('success', 'Report submitted successfully');
-        setDialog({ ...dialog, open: false });
+        setReportDialogOpen(false);
       }
     } catch (error) {
       showToast('error', 'Failed to submit report');
@@ -410,6 +357,53 @@ const BlogPostComments = ({ postId }) => {
         </Stack>
       )}
       {/* Report Dialog */}
+      <Dialog open={reportDialogOpen} onClose={() => setReportDialogOpen(false)}>
+        <DialogTitle>Report Comment</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2, minWidth: 400 }}>
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel>Reason</InputLabel>
+              <Select
+                value={selectedReason}
+                onChange={(e) => setSelectedReason(e.target.value)}
+                label="Reason"
+              >
+                {loadingReasons ? (
+                  <MenuItem disabled>Loading reasons...</MenuItem>
+                ) : (
+                  reportReasons && reportReasons.map((reason) => (
+                    <MenuItem key={reason.id} value={reason.id}>
+                      {reason.name}
+                    </MenuItem>
+                  ))
+                )}
+              </Select>
+            </FormControl>
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
+              label="Additional Details (Optional)"
+              value={reportDescription}
+              onChange={(e) => setReportDescription(e.target.value)}
+              variant="outlined"
+            />
+            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+              <Button onClick={() => setReportDialogOpen(false)} color="primary">
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => handleSubmitReport(reportingCommentId)}
+                color="primary"
+                variant="contained"
+              >
+                Submit Report
+              </Button>
+            </Box>
+          </Box>
+        </DialogContent>
+      </Dialog>
+      {/* Login Dialog */}
       <Dialog open={dialog.open} onClose={() => setDialog({ ...dialog, open: false })}>
         <DialogTitle>{dialog.title}</DialogTitle>
         <DialogContent>
