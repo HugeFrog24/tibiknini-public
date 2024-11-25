@@ -1,8 +1,7 @@
 import React, {useState} from 'react';
 import {Container, Row, Col} from 'react-bootstrap';
 import {TextField, Button, Typography, CircularProgress} from '@mui/material';
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
-import {faPaperPlane} from '@fortawesome/free-solid-svg-icons';
+import {Send as SendIcon} from '@mui/icons-material';
 import {toast, ToastContainer} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import api from '../utils/api';
@@ -127,15 +126,14 @@ function ContactForm() {
                                 className="mb-3"
                             />
                             <Button
+                                type="submit"
                                 variant="contained"
                                 color="primary"
-                                type="submit"
                                 fullWidth
                                 disabled={isLoading}
-                                startIcon={isLoading ? <CircularProgress size="1rem" /> : <FontAwesomeIcon icon={faPaperPlane} />}
-                                className="shadow"
+                                startIcon={isLoading ? <CircularProgress size={20} /> : <SendIcon />}
                             >
-                                {isLoading ? "Sending..." : "SEND"}
+                                {isLoading ? 'Sending...' : 'Send Message'}
                             </Button>
                         </form>
                     </Col>

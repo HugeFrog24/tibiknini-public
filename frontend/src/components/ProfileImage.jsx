@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Button, Dropdown, DropdownButton } from "react-bootstrap";
-import { faCamera, faTrash, faUpload } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { PhotoCamera, Delete, Upload } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Avatar from '@mui/material/Avatar';
@@ -99,51 +98,37 @@ function ProfileImage({
                     </Avatar>
                 </Button>
                 {isHovered && showOptions && (
-                    <div className="position-absolute top-50 start-50 translate-middle">
-                        <FontAwesomeIcon icon={faCamera} size="2x"/>
-                    </div>
-                    )}
-            </div>
-            {showOptions && (
-                <>
-                <DropdownButton
-                    id="profile-image-dropdown"
-                    title=""
-                    variant="none"
-                    className="align-self-end"
-                    show={showDropdown}
-                    style={{zIndex: 100}}
+                    <div
+                        id="profile-image-dropdown"
+                        className="position-absolute top-50 start-50 translate-middle"
+                        style={{ zIndex: 1000 }}
                     >
-                    <Dropdown.Item
-                        onClick={() => {
-                        setShowDropdown(false);
-                        fileInputRef.current.click();
-                    }}
+                        <DropdownButton
+                            show={showDropdown}
+                            title={<PhotoCamera />}
+                            variant="light"
+                            className="rounded-circle"
                         >
-                        <FontAwesomeIcon icon={faUpload} className="me-2"/>
-                        Upload photo
-                    </Dropdown.Item>
-                    <Dropdown.Item
-                        className="text-danger"
-                        onClick={() => {
-                        setShowDropdown(false);
-                        onImageDelete();
-                    }}
-                        >
-                        <FontAwesomeIcon icon={faTrash} className="me-2"/>
-                        Delete photo
-                    </Dropdown.Item>
-                </DropdownButton>
-                <input
-                    id="file-input"
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileInputChange}
-                    accept="image/*"
-                    style={{display: "none"}}
-                />
-                </>
+                            <Dropdown.Item onClick={() => fileInputRef.current.click()}>
+                                <Upload className="me-2" /> Upload
+                            </Dropdown.Item>
+                            {imageSrc && (
+                                <Dropdown.Item onClick={onImageDelete} className="text-danger">
+                                    <Delete className="me-2" /> Remove
+                                </Dropdown.Item>
+                            )}
+                        </DropdownButton>
+                    </div>
                 )}
+            </div>
+            <input
+                id="file-input"
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileInputChange}
+                accept="image/*"
+                style={{display: "none"}}
+            />
         </div>
         );
 }

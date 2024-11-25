@@ -14,6 +14,17 @@ class SiteInfoSerializer(serializers.ModelSerializer):
         return obj.site_title
 
 
+class SiteTitleSerializer(serializers.ModelSerializer):
+    site_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SiteInfo
+        fields = ["site_name", "last_updated"]
+
+    def get_site_name(self, obj):
+        return obj.site_title
+
+
 class PrivacyPolicySerializer(serializers.ModelSerializer):
     class Meta:
         model = PrivacyPolicy

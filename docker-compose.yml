@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
     nginx:
         build:
@@ -16,6 +18,10 @@ services:
         volumes:
             - static_volume:/usr/src/app/staticfiles
             - media_volume:/var/www/media
+        environment:
+            CELERY_BROKER_URL: "redis://redis:6379/0"
+            CELERY_RESULT_BACKEND: "redis://redis:6379/0"
+            REDIS_HOST: "redis"
         secrets:
             - django_secret_key
             - recaptcha_secret_key
@@ -23,10 +29,59 @@ services:
             - email_port
             - email_host_user
             - email_host_password
+        depends_on:
+            - redis
+
+    celery_worker:
+        build:
+            context: .
+            dockerfile: backend/Dockerfile
+        volumes:
+            - media_volume:/var/www/media
+        environment:
+            CELERY_BROKER_URL: "redis://redis:6379/0"
+            CELERY_RESULT_BACKEND: "redis://redis:6379/0"
+        command: celery -A backend worker -l info --uid=1000 --gid=1000
+        secrets:
+            - django_secret_key
+            - email_host
+            - email_port
+            - email_host_user
+            - email_host_password
+        depends_on:
+            - redis
+            - django
+
+    celery_beat:
+        build:
+            context: .
+            dockerfile: backend/Dockerfile
+        volumes:
+            - media_volume:/var/www/media
+        environment:
+            CELERY_BROKER_URL: "redis://redis:6379/0"
+            CELERY_RESULT_BACKEND: "redis://redis:6379/0"
+        command: celery -A backend beat -l info
+        secrets:
+            - django_secret_key
+            - email_host
+            - email_port
+            - email_host_user
+            - email_host_password
+        depends_on:
+            - redis
+            - django
+
+    redis:
+        image: redis:7-alpine
+        volumes:
+            - redis_data:/data
+        command: redis-server --appendonly yes
 
 volumes:
     static_volume:
     media_volume:
+    redis_data:
 
 secrets:
     django_secret_key:

@@ -6,3 +6,9 @@ Pillow
 psycopg
 python-dotenv
 requests
+celery
+redis
+django-celery-beat
+channels
+channels-redis
+daphne

@@ -96,14 +96,6 @@ function Login({onLogin}) {
                             className="mb-3"
                             autoComplete="true"
                         />
-                        <Button
-                            variant="text"
-                            fullWidth
-                            onClick={() => navigate('/forgot-password')}
-                            className="mb-3"
-                        >
-                            Forgot Password?
-                        </Button>
                         <ReCAPTCHA
                             ref={recaptchaRef}
                             sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
@@ -114,7 +106,7 @@ function Login({onLogin}) {
                             type="submit"
                             variant="contained"
                             color="primary"
-                            className="shadow w-100"
+                            className="shadow w-100 mb-3"
                             disabled={isLoading}
                             startIcon={isLoading ? <CircularProgress size="1rem" /> : null}
                         >
@@ -123,10 +115,17 @@ function Login({onLogin}) {
                         <Button
                             variant="outlined"
                             color="primary"
-                            className="shadow w-100 mt-3"
+                            className="shadow w-100 mb-3"
                             onClick={() => navigate("/register/")}
                         >
                             Register
+                        </Button>
+                        <Button
+                            variant="text"
+                            fullWidth
+                            onClick={() => navigate('/forgot-password')}
+                        >
+                            Forgot Password?
                         </Button>
                     </Form>
                 </Col>

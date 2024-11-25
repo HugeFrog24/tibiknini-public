@@ -1,19 +1,49 @@
 from rest_framework import generics
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 
 from .models import PrivacyPolicy, SiteInfo, TermsOfService
 from .serializers import (
     PrivacyPolicySerializer,
     SiteInfoSerializer,
+    SiteTitleSerializer,
     TermsOfServiceSerializer,
 )
 
 
-class SiteInfoView(generics.RetrieveAPIView):
+class SiteInfoView(generics.RetrieveUpdateAPIView):
     queryset = SiteInfo.objects.all()
     serializer_class = SiteInfoSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return SiteInfo.objects.first()
+
+    def put(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            return Response(
+                {"error": "Only superusers can modify site settings"}, status=403
+            )
+        return super().put(request, *args, **kwargs)
+
+
+class SiteTitleView(generics.RetrieveUpdateAPIView):
+    queryset = SiteInfo.objects.all()
+    serializer_class = SiteTitleSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return SiteInfo.objects.first()
+
+    def put(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            return Response(
+                {"error": "Only superusers can modify site settings"}, status=403
+            )
+        site_info = self.get_object()
+        site_info.site_title = request.data.get('site_name')
+        site_info.save()
+        return Response(self.get_serializer(site_info).data)
 
 
 class PrivacyPolicyView(generics.RetrieveAPIView):

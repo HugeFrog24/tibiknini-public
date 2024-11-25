@@ -17,6 +17,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     date_joined = serializers.CharField(source="profile.user.date_joined")
     is_anonymous = serializers.BooleanField()
     is_staff = serializers.BooleanField(source="profile.user.is_staff")
+    is_superuser = serializers.BooleanField(source="profile.user.is_superuser")
     is_authenticated = serializers.BooleanField()
     followers = serializers.SerializerMethodField()
     following = serializers.SerializerMethodField()
@@ -34,6 +35,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             "email",
             "is_authenticated",
             "is_staff",
+            "is_superuser",
             "followers",
             "following",
             "first_name",

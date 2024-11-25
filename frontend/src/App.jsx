@@ -30,11 +30,12 @@ const Contact = React.lazy(() => import("./components/Contact"));
 const ForgotPassword = React.lazy(() => import("./components/ForgotPassword"));
 const Home = React.lazy(() => import("./components/Home"));
 const Login = React.lazy(() => import("./components/Login"));
+const OnlineUsersPage = React.lazy(() => import("./components/OnlineUsersPage"));
 const ProfileDetail = React.lazy(() => import("./components/ProfileDetail"));
+const ProfileSettings = React.lazy(() => import("./components/ProfileSettings"));
 const RegistrationWizard = React.lazy(() => import("./components/RegistrationWizard"));
 const ResetPassword = React.lazy(() => import("./components/ResetPassword"));
 const SetupWizard = React.lazy(() => import("./components/SetupWizard"));
-const ProfileSettings = React.lazy(() => import("./components/ProfileSettings"));
 
 import { fetchUser } from "./utils/auth";
 import { ThemeProvider, CssBaseline } from '@mui/material'; // Import CssBaseline here
@@ -174,6 +175,10 @@ function App() {
                                         <Route
                                             path="/setup"
                                             element={<SetupWizard />}
+                                        />
+                                        <Route
+                                            path="/online/"
+                                            element={<OnlineUsersPage />}
                                         />
                                         <Route
                                             path="/privacy-policy"

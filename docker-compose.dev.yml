@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   django:
     build:
@@ -8,10 +10,49 @@ services:
       DEBUG: "True"
       DOMAIN_NAME: localhost
       MEDIA_PATH: ./media
+      DJANGO_SETTINGS_MODULE: "backend.settings"
     volumes:
       - ./backend:/usr/src/app
-      - static_volume:/usr/src/app/staticfiles
-    command: python manage.py runserver 0.0.0.0:8000
+    command: daphne -b 0.0.0.0 -p 8000 backend.asgi:application
+    networks:
+      - app_network
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: development
+    volumes:
+      - ./backend:/usr/src/app
+    environment:
+      DEBUG: "True"
+      DJANGO_SETTINGS_MODULE: "backend.settings"
+    command: celery -A backend worker -l info
+    user: celery
+    networks:
+      - app_network
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: development
+    volumes:
+      - ./backend:/usr/src/app
+    environment:
+      DEBUG: "True"
+      DJANGO_SETTINGS_MODULE: "backend.settings"
+    command: celery -A backend beat -l info
+    user: celery
+    networks:
+      - app_network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - app_network
 
   nginx:
     build:
@@ -19,10 +60,19 @@ services:
       dockerfile: nginx/Dockerfile
       args:
         ENVIRONMENT: dev
+    ports:
+      - "80:80"
     volumes:
-      - ./media:/var/www/media
       - ./frontend/dist:/var/www/html
-      - static_volume:/var/www/staticfiles
+      - ./media:/var/www/media
+    depends_on:
+      - django
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
 
 volumes:
   static_volume:

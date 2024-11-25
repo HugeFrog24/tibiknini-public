@@ -1,0 +1,10 @@
+Hi {{ username }}!
+
+🌟 Great news - {{ follower_username }} just started following you on {{ site_title }}!
+
+This is awesome - it means your content and contributions are making an impact in our community. Keep up the amazing work! Your unique perspective and contributions make our platform a better place.
+
+Want to check out {{ follower_username }}'s profile? Just head over to your notifications on {{ site_title }}.
+
+Best regards,
+The {{ site_title }} Team

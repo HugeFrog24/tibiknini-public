@@ -1,5 +1,6 @@
-from django.http import JsonResponse
 from asgiref.sync import sync_to_async
+from django.http import JsonResponse
+
 from api.views import get_setup_status
 
 

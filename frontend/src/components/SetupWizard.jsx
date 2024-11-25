@@ -13,6 +13,7 @@ import Check from '@mui/icons-material/Check';
 import SettingsIcon from '@mui/icons-material/Settings';
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import TitleIcon from '@mui/icons-material/Title';
+import EmailIcon from '@mui/icons-material/Email';
 
 // Custom connector styling
 const ColorlibConnector = styled(StepConnector)(({ theme }) => ({
@@ -65,6 +66,7 @@ function ColorlibStepIcon(props) {
     1: <SettingsIcon />,
     2: <GroupAddIcon />,
     3: <TitleIcon />,
+    4: <EmailIcon />,
   };
 
   return (
@@ -79,6 +81,7 @@ function SetupWizard() {
     const [isLoading, setIsLoading] = useState(true);
     const [setupStatus, setSetupStatus] = useState({});
     const [statusFetched, setStatusFetched] = useState(false);
+    const [sendingTestEmail, setSendingTestEmail] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -95,6 +98,8 @@ function SetupWizard() {
                     setCurrentStep(1);
                 } else if (!statusData.site_title_set) {
                     setCurrentStep(2);
+                } else if (!statusData.email_configured) {
+                    setCurrentStep(3);
                 }
             } catch (error) {
                 if (error.response && error.response.status === 503) {
@@ -106,6 +111,8 @@ function SetupWizard() {
                         setCurrentStep(1);
                     } else if (!statusData.site_title_set) {
                         setCurrentStep(2);
+                    } else if (!statusData.email_configured) {
+                        setCurrentStep(3);
                     }
                 } else {
                     showToast('Failed to fetch setup status.', 'error');
@@ -125,17 +132,19 @@ function SetupWizard() {
         // Determine the required step based on setup status
         let requiredStep;
         if (!setupStatus.database_configured) {
-            requiredStep = 0; // Database setup needed
+            requiredStep = 0;
         } else if (!setupStatus.superuser_exists) {
-            requiredStep = 1; // Admin user needed
+            requiredStep = 1;
         } else if (!setupStatus.site_title_set) {
-            requiredStep = 2; // Site title needed
+            requiredStep = 2;
+        } else if (!setupStatus.email_configured) {
+            requiredStep = 3;
         }
 
         // If we're on a step that's not required (either too early or too late), move to the required step
         if (requiredStep !== undefined && currentStep !== requiredStep) {
             setCurrentStep(requiredStep);
-            const stepNames = ['database configuration', 'admin user creation', 'site information'];
+            const stepNames = ['database configuration', 'admin user creation', 'site information', 'email configuration'];
             showToast(`Redirected to ${stepNames[requiredStep]} - this step needs to be completed`, 'info');
         }
     }, [currentStep, setupStatus, statusFetched]);
@@ -187,6 +196,27 @@ function SetupWizard() {
             validationSchema: Yup.object({
                 site_title: Yup.string().required("Required")
             })
+        },
+        {
+            id: "email_config",
+            title: "Email Configuration",
+            description: "Configure your email (SMTP) settings.",
+            fields: [
+                { id: "smtp_host", label: "SMTP Host", type: "text", required: true },
+                { id: "smtp_port", label: "SMTP Port", type: "number", required: true },
+                { id: "smtp_username", label: "SMTP Username", type: "text", required: true },
+                { id: "smtp_password", label: "SMTP Password", type: "password", required: true },
+                { id: "smtp_from_email", label: "From Email", type: "email", required: true },
+                { id: "smtp_use_tls", label: "Use TLS", type: "checkbox" }
+            ],
+            validationSchema: Yup.object({
+                smtp_host: Yup.string().required("Required"),
+                smtp_port: Yup.number().required("Required"),
+                smtp_username: Yup.string().required("Required"),
+                smtp_password: Yup.string().required("Required"),
+                smtp_from_email: Yup.string().email("Invalid email address").required("Required"),
+                smtp_use_tls: Yup.boolean()
+            })
         }
     ];
 
@@ -201,7 +231,13 @@ function SetupWizard() {
             admin_username: "",
             admin_email: "",
             admin_password: "",
-            admin_password2: ""
+            admin_password2: "",
+            smtp_host: "",
+            smtp_port: "",
+            smtp_username: "",
+            smtp_password: "",
+            smtp_from_email: "",
+            smtp_use_tls: false
         },
         validateOnBlur: false,
         validateOnChange: false,
@@ -234,6 +270,8 @@ function SetupWizard() {
                             setCurrentStep(1);
                         } else if (!response.data.site_title_set) {
                             setCurrentStep(2);
+                        } else if (!response.data.email_configured) {
+                            setCurrentStep(3);
                         } else {
                             navigate("/login", { state: { reason: 'SETUP_COMPLETE' } });
                         }
@@ -252,6 +290,8 @@ function SetupWizard() {
                         setSetupStatus(response.data);
                         if (!response.data.site_title_set) {
                             setCurrentStep(2);
+                        } else if (!response.data.email_configured) {
+                            setCurrentStep(3);
                         } else {
                             navigate("/login", { state: { reason: 'SETUP_COMPLETE' } });
                         }
@@ -266,10 +306,31 @@ function SetupWizard() {
                         });
                         showToast(response.data.detail, 'success');
                         setSetupStatus(response.data);
-                        navigate("/login", { state: { reason: 'SETUP_COMPLETE' } });
+                        if (!response.data.email_configured) {
+                            setCurrentStep(3);
+                        } else {
+                            navigate("/login", { state: { reason: 'SETUP_COMPLETE' } });
+                        }
                     } catch (error) {
                         console.error("Error during site info setup:", error);
                         showToast('An error occurred during site info setup.', 'error');
+                    }
+                } else if (currentStep === 3) {
+                    try {
+                        const response = await api.post('/setup/email/', {
+                            host: values.smtp_host,
+                            port: values.smtp_port,
+                            username: values.smtp_username,
+                            password: values.smtp_password,
+                            from_email: values.smtp_from_email,
+                            use_tls: values.smtp_use_tls
+                        });
+                        showToast(response.data.detail, 'success');
+                        setSetupStatus(response.data);
+                        navigate("/login", { state: { reason: 'SETUP_COMPLETE' } });
+                    } catch (error) {
+                        console.error("Error during email setup:", error);
+                        showToast('An error occurred during email setup.', 'error');
                     }
                 }
             } else {
@@ -282,6 +343,25 @@ function SetupWizard() {
             setIsLoading(false);
         },
     });
+
+    const handleTestEmail = async () => {
+        if (!formik.values.smtp_from_email) {
+            showToast('Please enter your email address first', 'warning');
+            return;
+        }
+        
+        setSendingTestEmail(true);
+        try {
+            const response = await api.post('/setup/test-email/', {
+                email: formik.values.smtp_from_email
+            });
+            showToast(response.data.detail, 'success');
+        } catch (error) {
+            console.error("Error sending test email:", error);
+            showToast(error.response?.data?.detail || 'Failed to send test email', 'error');
+        }
+        setSendingTestEmail(false);
+    };
 
     if (!statusFetched) {
         return (
@@ -338,6 +418,20 @@ function SetupWizard() {
                             />
                         ))}
                     </Box>
+
+                    {currentStep === 3 && (
+                        <Box mt={2} display="flex" justifyContent="center">
+                            <Button
+                                variant="outlined"
+                                color="primary"
+                                onClick={handleTestEmail}
+                                disabled={sendingTestEmail || !formik.values.smtp_from_email}
+                                startIcon={sendingTestEmail ? <CircularProgress size={20} /> : null}
+                            >
+                                {sendingTestEmail ? 'Sending...' : 'Send Test Email'}
+                            </Button>
+                        </Box>
+                    )}
 
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
                         {currentStep > 0 && (

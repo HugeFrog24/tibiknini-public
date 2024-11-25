@@ -1,11 +1,9 @@
 import React, {useCallback, useContext, useEffect, useState} from "react";
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import {faPlus} from '@fortawesome/free-solid-svg-icons'
 import { useNavigate } from "react-router-dom";
 import Pagination from "react-bootstrap/Pagination";
 import { Helmet } from 'react-helmet-async';
-import { Typography, Button } from '@mui/material'; // Import Typography and Button from Material UI
-import { Warning as WarningIcon } from '@mui/icons-material';
+import { Typography, Button } from '@mui/material'; 
+import { Warning as WarningIcon, Add as AddIcon } from '@mui/icons-material';
 
 import config from "../config.json";
 import BlogPostCard from "./BlogPostCard";
@@ -107,10 +105,17 @@ const BlogPostsList = ({postId}) => {
             </Helmet>
             <div className="d-flex align-items-center justify-content-between">
                 <Typography variant="h4" component="h1">Blog</Typography>
-                {isAuthenticated && (
-                    <Button variant="contained" color="success" className="shadow" onClick={handleAddPostClick} startIcon={<FontAwesomeIcon icon={faPlus}/>}>
-                        Add post
-                    </Button>
+                {isAuthenticated && user.is_staff && !isDetailView && (
+                    <div className="text-end mb-3">
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={handleAddPostClick}
+                            startIcon={<AddIcon />}
+                        >
+                            Add Post
+                        </Button>
+                    </div>
                 )}
             </div>
             <hr/>

@@ -1,6 +1,16 @@
+import logging
+import os
+import secrets
+from datetime import datetime, timedelta
+
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.mail import send_mail
 from django.http import JsonResponse
+from django.template.loader import render_to_string
+from django.utils import timezone
 from rest_framework import generics, parsers, status
 from rest_framework.decorators import parser_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -9,9 +19,10 @@ from rest_framework.views import APIView
 
 from api.permissions import IsAuthorOrAdmin
 from api.utils.recaptcha import verify_recaptcha
+from core.models import SiteInfo
+from core.tasks import send_scheduled_email
 
 from .models import CustomUser, Follow
-from core.models import SiteInfo
 from .serializers import (
     FollowSerializer,
     ProfileBioSerializer,
@@ -25,16 +36,6 @@ from .validators import (
     validate_reserved_username,
     validate_unique_username,
 )
-
-import secrets
-from datetime import datetime, timedelta
-from django.utils import timezone
-from django.core.cache import cache
-from django.template.loader import render_to_string
-from django.core.mail import send_mail
-from django.conf import settings
-import logging
-import os
 
 logger = logging.getLogger(__name__)
 
@@ -225,21 +226,20 @@ class ChangePasswordView(APIView):
 
     def post(self, request):
         user = request.user
-        old_password = request.data.get('old_password')
-        new_password = request.data.get('new_password')
+        old_password = request.data.get("old_password")
+        new_password = request.data.get("new_password")
 
         if not user.check_password(old_password):
             return Response(
-                {'error': 'Current password is incorrect'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Current password is incorrect"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         user.set_password(new_password)
         user.save()  # This will trigger our password change signal
 
         return Response(
-            {'message': 'Password changed successfully'},
-            status=status.HTTP_200_OK
+            {"message": "Password changed successfully"}, status=status.HTTP_200_OK
         )
 
 
@@ -247,21 +247,23 @@ class RequestPasswordResetView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        email = request.data.get('email')
+        email = request.data.get("email")
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
             # Return success even if email doesn't exist for security
             return Response(
-                {'message': 'If an account exists with this email, a password reset link will be sent.'},
-                status=status.HTTP_200_OK
+                {
+                    "message": "If an account exists with this email, a password reset link will be sent."
+                },
+                status=status.HTTP_200_OK,
             )
 
         # Generate a secure token
         reset_token = secrets.token_urlsafe(32)
-        
+
         # Store token in cache with 30 minutes expiry
-        token_key = f'password_reset_{reset_token}'
+        token_key = f"password_reset_{reset_token}"
         cache.set(token_key, user.id, timeout=1800)  # 30 minutes in seconds
 
         # Get site information for email context
@@ -269,37 +271,36 @@ class RequestPasswordResetView(APIView):
         site_title = site_info.site_title if site_info else "Our Platform"
 
         # Get frontend URL from DOMAIN_NAME environment variable
-        domain_name = os.environ.get('DOMAIN_NAME')
+        domain_name = os.environ.get("DOMAIN_NAME")
         frontend_url = f"https://{domain_name}"
 
         # Send reset email
-        subject = f'Password Reset Request - {site_title}'
-        message = render_to_string('emails/password_reset.txt', {
-            'username': user.username,
-            'site_title': site_title,
-            'reset_token': reset_token,
-            'token_expiry_minutes': 30,
-            'frontend_url': frontend_url
-        })
+        subject = f"Password Reset Request - {site_title}"
+        context = {
+            "username": user.username,
+            "site_title": site_title,
+            "reset_token": reset_token,
+            "token_expiry_minutes": 30,
+            "frontend_url": frontend_url,
+        }
 
         try:
-            send_mail(
+            send_scheduled_email.delay(
                 subject=subject,
-                message=message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[user.email],
-                fail_silently=False,
+                template_name="emails/password_reset.txt",
+                context=context,
             )
         except Exception as e:
             logger.error(f"Failed to send password reset email: {str(e)}")
             return Response(
-                {'error': 'Failed to send reset email'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": "Failed to send reset email"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
         return Response(
-            {'message': 'Password reset instructions have been sent to your email.'},
-            status=status.HTTP_200_OK
+            {"message": "Password reset instructions have been sent to your email."},
+            status=status.HTTP_200_OK,
         )
 
 
@@ -307,23 +308,23 @@ class ResetPasswordView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        token = request.data.get('token')
-        new_password = request.data.get('new_password')
+        token = request.data.get("token")
+        new_password = request.data.get("new_password")
 
         if not token or not new_password:
             return Response(
-                {'error': 'Token and new password are required'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Token and new password are required"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Check if token exists and get user_id
-        token_key = f'password_reset_{token}'
+        token_key = f"password_reset_{token}"
         user_id = cache.get(token_key)
 
         if not user_id:
             return Response(
-                {'error': 'Invalid or expired token'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Invalid or expired token"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
@@ -335,11 +336,10 @@ class ResetPasswordView(APIView):
             cache.delete(token_key)
 
             return Response(
-                {'message': 'Password has been reset successfully'},
-                status=status.HTTP_200_OK
+                {"message": "Password has been reset successfully"},
+                status=status.HTTP_200_OK,
             )
         except User.DoesNotExist:
             return Response(
-                {'error': 'User not found'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "User not found"}, status=status.HTTP_400_BAD_REQUEST
             )

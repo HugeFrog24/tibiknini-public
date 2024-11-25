@@ -1,23 +1,30 @@
 import logging
 import os
+import smtplib
+from datetime import datetime
+from email.mime.text import MIMEText
 from pathlib import Path
 
+from celery import shared_task
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth import login as auth_login
 from django.core.management import call_command
-from django.db import connections, transaction
-from django.db.utils import OperationalError
+from django.db import OperationalError, connections, transaction
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from dotenv import load_dotenv
 from rest_framework import generics, status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.models import SiteInfo
+from core.models import SiteInfo, SMTPSettings
+from core.tasks import send_scheduled_email
 from navbar.models import NavbarItem
 
 from .serializers import NavbarItemSerializer
+from .utils import get_setup_status
 from .utils.recaptcha import verify_recaptcha
 
 User = get_user_model()
@@ -56,44 +63,6 @@ class ReCaptchaLoginView(APIView):
                 {"detail": "Invalid login credentials."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-
-def get_setup_status():
-    env_path = Path(settings.BASE_DIR) / ".env"
-    database_configured = False
-    superuser_exists = False
-    site_title_set = False
-
-    if env_path.exists():
-        load_dotenv(env_path)
-        required_settings = [
-            "POSTGRES_DB",
-            "POSTGRES_USER",
-            "POSTGRES_PASSWORD",
-            "POSTGRES_HOST",
-            "POSTGRES_PORT",
-        ]
-        if all(os.getenv(setting) for setting in required_settings):
-            try:
-                connection = connections["default"]
-                connection.ensure_connection()
-                database_configured = True
-            except OperationalError:
-                database_configured = False
-
-    if database_configured:
-        # Check if a superuser exists
-        superuser_exists = User.objects.filter(is_superuser=True).exists()
-
-        # Check if the site title is set in the database
-        site_info = SiteInfo.objects.first()
-        site_title_set = bool(site_info and site_info.site_title)
-
-    return {
-        "database_configured": database_configured,
-        "superuser_exists": superuser_exists,
-        "site_title_set": site_title_set,
-    }
 
 
 class SetupView(APIView):
@@ -168,7 +137,7 @@ class SetupView(APIView):
             logging.error(f"Error during database setup: {str(e)}", exc_info=True)
             return JsonResponse(
                 {"error": "An internal server error occurred. Please try again later."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 
@@ -196,7 +165,7 @@ class SetupSiteInfoView(APIView):
             logging.error(f"Error during site info setup: {str(e)}", exc_info=True)
             return JsonResponse(
                 {"error": "An internal server error occurred. Please try again later."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 
@@ -232,8 +201,87 @@ class CreateSuperUserView(APIView):
             logging.error(f"Error during superuser creation: {str(e)}", exc_info=True)
             return JsonResponse(
                 {"error": "An internal server error occurred. Please try again later."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class SetupEmailView(APIView):
+    def post(self, request, *args, **kwargs):
+        host = request.data.get("host")
+        port = request.data.get("port")
+        username = request.data.get("username")
+        password = request.data.get("password")
+        use_tls = request.data.get("use_tls", True)
+        from_email = request.data.get("from_email")
+
+        if not all([host, port, username, password, from_email]):
+            return JsonResponse(
+                {"detail": "All SMTP fields are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            # Test SMTP connection
+            server = smtplib.SMTP(host, int(port))
+            if use_tls:
+                server.starttls()
+            server.login(username, password)
+
+            # Send test email
+            msg = MIMEText("This is a test email from your application setup.")
+            msg["Subject"] = "Test Email"
+            msg["From"] = from_email
+            msg["To"] = from_email
+            server.send_message(msg)
+            server.quit()
+
+            # Save settings
+            smtp_settings = SMTPSettings.objects.first()
+            if not smtp_settings:
+                smtp_settings = SMTPSettings()
+
+            smtp_settings.host = host
+            smtp_settings.port = port
+            smtp_settings.username = username
+            smtp_settings.password = password
+            smtp_settings.use_tls = use_tls
+            smtp_settings.from_email = from_email
+            smtp_settings.save()
+
+            setup_status = get_setup_status()
+            return JsonResponse(
+                {"detail": "Email configuration successful!", **setup_status},
+                status=status.HTTP_200_OK,
+            )
+
+        except Exception as e:
+            logging.error(f"Error during email setup: {str(e)}", exc_info=True)
+            return JsonResponse(
+                {"detail": f"Failed to configure email: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+
+@api_view(["POST"])
+def send_test_email(request):
+    """Send a test email using the current SMTP configuration"""
+    try:
+        recipient = request.data.get("email")
+        if not recipient:
+            return Response({"detail": "Email address is required"}, status=400)
+
+        send_scheduled_email.delay(
+            subject="Test Email from Your Application",
+            recipient_list=[recipient],
+            template_name="email/test_email.html",
+            context={
+                "recipient": recipient,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            },
+        )
+        return Response({"detail": "Test email has been queued"}, status=200)
+    except Exception as e:
+        return Response({"detail": f"Failed to send test email: {str(e)}"}, status=500)
 
 
 class SetupStatusView(APIView):

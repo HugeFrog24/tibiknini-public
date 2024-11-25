@@ -1,8 +1,12 @@
 import {useCallback, useContext, useEffect, useRef, useState} from "react";
 import {Link, useNavigate, useParams, useLocation} from "react-router-dom";
 import {Button, Card, Col, Container, InputGroup, Form, Row} from "react-bootstrap";
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faCheckCircle, faPencilAlt, faSave, faTimes} from "@fortawesome/free-solid-svg-icons";
+import {
+    CheckCircle as CheckCircleIcon,
+    Edit as EditIcon,
+    Save as SaveIcon,
+    Close as CloseIcon
+} from '@mui/icons-material';
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import Tabs from '@mui/material/Tabs';
@@ -243,11 +247,7 @@ function ProfileDetail() {
                                             {loading ? <Skeleton width={150} /> : profile.username}
                                         </h3>
                                         {profile.is_staff && (
-                                            <FontAwesomeIcon
-                                                icon={faCheckCircle}
-                                                className="ms-2 text-primary"
-                                                style={{width: "15px", height: "15px"}}
-                                            />
+                                            <CheckCircleIcon className="ms-2 text-primary" style={{width: "15px", height: "15px"}} />
                                         )}
                                     </Container>
                                 </Row>
@@ -278,28 +278,42 @@ function ProfileDetail() {
                         <Row>
                             <Col xs={12}>
                                 {isEditingBio ? (
-                                    <InputGroup hasValidation className="d-flex align-items-center mb-2 bg-white">
+                                    <div className="d-flex flex-column">
                                         <Form.Control
-                                            type="text"
+                                            as="textarea"
                                             value={bioInput}
                                             onChange={(e) => setBioInput(e.target.value)}
-                                            className={`${modeClasses.bgClass} ${modeClasses.textClass} mr-2 flex-grow-1`}
-                                            rounded="0"
+                                            className={`${modeClasses.bgClass} ${modeClasses.textClass} mb-2`}
                                             isInvalid={bioInput.length > 256}
                                         />
-                                        <Button variant="success" className="mr-2" onClick={handleSaveBio} rounded="0">
-                                            <FontAwesomeIcon icon={faSave} />
-                                        </Button>
-                                        <Button variant="danger" onClick={handleCancelBioEdit} rounded="0">
-                                            <FontAwesomeIcon icon={faTimes} />
-                                        </Button>
-                                        <Form.Control.Feedback type="invalid">
-                                            Bio cannot exceed 256 characters.
-                                        </Form.Control.Feedback>
-                                    </InputGroup>
+                                        <div className="d-flex justify-content-end">
+                                            <Button
+                                                variant="success"
+                                                size="sm"
+                                                onClick={handleSaveBio}
+                                                className="me-2"
+                                                startIcon={<SaveIcon />}
+                                            >
+                                                Save
+                                            </Button>
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={handleCancelBioEdit}
+                                                startIcon={<CloseIcon />}
+                                            >
+                                                Cancel
+                                            </Button>
+                                        </div>
+                                        {bioInput.length > 256 && (
+                                            <Form.Text className="text-danger">
+                                                Bio cannot exceed 256 characters.
+                                            </Form.Text>
+                                        )}
+                                    </div>
                                 ) : (
-                                    <>
-                                        <span>
+                                    <div className="d-flex align-items-center">
+                                        <span className="me-2">
                                             {loading ? (
                                                 <Skeleton width={200} />
                                             ) : (
@@ -307,14 +321,16 @@ function ProfileDetail() {
                                             )}
                                         </span>
                                         {(isOwner || username === "me") && (
-                                            <FontAwesomeIcon
-                                                icon={faPencilAlt}
-                                                className="ms-2"
-                                                style={{cursor: 'pointer'}}
+                                            <Button
+                                                variant="outline-primary"
+                                                size="sm"
                                                 onClick={handleEditBio}
-                                            />
+                                                startIcon={<EditIcon />}
+                                            >
+                                                Edit Bio
+                                            </Button>
                                         )}
-                                    </>
+                                    </div>
                                 )}
                             </Col>
                         </Row>

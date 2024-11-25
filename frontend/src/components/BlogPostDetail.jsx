@@ -2,8 +2,12 @@ import React, {useContext, useEffect, useState} from "react";
 import {useNavigate, useParams} from "react-router-dom";
 import {toast, ToastContainer} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faHeart, faPencilAlt, faShareAlt, faTrash} from "@fortawesome/free-solid-svg-icons";
+import {
+    Favorite as FavoriteIcon,
+    Edit as EditIcon,
+    Share as ShareIcon,
+    Delete as DeleteIcon
+} from '@mui/icons-material';
 import {Helmet} from 'react-helmet-async';
 import ReactMarkdown from "react-markdown";
 import Skeleton from "react-loading-skeleton";
@@ -14,7 +18,8 @@ import {
     Grid2,
     Typography,
     Box,
-    Chip
+    Chip,
+    IconButton
 } from '@mui/material';
 
 import UserContext from "./contexts/UserContext";
@@ -154,16 +159,19 @@ const BlogPostDetail = ({previousPath}) => {
                         (user.is_staff || user.id === postState.author.id) && (
                             <Box display="flex" justifyContent="flex-end" mb={3}>
                                 <Button
-                                    variant="outlined" color="primary" sx={{mr: 2}}
+                                    variant="outlined"
+                                    color="primary"
                                     onClick={() => navigate(`/blog/posts/${postState.id}/edit`)}
-                                    startIcon={<FontAwesomeIcon icon={faPencilAlt} />}
+                                    startIcon={<EditIcon />}
+                                    sx={{ mr: 1 }}
                                 >
                                     Edit
                                 </Button>
                                 <Button
-                                    variant="outlined" color="error"
+                                    variant="outlined"
+                                    color="error"
                                     onClick={handleDelete}
-                                    startIcon={<FontAwesomeIcon icon={faTrash} />}
+                                    startIcon={<DeleteIcon />}
                                 >
                                     Remove
                                 </Button>
@@ -196,15 +204,20 @@ const BlogPostDetail = ({previousPath}) => {
                         <Button
                             variant="outlined"
                             color="primary"
-                            sx={{mr: 2}}
+                            sx={{ mr: 1 }}
                             onClick={handleLike}
                             onMouseOver={() => setIsLikeButtonHovered(true)}
                             onMouseOut={() => setIsLikeButtonHovered(false)}
-                            startIcon={<FontAwesomeIcon icon={faHeart} color={isLiked || isLikeButtonHovered ? 'red' : 'gray'} />}
+                            startIcon={<FavoriteIcon sx={{ color: isLiked || isLikeButtonHovered ? 'red' : 'inherit' }} />}
                         >
                             {likesCount}
                         </Button>
-                        <Button variant="outlined" color="primary" onClick={handleShare} startIcon={<FontAwesomeIcon icon={faShareAlt} />}>
+                        <Button
+                            variant="outlined"
+                            color="primary"
+                            onClick={handleShare}
+                            startIcon={<ShareIcon />}
+                        >
                             Share
                         </Button>
                     </Box>

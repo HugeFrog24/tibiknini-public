@@ -1,8 +1,13 @@
-import {faSadTear, faFlushed, faIdCard, faServer} from '@fortawesome/free-solid-svg-icons'
+import {
+    SentimentVeryDissatisfied as SadIcon,
+    Face as FaceIcon,
+    AccountCircle as AccountIcon,
+    Storage as ServerIcon
+} from '@mui/icons-material';
 
 export const errorData = {
     401: {
-        emoji: faIdCard,
+        emoji: AccountIcon,
         messages: [
             "Access denied. We couldn't verify your ID.",
             "Unable to authenticate. Are you sure you're using the correct ID?",
@@ -21,7 +26,7 @@ export const errorData = {
         ]
     },
     404: {
-        emoji: faSadTear,
+        emoji: SadIcon,
         messages: [
             "Error 404. We couldn't find the page you're looking for.",
             "The requested page is unavailable. It might not exist.",
@@ -40,7 +45,7 @@ export const errorData = {
         ]
     },
     500: {
-        emoji: faServer,
+        emoji: ServerIcon,
         messages: [
             "The server is grappling with an intense migraine of cosmic proportions. Please allow it some respite and return later!",
             "The server is grappling with a severe headache. Could you please return later?",
@@ -62,7 +67,7 @@ export const errorData = {
         ]
     },
     'Unknown': {
-        emoji: faFlushed,
+        emoji: FaceIcon,
         messages: [
             "Unknown error. Something unexpected happened on our side.",
             "Oops, we encountered an unexpected error.",
