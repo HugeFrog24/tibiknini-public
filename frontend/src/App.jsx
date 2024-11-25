@@ -12,7 +12,6 @@ import Navbar from "./components/Navbar";
 import Footer from './components/Footer';
 
 import { lightTheme, darkTheme } from './themes/theme';
-import { DarkModeProvider } from "./components/contexts/DarkModeContext";
 import ApiUrlContext from "./components/contexts/ApiUrlContext";
 import UserContext from "./components/contexts/UserContext";
 
@@ -38,7 +37,7 @@ const ResetPassword = React.lazy(() => import("./components/ResetPassword"));
 const SetupWizard = React.lazy(() => import("./components/SetupWizard"));
 
 import { fetchUser } from "./utils/auth";
-import { ThemeProvider, CssBaseline } from '@mui/material'; // Import CssBaseline here
+import { ThemeProvider, CssBaseline } from '@mui/material'; 
 
 function App() {
     const [user, setUser] = useState(null);
@@ -46,6 +45,8 @@ function App() {
         const savedPreference = localStorage.getItem("darkMode");
         return savedPreference !== null ? JSON.parse(savedPreference) : window.matchMedia("(prefers-color-scheme: dark)").matches;
     });
+
+    const theme = isDarkMode ? darkTheme : lightTheme;
 
     const toggleDarkMode = () => {
         setIsDarkMode(!isDarkMode);
@@ -103,12 +104,11 @@ function App() {
     }, []);
 
     return (
-        <HelmetProvider>
-            <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
+        <ThemeProvider theme={theme}>
             <CssBaseline />
-            <DarkModeProvider>
+            <HelmetProvider>
                 <ApiUrlContext.Provider value={apiUrl}>
-                    <UserContext.Provider value={{ user, isAuthenticated: !!user, updateUser }}>
+                    <UserContext.Provider value={{ user, setUser, isAuthenticated: !!user }}>
                         <Helmet>
                             <meta name="viewport" content="width=device-width, initial-scale=1"/>
                             <meta name="theme-color" content="#000000"/>
@@ -200,9 +200,8 @@ function App() {
                         </div>
                     </UserContext.Provider>
                 </ApiUrlContext.Provider>
-            </DarkModeProvider>
-            </ThemeProvider>
-        </HelmetProvider>
+            </HelmetProvider>
+        </ThemeProvider>
     );
 }
 

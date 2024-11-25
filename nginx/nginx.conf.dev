@@ -43,6 +43,45 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
+    # Vite dev server proxy
+    location /ws {
+        proxy_pass http://host.docker.internal:5173;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # Serve static files from Vite
+    location /@fs/ {
+        proxy_pass http://host.docker.internal:5173;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    location /@vite/ {
+        proxy_pass http://host.docker.internal:5173;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    location /node_modules/ {
+        proxy_pass http://host.docker.internal:5173;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    location /src/ {
+        proxy_pass http://host.docker.internal:5173;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
     location /media/ {
         alias /var/www/media/;
     }

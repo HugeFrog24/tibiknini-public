@@ -2,13 +2,12 @@ import React, {useCallback, useContext, useEffect, useState} from "react";
 import { useNavigate } from "react-router-dom";
 import Pagination from "react-bootstrap/Pagination";
 import { Helmet } from 'react-helmet-async';
-import { Typography, Button } from '@mui/material'; 
+import { Typography, Button, useTheme } from '@mui/material'; 
 import { Warning as WarningIcon, Add as AddIcon } from '@mui/icons-material';
 
 import config from "../config.json";
 import BlogPostCard from "./BlogPostCard";
 import UserContext from "./contexts/UserContext";
-import { useDarkMode } from './contexts/DarkModeContext';
 import api from "../utils/api"
 
 const BlogPostsList = ({postId}) => {
@@ -18,7 +17,7 @@ const BlogPostsList = ({postId}) => {
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
     const { user, isAuthenticated } = useContext(UserContext);
-    const { modeClasses } = useDarkMode();
+    const theme = useTheme();
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(0);
 
@@ -147,7 +146,7 @@ const BlogPostsList = ({postId}) => {
                             isDetailView={isDetailView}
                             user={user}
                             postId={postId}
-                            textClass={modeClasses.textClass}
+                            textClass={theme.palette.mode === 'dark' ? 'text-light' : 'text-dark'}
                             onPostUpdated={(updatedPost) =>
                                 handlePostUpdated(updatedPost, index)
                             }
