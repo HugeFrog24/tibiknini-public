@@ -1,6 +1,8 @@
 import { createRequestHandler } from "@remix-run/express";
 import express from "express";
 import * as build from "./build/index.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 const app = express();
 const mode = process.env.NODE_ENV || "development";
