@@ -3,6 +3,32 @@ import { useLoaderData, useNavigate } from "@remix-run/react";
 import { Box, Alert } from "@mui/material";
 import BlogPostDetail from "../old-app/components/BlogPostDetail";
 import api from "../old-app/utils/api";
+import type { MetaFunction } from "@remix-run/node";
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => {
+  if (!data?.post) {
+    return [
+      { title: "Post Not Found" },
+      { name: "description", content: "The requested blog post could not be found." },
+    ];
+  }
+
+  const { post } = data;
+  return [
+    { title: `${post.title} | Your Blog Name` },
+    { name: "description", content: post.description || post.title },
+    // OpenGraph tags
+    { property: "og:title", content: post.title },
+    { property: "og:description", content: post.description || post.title },
+    { property: "og:type", content: "article" },
+    // If you have a post image, you can add it here
+    ...(post.image ? [{ property: "og:image", content: post.image }] : []),
+    // Twitter Card tags
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: post.title },
+    { name: "twitter:description", content: post.description || post.title },
+  ];
+};
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const postId = params.postId;
