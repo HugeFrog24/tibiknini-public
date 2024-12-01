@@ -1,6 +1,6 @@
-import React, {useContext, useEffect, useState} from "react";
-import {useNavigate, useParams} from "react-router-dom";
-import {toast, ToastContainer} from 'react-toastify';
+import React, {useContext, useState} from "react";
+import {useNavigate} from "react-router-dom";
+import {toast} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import {
     Favorite as FavoriteIcon,
@@ -9,8 +9,6 @@ import {
     Delete as DeleteIcon
 } from '@mui/icons-material';
 import ReactMarkdown from "react-markdown";
-import Skeleton from "react-loading-skeleton";
-import "react-loading-skeleton/dist/skeleton.css";
 import {
     Avatar,
     Button,
@@ -22,220 +20,137 @@ import {
 } from '@mui/material';
 
 import UserContext from "./contexts/UserContext";
-import UseBlogPost from "./UseBlogPost";
 import {REDIRECT_REASONS} from "./constants/Constants";
 import BlogPostComments from "./BlogPostComments";
-import config from '../config.json';
 import api from "../utils/api";
 
-const BlogPostDetail = ({previousPath}) => {
-    const {postId} = useParams();
-    const {fetchBlogPost, deleteBlogPost} = UseBlogPost();
+const BlogPostDetail = ({ post }) => {
     const navigate = useNavigate();
     const { user, isAuthenticated } = useContext(UserContext);
-    const [postState, setPostState] = useState(null);
-    const [likesCount, setLikesCount] = useState(0);
-    const [isLiked, setIsLiked] = useState(false);
+    const [likesCount, setLikesCount] = useState(post?.likes_count || 0);
+    const [isLiked, setIsLiked] = useState(post?.is_liked || false);
     const [isLikeButtonHovered, setIsLikeButtonHovered] = useState(false);
+
+    if (!post) {
+        return null;
+    }
 
     const handleShare = () => {
         const url = window.location.href;
-
         if (navigator.share) {
             navigator.share({
-                title: postState.title,
+                title: post.title,
                 text: 'Check out this blog post!',
                 url: url,
             }).catch((error) => {
                 if (error.name !== 'AbortError') {
                     navigator.clipboard.writeText(url);
-                    toast.success("URL copied to clipboard!");
-                } else {
-                    toast.info("Sharing canceled.");
+                    toast.success('Link copied to clipboard!');
                 }
             });
         } else {
             navigator.clipboard.writeText(url);
-            toast.success("URL copied to clipboard!");
+            toast.success('Link copied to clipboard!');
         }
     };
 
-    useEffect(() => {
-        const fetchPost = async () => {
-            try {
-                const post = await fetchBlogPost(postId);
-                if (post) {
-                    setPostState(post);
-                    setLikesCount(post.likes_count);
-                    setIsLiked(post.is_liked);
-                }
-            } catch (errorCode) {
-                console.error("Failed to fetch post with error code:", errorCode);
-                if (errorCode === 404) {
-                    navigate("/error-404");
-                }
-            }
-        };
+    const handleEdit = () => {
+        navigate(`/blog/edit/${post.id}`);
+    };
 
-        if (postId) {
-            fetchPost();
+    const handleDelete = async () => {
+        try {
+            await api.delete(`/blog/posts/id/${post.id}/`);
+            navigate('/blog', { state: { redirectReason: REDIRECT_REASONS.POST_DELETED } });
+        } catch (error) {
+            console.error('Error deleting post:', error);
+            toast.error('Failed to delete post');
         }
-    }, [postId, fetchBlogPost, navigate]);
+    };
 
     const handleLike = async () => {
         if (!isAuthenticated) {
-            navigate("/login", { state: { reason: REDIRECT_REASONS.LIKE_POST } });
+            toast.error('Please log in to like posts');
             return;
         }
 
         try {
-            const response = await api({
-                method: isLiked ? 'delete' : 'post',
-                url: `/blog/posts/id/${postId}/like/`
-            });
-
-            if ((isLiked && response.status === 204) || (!isLiked && response.status === 201)) {
-                setIsLiked(!isLiked);
-                setLikesCount(isLiked ? likesCount - 1 : likesCount + 1);
-            } else {
-                console.error('Failed to like/unlike post:', response.statusText);
-            }
+            const response = await api.post(`/blog/posts/id/${post.id}/like/`);
+            setLikesCount(response.data.likes_count);
+            setIsLiked(response.data.is_liked);
         } catch (error) {
-            console.error('Failed to like/unlike post:', error);
+            console.error('Error liking post:', error);
+            toast.error('Failed to like post');
         }
-    };
-
-    const handleDelete = async () => {
-        await deleteBlogPost(postState.id);
-        navigate("/blog");
-    };
-
-    const formatDate = (dateStr) => {
-        const date = new Date(dateStr);
-        return date.toLocaleDateString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-    };
-
-    const renderTags = (tags) => {
-        if (!tags || tags.length === 0) {
-            return null;
-        }
-
-        return (
-            <Box mt={2}>
-                <Typography variant="subtitle1" fontWeight="bold">Tags</Typography>
-                <Box>
-                    {tags.map((tag, index) => (
-                        <Chip
-                            key={index}
-                            label={`#${tag.name}`}
-                            style={{backgroundColor: tag.color, color: "#FFF", marginRight: 8}}
-                        />
-                    ))}
-                </Box>
-            </Box>
-        );
     };
 
     return (
-        <Box textAlign="left">
-            <ToastContainer autoClose={3000}/>
-            {postState ? (
-                <Box id={`post-${postState.id}`}>
-                    {isAuthenticated &&
-                        (user.is_staff || user.id === postState.author.id) && (
-                            <Box display="flex" justifyContent="flex-end" mb={3}>
-                                <Button
-                                    variant="outlined"
-                                    color="primary"
-                                    onClick={() => navigate(`/blog/posts/${postState.id}/edit`)}
-                                    startIcon={<EditIcon />}
-                                    sx={{ mr: 1 }}
-                                >
-                                    Edit
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    color="error"
-                                    onClick={handleDelete}
-                                    startIcon={<DeleteIcon />}
-                                >
-                                    Remove
-                                </Button>
-                            </Box>
-                        )}
-                    <Grid2 container justifyContent="space-between" alignItems="flex-start">
-                        <Grid2>
-                            <Typography variant="h4" component="h2">{postState.title}</Typography>
-                            {postState.author ? (
-                                <Box component="a" href={`/users/${postState.author.username}`} sx={{textDecoration: 'none', display: 'flex', gap: 1, alignItems: 'center'}}>
-                                    <Avatar
-                                        src={postState.author?.image}
-                                        alt={postState.author?.username}
-                                        sx={{ width: 16, height: 16 }}
-                                    />
-                                    <Typography variant="body2">{postState.author.username}</Typography>
-                                </Box>
-                            ) : (
-                                <Typography variant="body2" color="text.secondary">Unknown Author</Typography>
-                            )}
-                        </Grid2>
-                        <Grid2 alignSelf="flex-end">
-                            <Typography variant="body2" color="text.secondary">
-                                {formatDate(postState.pub_date)}
-                            </Typography>
-                        </Grid2>
-                    </Grid2>
-                    <Box my={2}><hr/></Box>
-                    <Box>
-                        <ReactMarkdown>{postState.content}</ReactMarkdown>
-                    </Box>
-                    {renderTags(postState.tags)}
-                    <Box display="flex" justifyContent="flex-end" mt={2}>
-                        <Button
-                            variant="outlined"
-                            color="primary"
-                            sx={{ mr: 1 }}
-                            onClick={handleLike}
-                            onMouseOver={() => setIsLikeButtonHovered(true)}
-                            onMouseOut={() => setIsLikeButtonHovered(false)}
-                            startIcon={<FavoriteIcon sx={{ color: isLiked || isLikeButtonHovered ? 'red' : 'inherit' }} />}
-                        >
-                            {likesCount}
-                        </Button>
-                        <Button
-                            variant="outlined"
-                            color="primary"
-                            onClick={handleShare}
-                            startIcon={<ShareIcon />}
-                        >
-                            Share
-                        </Button>
-                    </Box>
-                    <BlogPostComments postId={postId} />
+        <Box sx={{ maxWidth: '800px', margin: '0 auto', p: 2 }}>
+            <Typography variant="h4" component="h1" gutterBottom>
+                {post.title}
+            </Typography>
+            
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Avatar src={post.author?.profile_picture} alt={post.author?.username} />
+                <Box sx={{ ml: 1 }}>
+                    <Typography variant="subtitle1">
+                        {post.author?.username}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        {new Date(post.created_at).toLocaleDateString()}
+                    </Typography>
                 </Box>
-            ) : (
-                // Skeleton placeholders for loading state
-                <Box>
-                    <Skeleton height={40} width={300} sx={{mb: 3}} />
-                    <Grid2 container justifyContent="space-between" alignItems="flex-start">
-                        <Grid2>
-                            <Skeleton variant="circular" height={16} width={16} sx={{mr: 1}} />
-                            <Skeleton width={100} />
-                        </Grid2>
-                        <Grid2>
-                            <Skeleton width={120} />
-                        </Grid2>
-                    </Grid2>
-                    <Box my={2}><hr /></Box>
-                    <Skeleton count={5} />
+            </Box>
+
+            {post.tags && post.tags.length > 0 && (
+                <Box sx={{ mb: 2 }}>
+                    {post.tags.map((tag) => (
+                        <Chip
+                            key={tag}
+                            label={tag}
+                            size="small"
+                            sx={{ mr: 1, mb: 1 }}
+                        />
+                    ))}
                 </Box>
             )}
+
+            <Box sx={{ mb: 2 }}>
+                <ReactMarkdown>{post.content}</ReactMarkdown>
+            </Box>
+
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+                <Box>
+                    <IconButton
+                        onClick={handleLike}
+                        onMouseEnter={() => setIsLikeButtonHovered(true)}
+                        onMouseLeave={() => setIsLikeButtonHovered(false)}
+                        color={isLiked ? "primary" : "default"}
+                    >
+                        <FavoriteIcon />
+                    </IconButton>
+                    <Typography variant="body2" component="span">
+                        {likesCount} {likesCount === 1 ? 'like' : 'likes'}
+                    </Typography>
+                    
+                    <IconButton onClick={handleShare} sx={{ ml: 1 }}>
+                        <ShareIcon />
+                    </IconButton>
+                </Box>
+
+                {isAuthenticated && user?.id === post.author?.id && (
+                    <Box>
+                        <IconButton onClick={handleEdit} color="primary">
+                            <EditIcon />
+                        </IconButton>
+                        <IconButton onClick={handleDelete} color="error">
+                            <DeleteIcon />
+                        </IconButton>
+                    </Box>
+                )}
+            </Box>
+
+            <BlogPostComments postId={post.id} />
         </Box>
     );
 };

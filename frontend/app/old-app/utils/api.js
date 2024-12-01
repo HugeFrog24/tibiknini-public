@@ -22,11 +22,6 @@ export const setNavigate = (navigateFunction) => {
     navigate = navigateFunction;
 };
 
-api.interceptors.request.use(request => {
-    request.headers['X-CSRFToken'] = getCookie('csrftoken');
-    return request;
-});
-
 // List of endpoints that don't require authentication
 const PUBLIC_ENDPOINTS = [
     '/auth/login/',
@@ -37,16 +32,42 @@ const PUBLIC_ENDPOINTS = [
 ];
 
 const isPublicEndpoint = (url) => {
-    return PUBLIC_ENDPOINTS.some(endpoint => url.includes(endpoint));
+    return PUBLIC_ENDPOINTS.some(endpoint => url?.includes(endpoint));
 };
+
+const isClient = typeof window !== 'undefined';
+
+function getCookie(name) {
+    if (!isClient) return null;
+    
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+api.interceptors.request.use(request => {
+    if (isClient) {
+        request.headers['X-CSRFToken'] = getCookie('csrftoken');
+    }
+    return request;
+});
 
 api.interceptors.response.use(
     response => {
         // Check if this is the setup status endpoint and status is complete
-        if (response.config.url.endsWith('/setup/status/') && response.data.status === 'complete') {
+        if (isClient && response.config.url?.endsWith('/setup/status/') && response.data.status === 'complete') {
             showToast(TOAST_MESSAGES.SETUP_ALREADY, 'info');
             navigate('/');
-            return response;
         }
         return response;
     },
@@ -55,9 +76,9 @@ api.interceptors.response.use(
             return new Promise(() => {});
         }
 
-        const isPublic = isPublicEndpoint(error.config.url);
+        const isPublic = isPublicEndpoint(error.config?.url);
 
-        if (error.response) {
+        if (error.response && isClient) {
             if (error.response.status === 503) {
                 navigate('/setup');
             } else if ((error.response.status === 401 || error.response.status === 403) && !isPublic) {
@@ -74,21 +95,5 @@ api.interceptors.response.use(
         return Promise.reject(error);
     }
 );
-
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            // Does this cookie string begin with the name we want?
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
 
 export default api;

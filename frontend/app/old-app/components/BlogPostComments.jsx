@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useState, useContext } from "react";
+import { useFetcher, useLoaderData, Link } from "@remix-run/react";
 import {
   Box,
   TextField,
@@ -9,10 +10,6 @@ import {
   Avatar,
   IconButton,
   Stack,
-  Paper,
-  CircularProgress,
-  Alert,
-  Link,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -20,434 +17,253 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  FormHelperText,
   Tooltip
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import FlagIcon from '@mui/icons-material/Flag';
 import UserContext from "./contexts/UserContext";
-import api from '../utils/api';
 import { showToast } from '../utils/toastUtils';
-import { useNavigate } from 'react-router-dom';
 
 const BlogPostComments = ({ postId }) => {
-  const [comments, setComments] = useState([]);  
-  const [error, setError] = useState(null);
-  const [loadingComments, setLoadingComments] = useState(true);
-  const [newComment, setNewComment] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const { comments = [], reportReasons = [] } = useLoaderData();
+  const fetcher = useFetcher();
+  
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editContent, setEditContent] = useState("");
+  const [newComment, setNewComment] = useState("");
   const { user, isAuthenticated } = useContext(UserContext);
   
-  // Report-related state
+  // Report dialog state
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
-  const [reportReasons, setReportReasons] = useState([]);
   const [selectedReason, setSelectedReason] = useState('');
   const [reportDescription, setReportDescription] = useState('');
   const [reportingCommentId, setReportingCommentId] = useState(null);
-  const [loadingReasons, setLoadingReasons] = useState(false);
-  const [contentTypes, setContentTypes] = useState(null);
-  const [dialog, setDialog] = useState({ open: false, title: '', content: '', actions: [] });
-  const [reportReasonError, setReportReasonError] = useState(false);
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchComments();
-  }, [postId]);
-
-  const fetchContentTypes = async () => {
-    try {
-      const response = await api.get('/moderation/reports/content_types/');
-      if (response.status === 200) {
-        setContentTypes(response.data);
-        return response.data;
-      }
-    } catch (error) {
-      showToast('error', 'Failed to fetch content types');
-      return null;
-    }
-  };
-
-  const fetchReportReasons = async () => {
-    setLoadingReasons(true);
-    try {
-      const response = await api.get('/moderation/reasons/');
-      if (response.status === 200) {
-        const reasons = response.data;
-        console.log('Received reasons:', reasons);
-        setReportReasons(reasons);
-        return reasons;
-      }
-    } catch (error) {
-      showToast('error', 'Failed to fetch report reasons');
-      return null;
-    } finally {
-      setLoadingReasons(false);
-    }
-  };
-
-  const handleReportClick = async (commentId) => {
-    if (!isAuthenticated) {
-      setDialog({
-        open: true,
-        title: "Login Required",
-        content: "Please log in to report this comment. We value your feedback in keeping our community safe.",
-        actions: [
-          {
-            text: "Cancel",
-            onClick: () => setDialog({ ...dialog, open: false }),
-            color: "primary"
-          },
-          {
-            text: "Login",
-            onClick: () => {
-              setDialog({ ...dialog, open: false });
-              navigate('/login');
-            },
-            color: "primary",
-            variant: "contained"
-          }
-        ]
-      });
-      return;
-    }
-
-    // Reset states
-    setSelectedReason('');
-    setReportDescription('');
-    setReportingCommentId(commentId);
-    setReportDialogOpen(true);
-    
-    // Fetch content types and reasons
-    const types = await fetchContentTypes();
-    if (!types) {
-      showToast('error', 'Unable to report comment at this time');
-      return;
-    }
-    
-    const reasons = await fetchReportReasons();
-    if (!reasons || !Array.isArray(reasons)) {
-      showToast('error', 'Unable to load report reasons');
-      return;
-    }
-  };
-
-  const handleSubmitReport = async (commentId) => {
-    if (!selectedReason) {
-      setReportReasonError(true);
-      showToast('error', 'Please select a reason for reporting');
-      return;
-    }
-    setReportReasonError(false);
-
-    if (!contentTypes?.comment) {
-      showToast('error', 'Unable to report comment at this time');
-      return;
-    }
-
-    try {
-      const response = await api.post('/moderation/reports/', {
-        content_type: contentTypes.comment,
-        object_id: commentId,
-        reason: selectedReason,
-        description: reportDescription
-      });
-      
-      if (response.status === 201) {
-        showToast('success', 'Report submitted successfully');
-        setReportDialogOpen(false);
-      }
-    } catch (error) {
-      showToast('error', 'Failed to submit report');
-    }
-  };
-
-  const fetchComments = async () => {
-    setLoadingComments(true);
-    setError(null);
-    try {
-      const response = await api.get(`/blog/posts/id/${postId}/comments/`);
-      if (response.status === 200) {
-        setComments(response.data.results || []);
-      }
-    } catch (error) {
-      setError('Failed to load comments. Please try again later.');
-      showToast('error', 'Failed to load comments');
-      setComments([]);
-    } finally {
-      setLoadingComments(false);
-    }
-  };
-
-  const handleSubmitComment = async (e) => {
-    e.preventDefault();
+  const handleSubmitComment = () => {
     if (!newComment.trim()) return;
 
-    setSubmitting(true);
-    try {
-      const response = await api.post(`/blog/posts/id/${postId}/comments/`, {
-        content: newComment.trim()
-      });
-      if (response.status === 201) {
-        setComments([response.data, ...comments]);
-        setNewComment("");
-        showToast('success', 'Comment posted successfully');
-      }
-    } catch (error) {
-      showToast('error', 'Failed to post comment');
-    } finally {
-      setSubmitting(false);
-    }
+    fetcher.submit(
+      { 
+        _action: 'create',
+        content: newComment.trim(),
+      },
+      { method: 'post' }
+    );
+    setNewComment("");
   };
 
-  const handleEditComment = async (commentId) => {
-    if (!editContent.trim()) return;
-
-    try {
-      const response = await api.patch(`/blog/posts/id/${postId}/comments/${commentId}/`, {
-        content: editContent.trim()
-      });
-      if (response.status === 200) {
-        setComments(comments.map(comment => 
-          comment.id === commentId ? response.data : comment
-        ));
-        setEditingCommentId(null);
-        showToast('success', 'Comment updated successfully');
-      }
-    } catch (error) {
-      showToast('error', 'Failed to update comment');
-    }
-  };
-
-  const handleDeleteComment = async (commentId) => {
-    try {
-      await api.delete(`/blog/posts/id/${postId}/comments/${commentId}/`);
-      setComments(comments.filter(comment => comment.id !== commentId));
-      showToast('success', 'Comment deleted successfully');
-    } catch (error) {
-      showToast('error', 'Failed to delete comment');
-    }
-  };
-
-  const startEditing = (comment) => {
+  const handleEditComment = (comment) => {
     setEditingCommentId(comment.id);
     setEditContent(comment.content);
   };
 
+  const handleUpdateComment = () => {
+    if (!editContent.trim()) return;
+
+    fetcher.submit(
+      {
+        _action: 'update',
+        commentId: editingCommentId,
+        content: editContent.trim(),
+      },
+      { method: 'post' }
+    );
+    setEditingCommentId(null);
+    setEditContent("");
+  };
+
+  const handleDeleteComment = (commentId) => {
+    if (window.confirm('Are you sure you want to delete this comment?')) {
+      fetcher.submit(
+        {
+          _action: 'delete',
+          commentId: commentId,
+        },
+        { method: 'post' }
+      );
+    }
+  };
+
+  const handleOpenReportDialog = (commentId) => {
+    setReportingCommentId(commentId);
+    setReportDialogOpen(true);
+  };
+
+  const handleCloseReportDialog = () => {
+    setReportDialogOpen(false);
+    setReportingCommentId(null);
+    setSelectedReason('');
+    setReportDescription('');
+  };
+
+  const handleSubmitReport = () => {
+    if (!selectedReason) return;
+
+    fetcher.submit(
+      {
+        _action: 'report',
+        commentId: reportingCommentId,
+        reason: selectedReason,
+        description: reportDescription.trim(),
+      },
+      { method: 'post' }
+    );
+    handleCloseReportDialog();
+  };
+
   return (
     <Box sx={{ mt: 4 }}>
-      <Typography variant="h5" gutterBottom>Comments</Typography>
+      <Typography variant="h6" gutterBottom>
+        Comments ({(comments || []).length})
+      </Typography>
 
-      {isAuthenticated && (
-        <Paper sx={{ p: 2, mb: 3 }}>
-          <form onSubmit={handleSubmitComment}>
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-              <Avatar
-                src={user?.image}
-                alt={user?.username}
-                sx={{ width: 40, height: 40 }}
-              />
-              <TextField
-                fullWidth
-                multiline
-                rows={3}
-                variant="outlined"
-                placeholder="Write a comment..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                disabled={submitting}
-              />
-            </Box>
-            <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-end' }}>
-              <Button
-                variant="contained"
-                type="submit"
-                disabled={submitting || !newComment.trim()}
-                startIcon={submitting ? <CircularProgress size={20} /> : null}
-              >
-                Post Comment
-              </Button>
-            </Box>
-          </form>
-        </Paper>
+      {isAuthenticated ? (
+        <Box sx={{ mb: 3 }}>
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            variant="outlined"
+            placeholder="Write a comment..."
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+          />
+          <Button
+            variant="contained"
+            onClick={handleSubmitComment}
+            disabled={!newComment.trim()}
+            sx={{ mt: 1 }}
+          >
+            Post Comment
+          </Button>
+        </Box>
+      ) : (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Please <Link href="/login">log in</Link> to post comments.
+        </Typography>
       )}
 
-      {loadingComments ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-          <CircularProgress />
-        </Box>
-      ) : error ? (
-        <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
-      ) : comments.length === 0 ? (
-        <Typography variant="body1" color="text.secondary" sx={{ p: 2, textAlign: 'center' }}>
-          No comments yet. Be the first to comment!
-        </Typography>
-      ) : (
-        <Stack spacing={2}>
-          {Array.isArray(comments) && comments.map((comment) => (
-            <Card key={comment?.id || 'unknown'}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Avatar 
-                    src={comment?.author?.image} 
-                    alt={comment?.author?.username || 'Unknown User'} 
+      <Stack spacing={2}>
+        {comments.map((comment) => (
+          <Card key={comment.id}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Avatar
+                  src={comment.author?.profile_picture}
+                  alt={comment.author?.username}
+                  sx={{ width: 32, height: 32, mr: 1 }}
+                />
+                <Box>
+                  <Typography variant="subtitle2">
+                    {comment.author?.username}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {new Date(comment.created_at).toLocaleDateString()}
+                  </Typography>
+                </Box>
+              </Box>
+
+              {editingCommentId === comment.id ? (
+                <Box>
+                  <TextField
+                    fullWidth
+                    multiline
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    sx={{ mb: 1 }}
                   />
-                  <Box sx={{ ml: 1 }}>
-                    <Typography variant="subtitle1">
-                      {comment?.author?.username || 'Unknown User'}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {comment?.pub_date ? new Date(comment.pub_date).toLocaleString() : 'Unknown date'}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
-                    {(isAuthenticated && user && user.username === comment.author.username) && (
-                      <Tooltip title="Edit">
+                  <Button
+                    variant="contained"
+                    onClick={handleUpdateComment}
+                    disabled={!editContent.trim()}
+                    size="small"
+                    sx={{ mr: 1 }}
+                  >
+                    Save
+                  </Button>
+                  <Button
+                    onClick={() => setEditingCommentId(null)}
+                    size="small"
+                  >
+                    Cancel
+                  </Button>
+                </Box>
+              ) : (
+                <Box>
+                  <Typography variant="body2">{comment.content}</Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                    {isAuthenticated && user?.id === comment.author?.id && (
+                      <>
                         <IconButton
                           size="small"
-                          onClick={() => startEditing(comment)}
-                          disabled={editingCommentId === comment.id}
-                          color="primary"
+                          onClick={() => handleEditComment(comment)}
                         >
-                          <EditIcon />
+                          <EditIcon fontSize="small" />
                         </IconButton>
-                      </Tooltip>
-                    )}
-                    {isAuthenticated && user && (user.username === comment.author.username || user.is_staff) && (
-                      <Tooltip title="Delete">
                         <IconButton
                           size="small"
                           onClick={() => handleDeleteComment(comment.id)}
-                          color="error"
                         >
-                          <DeleteIcon />
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </>
+                    )}
+                    {isAuthenticated && user?.id !== comment.author?.id && (
+                      <Tooltip title="Report comment">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleOpenReportDialog(comment.id)}
+                        >
+                          <FlagIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     )}
-                    <Tooltip title="Report">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleReportClick(comment.id)}
-                        color="warning"
-                      >
-                        <FlagIcon />
-                      </IconButton>
-                    </Tooltip>
                   </Box>
                 </Box>
-                
-                {editingCommentId === comment.id ? (
-                  <Box>
-                    <TextField
-                      fullWidth
-                      multiline
-                      rows={2}
-                      variant="outlined"
-                      value={editContent}
-                      onChange={(e) => setEditContent(e.target.value)}
-                      sx={{ mb: 1 }}
-                    />
-                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-                      <Button
-                        size="small"
-                        onClick={() => setEditingCommentId(null)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        variant="contained"
-                        size="small"
-                        onClick={() => handleEditComment(comment.id)}
-                        disabled={!editContent.trim()}
-                      >
-                        Save
-                      </Button>
-                    </Box>
-                  </Box>
-                ) : (
-                  <Typography variant="body1">{comment.content}</Typography>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </Stack>
-      )}
-      {/* Report Dialog */}
-      <Dialog open={reportDialogOpen} onClose={() => setReportDialogOpen(false)}>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </Stack>
+
+      <Dialog open={reportDialogOpen} onClose={handleCloseReportDialog}>
         <DialogTitle>Report Comment</DialogTitle>
         <DialogContent>
-          <Box sx={{ mt: 2, minWidth: 400 }}>
-            <FormControl fullWidth sx={{ mb: 2 }} error={reportReasonError}>
-              <InputLabel>Reason</InputLabel>
-              <Select
-                value={selectedReason}
-                onChange={(e) => {
-                  setSelectedReason(e.target.value);
-                  setReportReasonError(false);
-                }}
-                label="Reason"
-                required
-              >
-                {loadingReasons ? (
-                  <MenuItem disabled>Loading reasons...</MenuItem>
-                ) : (
-                  reportReasons && reportReasons.map((reason) => (
-                    <MenuItem key={reason.id} value={reason.id}>
-                      {reason.name}
-                    </MenuItem>
-                  ))
-                )}
-              </Select>
-              {reportReasonError && (
-                <FormHelperText>Please select a reason for reporting</FormHelperText>
-              )}
-            </FormControl>
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              label="Additional Details (Optional)"
-              value={reportDescription}
-              onChange={(e) => setReportDescription(e.target.value)}
-              variant="outlined"
-            />
-            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-              <Button onClick={() => setReportDialogOpen(false)} color="primary">
-                Cancel
-              </Button>
-              <Button 
-                onClick={() => handleSubmitReport(reportingCommentId)}
-                color="primary"
-                variant="contained"
-              >
-                Submit Report
-              </Button>
-            </Box>
-          </Box>
-        </DialogContent>
-      </Dialog>
-      {/* Login Dialog */}
-      <Dialog open={dialog.open} onClose={() => setDialog({ ...dialog, open: false })}>
-        <DialogTitle>{dialog.title}</DialogTitle>
-        <DialogContent>
-          <Box sx={{ mt: 2 }}>
-            {dialog.content}
-            {dialog.actions.length > 0 && (
-              <Box sx={{ mt: 2 }}>
-                {dialog.actions.map((action, index) => (
-                  <Button
-                    key={index}
-                    onClick={action.onClick}
-                    color={action.color}
-                    variant={action.variant}
-                  >
-                    {action.text}
-                  </Button>
-                ))}
-              </Box>
-            )}
+          <FormControl fullWidth sx={{ mt: 2 }}>
+            <InputLabel>Reason</InputLabel>
+            <Select
+              value={selectedReason}
+              onChange={(e) => setSelectedReason(e.target.value)}
+              label="Reason"
+            >
+              {reportReasons.map((reason) => (
+                <MenuItem key={reason.id} value={reason.id}>
+                  {reason.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            label="Additional Details (Optional)"
+            value={reportDescription}
+            onChange={(e) => setReportDescription(e.target.value)}
+            sx={{ mt: 2 }}
+          />
+          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+            <Button onClick={handleCloseReportDialog} sx={{ mr: 1 }}>
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleSubmitReport}
+              disabled={!selectedReason}
+            >
+              Submit Report
+            </Button>
           </Box>
         </DialogContent>
       </Dialog>
