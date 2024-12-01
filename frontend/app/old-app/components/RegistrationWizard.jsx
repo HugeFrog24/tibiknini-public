@@ -1,8 +1,8 @@
 import React, { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from '@remix-run/react';
 import ReCAPTCHA from "react-google-recaptcha";
 import { useFormik } from 'formik';
-import * as Yup from 'yup';
+import { object, string, ref } from 'yup';
 import {
   Box,
   Button,
@@ -38,9 +38,9 @@ function RegistrationWizard() {
           type: "text",
         }
       ],
-      validationSchema: Yup.object({
-        first_name: Yup.string().trim().required("Required"),
-        last_name: Yup.string().trim().required("Required")
+      validationSchema: object({
+        first_name: string().trim().required("Required"),
+        last_name: string().trim().required("Required")
       })
     },
     {
@@ -54,8 +54,8 @@ function RegistrationWizard() {
           type: "email",
         }
       ],
-      validationSchema: Yup.object({
-        email: Yup.string().email("Invalid email address").required("Required")
+      validationSchema: object({
+        email: string().email("Invalid email address").required("Required")
       })
     },
     {
@@ -79,10 +79,10 @@ function RegistrationWizard() {
           type: "password",
         }
       ],
-      validationSchema: Yup.object({
-        username: Yup.string().trim().required("Required"),
-        password: Yup.string().trim().min(8, "Password should be at least 8 characters").required("Required"),
-        password2: Yup.string().oneOf([Yup.ref("password")], "Passwords must match").required("Required")
+      validationSchema: object({
+        username: string().trim().required("Required"),
+        password: string().trim().min(8, "Password should be at least 8 characters").required("Required"),
+        password2: string().oneOf([ref("password")], "Passwords must match").required("Required")
       })
     },
     {
@@ -90,7 +90,7 @@ function RegistrationWizard() {
       label: "Welcome Aboard!",
       description: "",
       fields: [],
-      validationSchema: Yup.object({})
+      validationSchema: object({})
     }
   ];
 

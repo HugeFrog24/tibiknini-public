@@ -8,7 +8,6 @@ import {
     Share as ShareIcon,
     Delete as DeleteIcon
 } from '@mui/icons-material';
-import {Helmet} from 'react-helmet-async';
 import ReactMarkdown from "react-markdown";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
@@ -145,13 +144,6 @@ const BlogPostDetail = ({previousPath}) => {
 
     return (
         <Box textAlign="left">
-            <Helmet>
-                <title>{postState ? `${postState.title} - ${config.siteName}` : "Loading..."}</title>
-                <meta name="description" content={postState ? postState.summary : "Loading blog post..."}/>
-                <meta property="og:title" content={postState ? postState.title : "Loading..."}/>
-                <meta property="og:description" content={postState ? postState.summary : "Loading blog post..."}/>
-                <meta property="og:url" content={window.location.href}/>
-            </Helmet>
             <ToastContainer autoClose={3000}/>
             {postState ? (
                 <Box id={`post-${postState.id}`}>

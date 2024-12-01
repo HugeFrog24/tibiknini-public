@@ -1,6 +1,6 @@
 import React, { useContext, useState } from "react";
 import UserContext from "./contexts/UserContext";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "@remix-run/react";
 import {
   AppBar,
   Box,
@@ -70,37 +70,93 @@ const NavigationBar = ({ toggleDarkMode }) => {
     { path: "/contact", icon: <EmailIcon />, label: "Contact" },
   ];
 
+  const getLinkStyle = (path) => {
+    const isActive = location.pathname === path;
+    return {
+      textDecoration: 'none',
+      color: 'inherit',
+      backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
+    };
+  };
+
   const renderNavLinks = () => (
     <Box sx={{ display: { xs: 'none', sm: 'flex' } }}>
       {navItems.map((item) => (
-        <Button
+        <Link
           key={item.path}
-          component={Link}
           to={item.path}
-          color="inherit"
-          sx={{
-            mx: 1,
-            color: 'white',
-            backgroundColor: location.pathname === item.path ? 'action.selected' : 'transparent',
-            '&:hover': {
-              backgroundColor: 'action.hover',
-            },
+          style={{
+            textDecoration: 'none',
+            color: 'inherit'
           }}
         >
-          {item.icon}
-          <Typography variant="button" sx={{ ml: 1 }}>{item.label}</Typography>
-        </Button>
+          <Button
+            color="inherit"
+            sx={{
+              px: 2,
+              py: 1,
+              display: 'flex',
+              alignItems: 'center',
+              ...(location.pathname === item.path && {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)'
+              })
+            }}
+          >
+            {item.icon}
+            <Typography variant="button" sx={{ ml: 1 }}>{item.label}</Typography>
+          </Button>
+        </Link>
       ))}
     </Box>
   );
 
+  const renderMobileNavLinks = () => (
+    <Box sx={{ width: 250 }} role="presentation">
+      <Typography variant="h6" sx={{ p: 2 }}>
+        Menu
+      </Typography>
+      <List>
+        {navItems.map((item) => (
+          <ListItem key={item.path} disablePadding>
+            <Link
+              to={item.path}
+              style={{
+                textDecoration: 'none',
+                color: 'inherit',
+                width: '100%'
+              }}
+            >
+              <Button
+                fullWidth
+                color="inherit"
+                sx={{
+                  justifyContent: 'flex-start',
+                  px: 3,
+                  py: 1,
+                  ...(location.pathname === item.path && {
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                  })
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText primary={item.label} />
+              </Button>
+            </Link>
+          </ListItem>
+        ))}
+      </List>
+    </Box>
+  );
+
   const renderUserSection = () => (
-    <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
-      <IconButton onClick={toggleDarkMode} color="inherit">
-        {theme.palette.mode === "dark" ? <Brightness7Icon /> : <Brightness4Icon />}
-      </IconButton>
+    <Box sx={{ display: 'flex', alignItems: 'center' }}>
       {isAuthenticated ? (
         <>
+          <IconButton onClick={toggleDarkMode} color="inherit">
+            {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+          </IconButton>
           <IconButton
             onClick={handleMenu}
             color="inherit"
@@ -126,21 +182,21 @@ const NavigationBar = ({ toggleDarkMode }) => {
             onClose={handleClose}
           >
             <MenuItem disabled>{user.username}</MenuItem>
-            <MenuItem component={Link} to="/users/me" onClick={handleClose}>
+            <MenuItem onClick={() => { handleClose(); navigate("/users/me"); }}>
               <ListItemIcon>
                 <AccountCircleIcon fontSize="small" />
               </ListItemIcon>
               <ListItemText>Profile</ListItemText>
             </MenuItem>
             {user.is_staff && (
-              <MenuItem component="a" href="/admin" onClick={handleClose}>
+              <MenuItem onClick={() => { handleClose(); navigate("/admin"); }}>
                 <ListItemIcon>
                   <SettingsIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>Admin console</ListItemText>
               </MenuItem>
             )}
-            <MenuItem component={Link} to="/settings" onClick={handleClose}>
+            <MenuItem onClick={() => { handleClose(); navigate("/settings"); }}>
               <ListItemIcon>
                 <SettingsIcon fontSize="small" />
               </ListItemIcon>
@@ -157,10 +213,9 @@ const NavigationBar = ({ toggleDarkMode }) => {
       ) : (
         <Button
           variant="outlined"
-          component={Link}
-          to="/login"
           color="inherit"
           startIcon={<ExitToAppIcon />}
+          onClick={() => navigate("/login")}
         >
           Login
         </Button>
@@ -180,29 +235,32 @@ const NavigationBar = ({ toggleDarkMode }) => {
       </Typography>
       <List>
         {navItems.map((item) => (
-          <ListItem 
-            key={item.path} 
-            component={Link} 
-            to={item.path} 
-            disablePadding
-          >
-            <Button
-              fullWidth
-              sx={{
-                justifyContent: 'flex-start',
-                padding: 2,
-                color: 'text.primary',
-                '&:hover': {
-                  backgroundColor: 'action.hover',
-                },
-                '&.active': {
-                  backgroundColor: 'action.selected',
-                },
+          <ListItem key={item.path} disablePadding>
+            <Link
+              to={item.path}
+              style={{
+                textDecoration: 'none',
+                color: 'inherit',
+                width: '100%'
               }}
-              startIcon={item.icon}
             >
-              {item.label}
-            </Button>
+              <Button
+                fullWidth
+                sx={{
+                  justifyContent: 'flex-start',
+                  px: 3,
+                  py: 1,
+                  ...(location.pathname === item.path && {
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                  })
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText primary={item.label} />
+              </Button>
+            </Link>
           </ListItem>
         ))}
       </List>

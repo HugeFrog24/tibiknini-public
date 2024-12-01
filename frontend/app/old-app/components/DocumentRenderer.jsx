@@ -2,21 +2,21 @@ import React, { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
-import { Helmet } from 'react-helmet-async';
 import { 
   Typography, 
   Container, 
   Skeleton,
   useTheme,
   Box,
-  Link
 } from '@mui/material';
+import { Link } from '@remix-run/react';
 import LinkIcon from '@mui/icons-material/Link';
+import PropTypes from 'prop-types';
 
 import config from "../config.json";
 import api from "../utils/api";
 
-function DocumentRenderer({endpoint}) {
+function DocumentRenderer({ endpoint }) {
     const [title, setTitle] = useState('');
     const [lastUpdated, setLastUpdated] = useState('');
     const [content, setContent] = useState('');
@@ -40,12 +40,60 @@ function DocumentRenderer({endpoint}) {
         fetchDocument();
     }, [endpoint]);
 
+    const CustomLink = ({ href, children }) => {
+        const isInternal = href.startsWith('/');
+        
+        if (isInternal) {
+            return (
+                <Link
+                    to={href}
+                    style={{
+                        color: 'inherit',
+                        textDecoration: 'none',
+                        '&:hover': { 
+                            color: theme.palette.primary.main,
+                            '& .MuiSvgIcon-root': { opacity: 1 } 
+                        },
+                    }}
+                >
+                    {children}
+                    <LinkIcon 
+                        fontSize="small" 
+                        sx={{ 
+                            marginLeft: 1, 
+                            opacity: 0, 
+                            transition: 'opacity 0.2s'
+                        }} 
+                    />
+                </Link>
+            );
+        }
+
+        return (
+            <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                    color: 'inherit',
+                    textDecoration: 'none',
+                }}
+            >
+                {children}
+                <LinkIcon 
+                    fontSize="small" 
+                    sx={{ 
+                        marginLeft: 1, 
+                        opacity: 0, 
+                        transition: 'opacity 0.2s'
+                    }} 
+                />
+            </a>
+        );
+    };
+
     return (
         <Container maxWidth="md">
-            <Helmet>
-                <title>{loading ? 'Loading...' : `${title} - ${config.siteName}`}</title>
-                <meta name="description" content={loading ? 'Loading...' : `Read ${title} at ${config.siteName}`}/>
-            </Helmet>
             <Box sx={{ 
                 textAlign: 'left', 
                 marginTop: theme.spacing(3),
@@ -67,27 +115,7 @@ function DocumentRenderer({endpoint}) {
                                 h2: ({node, ...props}) => <Typography variant="h5" gutterBottom {...props} />,
                                 h3: ({node, ...props}) => <Typography variant="h6" gutterBottom {...props} />,
                                 p: ({node, ...props}) => <Typography variant="body1" component="p" sx={{marginBottom: theme.spacing(2)}} {...props} />,
-                                a: ({node, ...props}) => (
-                                    <Link 
-                                        {...props} 
-                                        color="textPrimary" 
-                                        underline="none" 
-                                        sx={{ 
-                                            '&:hover': { 
-                                                color: 'primary.main', 
-                                                '& .MuiSvgIcon-root': { opacity: 1 } 
-                                            },
-                                            '& .MuiSvgIcon-root': { 
-                                                marginLeft: 1, 
-                                                opacity: 0, 
-                                                transition: 'opacity 0.2s' 
-                                            }
-                                        }}
-                                    >
-                                        {props.children}
-                                        <LinkIcon fontSize="small" />
-                                    </Link>
-                                )
+                                a: ({node, href, ...props}) => <CustomLink href={href} {...props} />
                             }}
                             rehypePlugins={[
                                 rehypeSlug,
@@ -102,5 +130,9 @@ function DocumentRenderer({endpoint}) {
         </Container>
     );
 }
+
+DocumentRenderer.propTypes = {
+    endpoint: PropTypes.string.isRequired,
+};
 
 export default DocumentRenderer;

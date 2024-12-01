@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Container, Row, Col, Form } from 'react-bootstrap';
+import { Container, Grid, Box } from '@mui/material';
 import { TextField, Typography, Button, CircularProgress } from '@mui/material';
-import { Helmet } from 'react-helmet-async';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@remix-run/react';
 import { showToast } from '../utils/toastUtils';
 import api from '../utils/api';
 import config from "../config.json";
@@ -38,43 +37,41 @@ function ForgotPassword() {
     if (isEmailSent) {
         return (
             <Container>
-                <Row className="justify-content-center">
-                    <Col xs={12} md={8} lg={6} className="text-center">
-                        <Typography variant="h5" component="h2" className="mb-4">
-                            Check Your Email
-                        </Typography>
-                        <Typography variant="body1" className="mb-4">
-                            We've sent password reset instructions to your email address.
-                            Please check your inbox and follow the instructions to reset your password.
-                        </Typography>
-                        <Button
-                            variant="contained"
-                            onClick={() => navigate('/login')}
-                            className="mt-3"
-                        >
-                            Return to Login
-                        </Button>
-                    </Col>
-                </Row>
+                <Grid container justifyContent="center">
+                    <Grid item xs={12} md={8} lg={4}>
+                        <Box component="form" onSubmit={handleSubmit} noValidate>
+                            <Typography variant="h5" component="h2" className="mb-4">
+                                Check Your Email
+                            </Typography>
+                            <Typography variant="body1" className="mb-4">
+                                We've sent password reset instructions to your email address.
+                                Please check your inbox and follow the instructions to reset your password.
+                            </Typography>
+                            <Button
+                                variant="contained"
+                                onClick={() => navigate('/login')}
+                                className="mt-3"
+                            >
+                                Return to Login
+                            </Button>
+                        </Box>
+                    </Grid>
+                </Grid>
             </Container>
         );
     }
 
     return (
         <Container>
-            <Helmet>
-                <title>Forgot Password - {config.siteName}</title>
-                <meta name="description" content="Reset your password" />
-            </Helmet>
-            <Row className="justify-content-center">
-                <Col xs={12} md={8} lg={4}>
-                    <Typography variant="h4" component="h2" className="mb-4">
-                        Forgot Password
-                    </Typography>
-                    <Typography variant="body1" className="mb-4">
-                        Enter your email address and we'll send you instructions to reset your password.
-                    </Typography>
-                    <Form onSubmit={handleSubmit} noValidate>
+            <Grid container justifyContent="center">
+                <Grid item xs={12} md={8} lg={4}>
+                    <Box component="form" onSubmit={handleSubmit} noValidate>
+                        <Typography variant="h4" component="h2" className="mb-4">
+                            Forgot Password
+                        </Typography>
+                        <Typography variant="body1" className="mb-4">
+                            Enter your email address and we'll send you instructions to reset your password.
+                        </Typography>
                         <TextField
                             id="email"
                             label="Email"
@@ -107,9 +104,9 @@ function ForgotPassword() {
                         >
                             Back to Login
                         </Button>
-                    </Form>
-                </Col>
-            </Row>
+                    </Box>
+                </Grid>
+            </Grid>
         </Container>
     );
 }

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Container, Box, Link as MuiLink } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
-import { useTheme } from '@mui/material/styles';
+import { Link } from '@remix-run/react';
+import { useTheme } from '@mui/material';
 
 function Footer() {
     const theme = useTheme();
@@ -26,7 +26,7 @@ function Footer() {
                 aria-label="Footer Navigation"
             >
                 <MuiLink
-                    component={RouterLink}
+                    component={Link}
                     to="/privacy-policy"
                     color="inherit"
                     sx={{ mr: 1 }}
@@ -36,7 +36,7 @@ function Footer() {
                 </MuiLink>
                 <Box component="span" sx={{ mx: 1 }} aria-hidden="true">|</Box>
                 <MuiLink
-                    component={RouterLink}
+                    component={Link}
                     to="/terms-of-service"
                     color="inherit"
                     sx={{ ml: 1 }}

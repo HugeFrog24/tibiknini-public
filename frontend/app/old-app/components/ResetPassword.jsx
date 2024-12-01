@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Form } from 'react-bootstrap';
 import { TextField, Typography, Button, CircularProgress } from '@mui/material';
-import { Helmet } from 'react-helmet-async';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from '@remix-run/react';
 import { showToast } from '../utils/toastUtils';
 import api from '../utils/api';
 import config from "../config.json";
@@ -82,10 +81,6 @@ function ResetPassword() {
 
     return (
         <Container>
-            <Helmet>
-                <title>Reset Password - {config.siteName}</title>
-                <meta name="description" content="Reset your password" />
-            </Helmet>
             <Row className="justify-content-center">
                 <Col xs={12} md={8} lg={4}>
                     <Typography variant="h4" component="h2" className="mb-4">

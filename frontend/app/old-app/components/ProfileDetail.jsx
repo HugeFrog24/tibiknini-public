@@ -1,5 +1,5 @@
 import {useCallback, useContext, useEffect, useRef, useState} from "react";
-import {Link, useNavigate, useParams, useLocation} from "react-router-dom";
+import {Link, useNavigate, useParams, useLocation} from "@remix-run/react";
 import {Button, Card, Col, Container, InputGroup, Form, Row} from "react-bootstrap";
 import {
     CheckCircle as CheckCircleIcon,
@@ -9,10 +9,10 @@ import {
 } from '@mui/icons-material';
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
-import Tabs from '@mui/material/Tabs';
-import Tab from '@mui/material/Tab';
-import Box from '@mui/material/Box';
-import Avatar from '@mui/material/Avatar';
+import { Tabs } from '@mui/material'
+import { Tab } from '@mui/material'
+import { Box } from '@mui/material'
+import { Avatar } from '@mui/material'
 
 import UserContext from "./contexts/UserContext";
 import {REDIRECT_REASONS} from "./constants/Constants";

@@ -1,6 +1,5 @@
 import React, {useContext, useEffect, useState} from 'react';
-
-import {useNavigate, useParams} from "react-router-dom";
+import {useNavigate, useParams} from "@remix-run/react";
 import {toast} from "react-toastify";
 import {Box, Button, Checkbox, FormControlLabel, TextField} from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';

@@ -1,7 +1,7 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@remix-run/react';
 import { Card, CardContent, CardMedia, Typography, Button, Grid2, Skeleton } from '@mui/material';
-import Avatar from '@mui/material/Avatar';
+import { Avatar } from '@mui/material'
 import ImageIcon from '@mui/icons-material/Image';
 
 const BlogPostCard = ({ post }) => {
@@ -22,18 +22,18 @@ const BlogPostCard = ({ post }) => {
                 <Skeleton variant="rectangular" height={200} />
                 <CardContent>
                     <Grid2 container spacing={2} alignItems="center" justifyContent="space-between">
-                        <Grid2 item>
+                        <Grid2 xs={12} sm={8}>
                             <Skeleton width="200px" height="32px" />
                             <Grid2 container spacing={2} alignItems="center" className="mt-3">
-                                <Grid2 item>
+                                <Grid2 xs={1}>
                                     <Skeleton variant="circular" width={32} height={32} />
                                 </Grid2>
-                                <Grid2 item>
+                                <Grid2 xs={11}>
                                     <Skeleton width="100px" />
                                 </Grid2>
                             </Grid2>
                         </Grid2>
-                        <Grid2 item>
+                        <Grid2 xs={12} sm={4}>
                             <Skeleton variant="rectangular" width={50} height={40} />
                         </Grid2>
                     </Grid2>
@@ -66,7 +66,7 @@ const BlogPostCard = ({ post }) => {
             )}
             <CardContent>
                 <Grid2 container spacing={2} alignItems="center" justifyContent="space-between">
-                    <Grid2 item xs>
+                    <Grid2 xs={12} sm={8}>
                         <Typography variant="h5" component="div" className="mb-1">
                             <Button onClick={() => navigate(`/blog/posts/${post.id}`)} 
                                     className={`text-decoration-none`}>
@@ -74,10 +74,10 @@ const BlogPostCard = ({ post }) => {
                             </Button>
                         </Typography>
                         <Grid2 container spacing={2} alignItems="center">
-                            <Grid2 item>
+                            <Grid2 xs={1}>
                                 <Avatar src={post.author.image} alt={post.author.username} />
                             </Grid2>
-                            <Grid2 item>
+                            <Grid2 xs={11}>
                                 <Button onClick={() => navigate(`/users/${post.author.username}`)}
                                         className={`text-decoration-none`}>
                                     <Typography variant="subtitle1">{post.author.username}</Typography>
@@ -85,7 +85,7 @@ const BlogPostCard = ({ post }) => {
                             </Grid2>
                         </Grid2>
                     </Grid2>
-                    <Grid2 item>
+                    <Grid2 xs={12} sm={4}>
                         <Button variant="contained" onClick={() => navigate(`/blog/posts/${post.id}`)}>
                             Go!
                         </Button>

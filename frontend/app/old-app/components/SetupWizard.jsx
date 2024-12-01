@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Container, TextField, Button, CircularProgress, Typography, Box, styled, LinearProgress } from "@mui/material";
-import Stepper from '@mui/material/Stepper';
-import Step from '@mui/material/Step';
-import StepLabel from '@mui/material/StepLabel';
-import StepConnector, { stepConnectorClasses } from '@mui/material/StepConnector';
-import { useNavigate } from "react-router-dom";
+import { Stepper, Step, StepLabel, StepConnector, stepConnectorClasses } from '@mui/material';
+import { useNavigate } from '@remix-run/react';
 import api from '../utils/api';
-import * as Yup from 'yup';
+import { object, string, number, boolean, ref } from 'yup';
 import { useFormik } from 'formik';
 import { showToast } from '../utils/toastUtils';
 import Check from '@mui/icons-material/Check';
@@ -161,12 +158,12 @@ function SetupWizard() {
                 { id: "db_user", label: "Database User", type: "text", required: true },
                 { id: "db_password", label: "Database Password", type: "password", required: true }
             ],
-            validationSchema: Yup.object({
-                db_host: Yup.string().required("Required"),
-                db_port: Yup.number().required("Required"),
-                db_name: Yup.string().required("Required"),
-                db_user: Yup.string().required("Required"),
-                db_password: Yup.string().required("Required")
+            validationSchema: object({
+                db_host: string().required("Required"),
+                db_port: number().required("Required"),
+                db_name: string().required("Required"),
+                db_user: string().required("Required"),
+                db_password: string().required("Required")
             })
         },
         {
@@ -179,11 +176,11 @@ function SetupWizard() {
                 { id: "admin_password", label: "Admin Password", type: "password", required: true },
                 { id: "admin_password2", label: "Confirm Password", type: "password", required: true }
             ],
-            validationSchema: Yup.object({
-                admin_username: Yup.string().required("Required"),
-                admin_email: Yup.string().email("Invalid email address").required("Required"),
-                admin_password: Yup.string().min(8, "Password should be at least 8 characters").required("Required"),
-                admin_password2: Yup.string().oneOf([Yup.ref("admin_password")], "Passwords must match").required("Required")
+            validationSchema: object({
+                admin_username: string().required("Required"),
+                admin_email: string().email("Invalid email address").required("Required"),
+                admin_password: string().min(8, "Password should be at least 8 characters").required("Required"),
+                admin_password2: string().oneOf([ref("admin_password")], "Passwords must match").required("Required")
             })
         },
         {
@@ -193,8 +190,8 @@ function SetupWizard() {
             fields: [
                 { id: "site_title", label: "Site Title", type: "text" }
             ],
-            validationSchema: Yup.object({
-                site_title: Yup.string().required("Required")
+            validationSchema: object({
+                site_title: string().required("Required")
             })
         },
         {
@@ -209,13 +206,13 @@ function SetupWizard() {
                 { id: "smtp_from_email", label: "From Email", type: "email", required: true },
                 { id: "smtp_use_tls", label: "Use TLS", type: "checkbox" }
             ],
-            validationSchema: Yup.object({
-                smtp_host: Yup.string().required("Required"),
-                smtp_port: Yup.number().required("Required"),
-                smtp_username: Yup.string().required("Required"),
-                smtp_password: Yup.string().required("Required"),
-                smtp_from_email: Yup.string().email("Invalid email address").required("Required"),
-                smtp_use_tls: Yup.boolean()
+            validationSchema: object({
+                smtp_host: string().required("Required"),
+                smtp_port: number().required("Required"),
+                smtp_username: string().required("Required"),
+                smtp_password: string().required("Required"),
+                smtp_from_email: string().email("Invalid email address").required("Required"),
+                smtp_use_tls: boolean()
             })
         }
     ];

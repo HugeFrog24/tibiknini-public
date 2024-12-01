@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { errorData } from './constants/errorMessages';
 
-function ErrorComponent({errorCode}) {
+function ErrorComponent({errorCode = 404}) {
     const validErrorCode = errorData.hasOwnProperty(errorCode) ? errorCode : 'Unknown';
     const errorInfo = errorData[validErrorCode] || errorData['default'];
     const randomMessage = errorInfo.messages[Math.floor(Math.random() * errorInfo.messages.length)];
@@ -15,7 +15,7 @@ function ErrorComponent({errorCode}) {
             </Typography>
             <Typography>{randomMessage}</Typography>
             <meta name="robots" content="noindex"/>
-            <meta httpEquiv="status" content={errorCode.toString()}/>
+            {errorCode && <meta httpEquiv="status" content={errorCode.toString()}/>}
         </Box>
     );
 }

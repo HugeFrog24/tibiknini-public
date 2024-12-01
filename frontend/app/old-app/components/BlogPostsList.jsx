@@ -1,9 +1,9 @@
 import React, {useCallback, useContext, useEffect, useState} from "react";
-import { useNavigate } from "react-router-dom";
-import Pagination from "react-bootstrap/Pagination";
-import { Helmet } from 'react-helmet-async';
-import { Typography, Button, useTheme } from '@mui/material'; 
+import { useNavigate } from "@remix-run/react";
+import { Pagination as MuiPagination } from '@mui/material';
+import { Typography, Button, useTheme, Divider } from '@mui/material'; 
 import { Warning as WarningIcon, Add as AddIcon } from '@mui/icons-material';
+import { Container, Grid, Box, Alert } from '@mui/material';
 
 import config from "../config.json";
 import BlogPostCard from "./BlogPostCard";
@@ -32,17 +32,23 @@ const BlogPostsList = ({postId}) => {
             api.get(url)
                 .then((response) => {
                     const data = response.data;
-                    setBlogPosts(postId ? [data] : data.results);
+                    if (!data) {
+                        throw new Error('No data received');
+                    }
+                    setBlogPosts(postId ? [data].filter(Boolean) : (data.results || []));
                     if (data.page_count) {
                         setTotalPages(data.page_count);
-                    } else {
+                    } else if (data.count) {
                         const calculatedPages = Math.ceil(data.count / 10);
                         setTotalPages(calculatedPages);
+                    } else {
+                        setTotalPages(1);
                     }
                     setIsLoading(false);
                 })
                 .catch((error) => {
                     console.error("Error fetching blog posts:", error);
+                    setBlogPosts([]);
                     if (retryAttempt < 3) {
                         setTimeout(() => {
                             fetchBlogPosts(retryAttempt + 1, page);
@@ -78,18 +84,16 @@ const BlogPostsList = ({postId}) => {
     };
 
     const renderPagination = () => {
-        let items = [];
-        for (let number = 1; number <= totalPages; number++) {
-            items.push(
-                <Pagination.Item
-                    key={number}
-                    active={number === currentPage}
-                    onClick={() => setCurrentPage(number)}>
-                    {number}
-                </Pagination.Item>
-            );
-        }
-        return <Pagination>{items}</Pagination>;
+        return (
+            <Box display="flex" justifyContent="center" mt={2}>
+                <MuiPagination 
+                    count={totalPages}
+                    page={currentPage}
+                    onChange={(e, page) => setCurrentPage(page)}
+                    color="primary"
+                />
+            </Box>
+        );
     };
 
     useEffect(() => {
@@ -97,48 +101,52 @@ const BlogPostsList = ({postId}) => {
     }, [fetchBlogPosts, currentPage]);
 
     return (
-        <div>
-            <Helmet>
-                <title>Blog - {config.siteName}</title>
-                <meta name="description" content={`Browse the latest blog posts on ${config.siteName}`} />
-            </Helmet>
-            <div className="d-flex align-items-center justify-content-between">
-                <Typography variant="h4" component="h1">Blog</Typography>
-                {isAuthenticated && user.is_staff && !isDetailView && (
-                    <div className="text-end mb-3">
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            onClick={handleAddPostClick}
-                            startIcon={<AddIcon />}
-                        >
-                            Add Post
-                        </Button>
-                    </div>
-                )}
-            </div>
-            <hr/>
+        <Container>
+            <Box mb={3}>
+                <Grid container alignItems="center" justifyContent="space-between">
+                    <Grid item>
+                        <Typography variant="h4" component="h1">Blog</Typography>
+                    </Grid>
+                    {isAuthenticated && user.is_staff && !isDetailView && (
+                        <Grid item>
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={handleAddPostClick}
+                                startIcon={<AddIcon />}
+                            >
+                                Add Post
+                            </Button>
+                        </Grid>
+                    )}
+                </Grid>
+            </Box>
+            <Divider />
             {isLoading ? (
-                <div>
+                <Box mt={2}>
                     {Array(5).fill(0).map((_, index) => (
                         <BlogPostCard key={index} />
-                        ))}
-                </div>
+                    ))}
+                </Box>
             ) : hasError ? (
-                <div>
-                    <WarningIcon color="warning" fontSize="large" />
-                    <Typography variant="body1">Error retrieving data</Typography>
-                    <Button variant="contained" color="primary" onClick={handleRetryClick}>
-                        Retry
-                    </Button>
-                </div>
+                <Box mt={2} textAlign="center">
+                    <Alert severity="warning" 
+                        action={
+                            <Button color="inherit" size="small" onClick={handleRetryClick}>
+                                Retry
+                            </Button>
+                        }
+                    >
+                        Error retrieving data
+                    </Alert>
+                </Box>
             ) : blogPosts.length === 0 ? (
-                <div>
+                <Box mt={2}>
                     <Typography variant="h5" component="h3">Nothing to show</Typography>
-                    <p>There are no blog posts available at this time.</p>
-                </div>
+                    <Typography>There are no blog posts available at this time.</Typography>
+                </Box>
             ) : (
-                <>
+                <Box mt={2}>
                     {blogPosts.map((post, index) => (
                         <BlogPostCard
                             key={post.id || index}
@@ -153,9 +161,9 @@ const BlogPostsList = ({postId}) => {
                         />
                     ))}
                     {blogPosts.length > 0 && renderPagination()}
-                </>
+                </Box>
             )}
-        </div>
+        </Container>
     );
 };
 

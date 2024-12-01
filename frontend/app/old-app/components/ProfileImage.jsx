@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Button, Dropdown, DropdownButton } from "react-bootstrap";
+import { Button, Menu, MenuItem, IconButton } from '@mui/material';
 import { PhotoCamera, Delete, Upload } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import Avatar from '@mui/material/Avatar';
+import { Avatar } from '@mui/material'
 
 function ProfileImage({
     imageSrc,
@@ -16,33 +16,31 @@ function ProfileImage({
     fileInputRef,
 }) {
     const [isHovered, setIsHovered] = useState(false);
-    const [showDropdown, setShowDropdown] = useState(false);
-    const [hideDropdownTimeout, setHideDropdownTimeout] = useState(null);
+    const [anchorEl, setAnchorEl] = useState(null);
 
     // Calculate font size based on avatar dimensions
     const fontSize = Math.min(Number(width), Number(height)) / 2;
 
     const handleDocumentClick = (e) => {
         if (!e.target.closest("#profile-image-dropdown")) {
-            setShowDropdown(false);
+            setAnchorEl(null);
         }
     };
 
     const handleMouseEnter = () => {
         setIsHovered(showOptions);
-        setShowDropdown(showOptions);
-        if (hideDropdownTimeout) {
-            clearTimeout(hideDropdownTimeout);
-            setHideDropdownTimeout(null);
-        }
     };
 
     const handleMouseLeave = () => {
         setIsHovered(false);
-        const timeout = setTimeout(() => {
-            setShowDropdown(false);
-        }, 300);
-        setHideDropdownTimeout(timeout);
+    };
+
+    const handleClick = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleClose = () => {
+        setAnchorEl(null);
     };
 
     const handleFileInputChange = (e) => {
@@ -57,7 +55,7 @@ function ProfileImage({
     };
 
     useEffect(() => {
-        if (showDropdown) {
+        if (anchorEl) {
             document.addEventListener("click", handleDocumentClick);
         } else {
             document.removeEventListener("click", handleDocumentClick);
@@ -65,7 +63,7 @@ function ProfileImage({
         return () => {
             document.removeEventListener("click", handleDocumentClick);
         };
-    }, [showDropdown]);
+    }, [anchorEl]);
 
     return (
         <div
@@ -103,21 +101,36 @@ function ProfileImage({
                         className="position-absolute top-50 start-50 translate-middle"
                         style={{ zIndex: 1000 }}
                     >
-                        <DropdownButton
-                            show={showDropdown}
-                            title={<PhotoCamera />}
-                            variant="light"
-                            className="rounded-circle"
+                        <IconButton
+                            onClick={handleClick}
+                            size="small"
+                            sx={{ 
+                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' }
+                            }}
                         >
-                            <Dropdown.Item onClick={() => fileInputRef.current.click()}>
-                                <Upload className="me-2" /> Upload
-                            </Dropdown.Item>
+                            <PhotoCamera />
+                        </IconButton>
+                        <Menu
+                            anchorEl={anchorEl}
+                            open={Boolean(anchorEl)}
+                            onClose={handleClose}
+                        >
+                            <MenuItem onClick={() => {
+                                fileInputRef.current.click();
+                                handleClose();
+                            }}>
+                                <Upload sx={{ mr: 1 }} /> Upload
+                            </MenuItem>
                             {imageSrc && (
-                                <Dropdown.Item onClick={onImageDelete} className="text-danger">
-                                    <Delete className="me-2" /> Remove
-                                </Dropdown.Item>
+                                <MenuItem onClick={() => {
+                                    onImageDelete();
+                                    handleClose();
+                                }} sx={{ color: 'error.main' }}>
+                                    <Delete sx={{ mr: 1 }} /> Remove
+                                </MenuItem>
                             )}
-                        </DropdownButton>
+                        </Menu>
                     </div>
                 )}
             </div>

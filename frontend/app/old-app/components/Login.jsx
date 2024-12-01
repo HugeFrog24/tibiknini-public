@@ -1,16 +1,16 @@
 import React, {useEffect, useRef, useState} from "react";
-import {Col, Container, Form, Row} from "react-bootstrap";
-import { Helmet } from 'react-helmet-async';
-import { useLocation, useNavigate } from 'react-router-dom';
-import ReCAPTCHA from "react-google-recaptcha";
-import { TextField, Typography, Button, CircularProgress } from '@mui/material'; // Import Material UI components
+import { Container, Grid, Box } from '@mui/material';
+import { useLocation, useNavigate } from '@remix-run/react';
+import { TextField, Typography, Button, CircularProgress } from '@mui/material';
 
 import config from "../config.json";
 import { handleLogin } from '../utils/auth';
 import { REDIRECT_REASONS } from './constants/Constants';
 import { showToast } from '../utils/toastUtils';
 
-function Login({onLogin}) {
+import ReCAPTCHA from 'react-google-recaptcha';
+
+export default function Login({onLogin, recaptchaSiteKey}) {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [usernameInvalid, setUsernameInvalid] = useState(false);
@@ -61,15 +61,10 @@ function Login({onLogin}) {
 
     return (
         <Container>
-            <Helmet>
-                <title>Login - {config.siteName}</title>
-                <meta name="description" content={`Login to access your account on ${config.siteName}`} />
-            </Helmet>
-            <Row className="justify-content-center">
-                <Col xs={12} md={8} lg={3}>
-                    {/* Use Typography for Material UI theming */}
+            <Grid container justifyContent="center">
+                <Grid item xs={12} md={8} lg={3}>
                     <Typography variant="h4" component="h2" className="mb-3">Login</Typography>
-                    <Form onSubmit={handleSubmit} noValidate>
+                    <Box component="form" onSubmit={handleSubmit} noValidate>
                         <TextField
                             id="username"
                             label="Username"
@@ -98,7 +93,7 @@ function Login({onLogin}) {
                         />
                         <ReCAPTCHA
                             ref={recaptchaRef}
-                            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                            sitekey={recaptchaSiteKey}
                             size="invisible"
                             onChange={handleRecaptcha}
                         />
@@ -127,11 +122,9 @@ function Login({onLogin}) {
                         >
                             Forgot Password?
                         </Button>
-                    </Form>
-                </Col>
-            </Row>
+                    </Box>
+                </Grid>
+            </Grid>
         </Container>
     );
 }
-
-export default Login;
