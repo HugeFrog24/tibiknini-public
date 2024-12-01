@@ -1,12 +1,13 @@
 import React from 'react';
-import { json, LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData, useNavigate } from "@remix-run/react";
+import { defer, json, LoaderFunctionArgs } from "@remix-run/node";
+import { Await, useLoaderData, useNavigate } from "@remix-run/react";
 import BlogPostCard from "../old-app/components/BlogPostCard";
-import { Typography, Button, Box, Pagination } from '@mui/material';
+import { Typography, Button, Box, Pagination, Stack } from '@mui/material';
 import { Warning as WarningIcon, Add as AddIcon } from '@mui/icons-material';
-import { useCallback, useState } from "react";
+import { Suspense, useCallback, useState } from "react";
 import { getApiUrl } from "../env.server";
-import api from '../old-app/utils/api'; // Assuming you have an api utility in this file
+import api from '../old-app/utils/api';
+import BlogPostSkeleton from '../components/BlogPostSkeleton';
 
 // Types for our data
 interface BlogPost {
@@ -20,9 +21,11 @@ interface BlogPost {
 }
 
 interface LoaderData {
-  posts: BlogPost[];
-  totalPages: number;
-  currentPage: number;
+  posts: Promise<{
+    posts: BlogPost[];
+    totalPages: number;
+    currentPage: number;
+  }>;
   isAuthenticated: boolean;
   isStaff: boolean;
 }
@@ -31,103 +34,83 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const page = parseInt(url.searchParams.get("page") || "1");
   
-  try {
-    const response = await api.get(`/blog/posts/?page=${page}`);
-    const data = response.data;
-    
-    // Get auth status from session (implement your auth logic here)
-    const isAuthenticated = true; // Replace with actual auth check
-    const isStaff = true; // Replace with actual staff check
+  // Get auth status immediately (should be fast)
+  const isAuthenticated = true; // Replace with actual auth check
+  const isStaff = true; // Replace with actual staff check
 
-    return json<LoaderData>({
-      posts: data.results || [],
-      totalPages: Math.ceil(data.count / 10),
+  // Defer the posts loading
+  const postsPromise = api.get(`/blog/posts/?page=${page}`)
+    .then(response => ({
+      posts: response.data.results || [],
+      totalPages: Math.ceil(response.data.count / 10),
       currentPage: page,
-      isAuthenticated,
-      isStaff,
-    });
-  } catch (error) {
-    console.error("Error fetching blog posts:", error);
-    return json<LoaderData>({
-      posts: [],
-      totalPages: 0,
-      currentPage: 1,
-      isAuthenticated: false,
-      isStaff: false,
-    });
-  }
+    }));
+
+  return defer({
+    posts: postsPromise,
+    isAuthenticated,
+    isStaff,
+  });
 }
 
 export default function BlogIndex() {
-  const { posts, totalPages, currentPage, isAuthenticated, isStaff } = useLoaderData<typeof loader>();
+  const { posts, isAuthenticated, isStaff } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
-  const [hasError, setHasError] = useState(false);
+  const [page, setPage] = useState(1);
 
-  const handleAddPostClick = () => {
-    navigate("/blog/posts/new");
-  };
-
-  const handlePageChange = useCallback((_event: React.ChangeEvent<unknown>, page: number) => {
-    navigate(`?page=${page}`);
+  const handlePageChange = useCallback((_: React.ChangeEvent<unknown>, value: number) => {
+    setPage(value);
+    navigate(`/blog?page=${value}`);
   }, [navigate]);
 
   return (
-    <Box>
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
-        <Typography variant="h4" component="h1">Blog</Typography>
+    <Box sx={{ py: 4 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Typography variant="h4" component="h1">Blog Posts</Typography>
         {isAuthenticated && isStaff && (
           <Button
             variant="contained"
             color="primary"
-            onClick={handleAddPostClick}
             startIcon={<AddIcon />}
+            onClick={() => navigate('/blog/new')}
           >
-            Add Post
+            New Post
           </Button>
         )}
       </Box>
-      <hr/>
-      {hasError ? (
-        <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
-          <WarningIcon color="warning" fontSize="large" />
-          <Typography variant="body1">Error retrieving data</Typography>
-          <Button 
-            variant="contained" 
-            color="primary" 
-            onClick={() => window.location.reload()}
-          >
-            Retry
-          </Button>
-        </Box>
-      ) : posts.length === 0 ? (
-        <Box>
-          <Typography variant="h5" component="h3">Nothing to show</Typography>
-          <Typography variant="body1">There are no blog posts available at this time.</Typography>
-        </Box>
-      ) : (
-        <>
-          <Box display="flex" flexDirection="column" gap={2}>
-            {posts.map((post) => (
-              <BlogPostCard
-                key={post.id}
-                post={post}
-              />
-            ))}
-          </Box>
-          {totalPages > 1 && (
-            <Box display="flex" justifyContent="center" mt={3}>
-              <Pagination 
-                count={totalPages}
-                page={currentPage}
-                onChange={handlePageChange}
-                color="primary"
-                showFirstButton
-                showLastButton
-              />
+
+      <Suspense fallback={
+        <Stack spacing={2}>
+          {[1, 2, 3, 4, 5].map((n) => (
+            <BlogPostSkeleton key={n} />
+          ))}
+        </Stack>
+      }>
+        <Await resolve={posts}
+          errorElement={
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <WarningIcon color="error" sx={{ fontSize: 48, mb: 2 }} />
+              <Typography>Error loading blog posts. Please try again later.</Typography>
             </Box>
+          }
+        >
+          {(resolvedPosts) => (
+            <>
+              {resolvedPosts.posts.map((post: any) => (
+                <BlogPostCard key={post.id} post={post} />
+              ))}
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                <Pagination
+                  count={resolvedPosts.totalPages}
+                  page={resolvedPosts.currentPage}
+                  onChange={handlePageChange}
+                  color="primary"
+                />
+              </Box>
+            </>
           )}
-        </>
-      )}
+        </Await>
+      </Suspense>
     </Box>
   );
 }
