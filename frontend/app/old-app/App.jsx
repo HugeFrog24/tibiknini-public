@@ -3,21 +3,6 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { ToastContainer } from 'react-toastify';
 
 // Import components directly instead of lazy loading
-import BlogPostForm from "./components/BlogPostForm";
-import BlogPostsList from "./components/BlogPostsList";
-import BlogPostDetail from "./components/BlogPostDetail";
-import Contact from "./components/Contact";
-import ForgotPassword from "./components/ForgotPassword";
-import Home from "./components/Home";
-import Login from "./components/Login";
-import OnlineUsersPage from "./components/OnlineUsersPage";
-import ProfileDetail from "./components/ProfileDetail";
-import ProfileSettings from "./components/ProfileSettings";
-import RegistrationWizard from "./components/RegistrationWizard";
-import ResetPassword from "./components/ResetPassword";
-import SetupWizard from "./components/SetupWizard";
-import DocumentRenderer from "./components/DocumentRenderer";
-import ErrorComponent from "./components/ErrorComponent";
 import Navbar from "./components/Navbar";
 import Footer from './components/Footer';
 

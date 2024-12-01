@@ -2,10 +2,9 @@ import React, {useCallback, useContext, useEffect, useState} from "react";
 import { useNavigate } from "@remix-run/react";
 import { Pagination as MuiPagination } from '@mui/material';
 import { Typography, Button, useTheme, Divider } from '@mui/material'; 
-import { Warning as WarningIcon, Add as AddIcon } from '@mui/icons-material';
+import { Add as AddIcon } from '@mui/icons-material';
 import { Container, Grid, Box, Alert } from '@mui/material';
 
-import config from "../config.json";
 import BlogPostCard from "./BlogPostCard";
 import UserContext from "./contexts/UserContext";
 import api from "../utils/api"

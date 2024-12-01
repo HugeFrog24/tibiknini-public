@@ -18,7 +18,6 @@ import {
 import CelebrationIcon from '@mui/icons-material/Celebration';
 
 import api from '../utils/api';
-import { REDIRECT_REASONS } from "./constants/Constants";
 
 function RegistrationWizard() {
   const steps = [

@@ -1,6 +1,6 @@
 import { json, LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
-import { Box, CircularProgress, Alert } from "@mui/material";
+import { Box, Alert } from "@mui/material";
 import BlogPostDetail from "../old-app/components/BlogPostDetail";
 import api, { setApiUrl } from "../old-app/utils/api";
 import { getApiUrl } from "../env.server";

@@ -1,6 +1,6 @@
 import {useCallback, useContext, useEffect, useRef, useState} from "react";
 import {Link, useNavigate, useParams, useLocation} from "@remix-run/react";
-import {Button, Card, Col, Container, InputGroup, Form, Row} from "react-bootstrap";
+import {Button, Card, Col, Container, Form, Row} from "react-bootstrap";
 import {
     CheckCircle as CheckCircleIcon,
     Edit as EditIcon,
@@ -20,7 +20,6 @@ import BlogPostsTab from "./BlogPostsTab";
 import ProfileImage from "./ProfileImage";
 import FetchUserFollows from '../utils/FetchUserFollows';
 import { useDarkMode } from './contexts/DarkModeContext';
-import {handleProfileImageError} from '../utils/ImageUtils';
 import api from '../utils/api';
 
 function TabPanel(props) {

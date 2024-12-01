@@ -43,7 +43,9 @@
     "dev": "remix dev",
     "build": "remix build",
     "start": "node server.js",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "lint": "eslint app/**/*.{ts,tsx,js,jsx}",
+    "lint:fix": "eslint --fix app/**/*.{ts,tsx,js,jsx}"
   },
   "eslintConfig": {
     "extends": [
@@ -67,9 +69,13 @@
     "@babel/core": "^7.26.0",
     "@babel/preset-env": "^7.26.0",
     "@babel/preset-react": "^7.25.9",
+    "@eslint/js": "^9.16.0",
+    "@typescript-eslint/eslint-plugin": "^8.16.0",
+    "@typescript-eslint/parser": "^8.16.0",
     "@vitejs/plugin-react": "^4.3.4",
     "eslint": "^9.16.0",
     "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-unused-imports": "^4.1.4",
     "eslint-webpack-plugin": "^4.2.0"
   }
 }

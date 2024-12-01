@@ -3,7 +3,6 @@ import { Container, Grid, Box } from '@mui/material';
 import { useLocation, useNavigate } from '@remix-run/react';
 import { TextField, Typography, Button, CircularProgress } from '@mui/material';
 
-import config from "../config.json";
 import { handleLogin } from '../utils/auth';
 import { REDIRECT_REASONS } from './constants/Constants';
 import { showToast } from '../utils/toastUtils';

@@ -1,5 +1,4 @@
-import { LoaderFunctionArgs, json } from "@remix-run/node";
-import DocumentRenderer from "../old-app/components/DocumentRenderer";
+import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import React from 'react';
 import { getApiUrl } from "../env.server";

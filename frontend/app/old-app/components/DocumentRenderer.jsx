@@ -13,7 +13,6 @@ import { Link } from '@remix-run/react';
 import LinkIcon from '@mui/icons-material/Link';
 import PropTypes from 'prop-types';
 
-import config from "../config.json";
 import api from "../utils/api";
 
 function DocumentRenderer({ endpoint }) {

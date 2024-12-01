@@ -23,7 +23,6 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import FlagIcon from '@mui/icons-material/Flag';
 import UserContext from "./contexts/UserContext";
-import { showToast } from '../utils/toastUtils';
 
 const BlogPostComments = ({ postId }) => {
   const { comments = [], reportReasons = [] } = useLoaderData();

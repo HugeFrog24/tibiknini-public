@@ -1,4 +1,3 @@
-import { json } from "@remix-run/node";
 import * as React from "react";
 import { ClientOnly } from "remix-utils/client-only";
 import ForgotPassword from "../old-app/components/ForgotPassword";
