@@ -1,11 +1,10 @@
 import React from 'react';
-import { defer, json, LoaderFunctionArgs } from "@remix-run/node";
+import { defer, LoaderFunctionArgs } from "@remix-run/node";
 import { Await, useLoaderData, useNavigate } from "@remix-run/react";
 import BlogPostCard from "../old-app/components/BlogPostCard";
 import { Typography, Button, Box, Pagination, Stack } from '@mui/material';
 import { Warning as WarningIcon, Add as AddIcon } from '@mui/icons-material';
 import { Suspense, useCallback, useState } from "react";
-import { getApiUrl } from "../env.server";
 import api from '../old-app/utils/api';
 import BlogPostSkeleton from '../components/BlogPostSkeleton';
 
