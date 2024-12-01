@@ -29,6 +29,8 @@ const PUBLIC_ENDPOINTS = [
     '/setup/status/',
     '/blog/posts/',  // Assuming this is your public blog posts endpoint
     '/users/me/',    // We'll allow this to fail silently
+    '/privacy_policy/',
+    '/terms_of_service/',
 ];
 
 const isPublicEndpoint = (url) => {
