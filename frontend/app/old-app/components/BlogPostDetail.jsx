@@ -172,14 +172,18 @@ const BlogPostDetail = ({previousPath}) => {
                     <Grid2 container justifyContent="space-between" alignItems="flex-start">
                         <Grid2>
                             <Typography variant="h4" component="h2">{postState.title}</Typography>
-                            <Box component="a" href={`/users/${postState.author.username}`} sx={{textDecoration: 'none', display: 'flex', gap: 1, alignItems: 'center'}}>
-                                <Avatar
-                                    src={postState.author.image}
-                                    alt={postState.author.username}
-                                    sx={{ width: 16, height: 16 }}
-                                />
-                                <Typography variant="body2">{postState.author.username}</Typography>
-                            </Box>
+                            {postState.author ? (
+                                <Box component="a" href={`/users/${postState.author.username}`} sx={{textDecoration: 'none', display: 'flex', gap: 1, alignItems: 'center'}}>
+                                    <Avatar
+                                        src={postState.author?.image}
+                                        alt={postState.author?.username}
+                                        sx={{ width: 16, height: 16 }}
+                                    />
+                                    <Typography variant="body2">{postState.author.username}</Typography>
+                                </Box>
+                            ) : (
+                                <Typography variant="body2" color="text.secondary">Unknown Author</Typography>
+                            )}
                         </Grid2>
                         <Grid2 alignSelf="flex-end">
                             <Typography variant="body2" color="text.secondary">

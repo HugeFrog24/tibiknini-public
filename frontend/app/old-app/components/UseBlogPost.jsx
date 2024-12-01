@@ -31,7 +31,7 @@ const useBlogPost = () => {
         try {
             const response = await api.put(`/blog/posts/id/${id}/`, postData);
             setBlogPost(response.data);
-            return response.data; // Return the response data
+            return response.data;
         } catch (error) {
             console.error(error);
         }

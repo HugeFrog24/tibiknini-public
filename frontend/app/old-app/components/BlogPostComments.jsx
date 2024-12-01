@@ -32,8 +32,8 @@ import { showToast } from '../utils/toastUtils';
 import { useNavigate } from 'react-router-dom';
 
 const BlogPostComments = ({ postId }) => {
-  const [comments, setComments] = useState([]);
-  const [loadingComments, setLoadingComments] = useState(false);
+  const [comments, setComments] = useState(null);
+  const [loadingComments, setLoadingComments] = useState(true);
   const [newComment, setNewComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState(null);
@@ -274,6 +274,12 @@ const BlogPostComments = ({ postId }) => {
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
           <CircularProgress />
         </Box>
+      ) : comments === null ? (
+        <Box sx={{ my: 4 }}>
+          <Alert severity="error">
+            Failed to load comments. Please try again later.
+          </Alert>
+        </Box>
       ) : (
         <Stack spacing={2}>
           {comments.length === 0 && (
@@ -288,17 +294,20 @@ const BlogPostComments = ({ postId }) => {
               </Alert>
             </Box>
           )}
-          {comments.map((comment) => (
-            <Card key={comment.id}>
+          {Array.isArray(comments) && comments.map((comment) => (
+            <Card key={comment?.id || 'unknown'}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Avatar src={comment.author.image} alt={comment.author.username} />
+                  <Avatar 
+                    src={comment?.author?.image} 
+                    alt={comment?.author?.username || 'Unknown User'} 
+                  />
                   <Box sx={{ ml: 1 }}>
                     <Typography variant="subtitle1">
-                      {comment.author.username}
+                      {comment?.author?.username || 'Unknown User'}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {new Date(comment.pub_date).toLocaleString()}
+                      {comment?.pub_date ? new Date(comment.pub_date).toLocaleString() : 'Unknown date'}
                     </Typography>
                   </Box>
                   <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
