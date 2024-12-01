@@ -1,8 +1,8 @@
 # Frontend builder
-FROM node:lts-alpine AS frontend-builder
+FROM node:18-alpine AS frontend-builder
 WORKDIR /app
-COPY frontend/package*.json ./
-RUN npm ci
+COPY frontend/package*.json frontend/.npmrc ./
+RUN npm ci --prefer-offline --no-audit --no-fund
 COPY frontend/ ./
 ARG ENVIRONMENT=prod
 RUN npm run build
