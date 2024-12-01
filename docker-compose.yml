@@ -170,6 +170,21 @@ services:
       - email_host_user
       - email_host_password
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=production
+      - DOMAIN_NAME=boger.dev
+    networks:
+      - app_network
+
   frontend-dev:
     build:
       context: ./frontend
@@ -186,6 +201,7 @@ services:
       - VITE_API_URL=http://nginx-dev
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
+      - DOMAIN_NAME=localhost
     networks:
       - app_network
     depends_on:

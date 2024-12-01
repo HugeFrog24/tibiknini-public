@@ -5,6 +5,7 @@ import BlogPostCard from "../old-app/components/BlogPostCard";
 import { Typography, Button, Box, Pagination } from '@mui/material';
 import { Warning as WarningIcon, Add as AddIcon } from '@mui/icons-material';
 import { useCallback, useState } from "react";
+import { getApiUrl } from "../env.server";
 
 // Types for our data
 interface BlogPost {
@@ -30,8 +31,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const page = parseInt(url.searchParams.get("page") || "1");
   
   try {
-    // Replace with your actual API endpoint
-    const response = await fetch(`${process.env.API_URL}/api/blog/posts/?page=${page}`);
+    const apiUrl = getApiUrl();
+    const response = await fetch(`${apiUrl}/api/blog/posts/?page=${page}`);
     const data = await response.json();
     
     // Get auth status from session (implement your auth logic here)
