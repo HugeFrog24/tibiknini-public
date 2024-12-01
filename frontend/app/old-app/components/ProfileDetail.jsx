@@ -19,7 +19,6 @@ import {REDIRECT_REASONS} from "./constants/Constants";
 import BlogPostsTab from "./BlogPostsTab";
 import ProfileImage from "./ProfileImage";
 import FetchUserFollows from '../utils/FetchUserFollows';
-import { useDarkMode } from './contexts/DarkModeContext';
 import api from '../utils/api';
 
 function TabPanel(props) {
@@ -54,7 +53,6 @@ function ProfileDetail() {
     const { username } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
-    const { modeClasses } = useDarkMode();
     const [bio, setBio] = useState('');
     const [loading, setLoading] = useState(true);
 
@@ -242,7 +240,7 @@ function ProfileDetail() {
                                         />
                                     )}
                                     <Container className="d-flex justify-content-center align-items-center">
-                                        <h3 className={`${modeClasses.textClass} my-1`}>
+                                        <h3>
                                             {loading ? <Skeleton width={150} /> : profile.username}
                                         </h3>
                                         {profile.is_staff && (
@@ -269,7 +267,7 @@ function ProfileDetail() {
                         </Row>
                         <Row>
                             <Col xs={12}>
-                                <i className={`opacity-75 mt-2 ${modeClasses.textClass}`}>
+                                <i className="opacity-75 mt-2">
                                     Member since {formatDate(profile.date_joined)}
                                 </i>
                             </Col>
@@ -282,7 +280,7 @@ function ProfileDetail() {
                                             as="textarea"
                                             value={bioInput}
                                             onChange={(e) => setBioInput(e.target.value)}
-                                            className={`${modeClasses.bgClass} ${modeClasses.textClass} mb-2`}
+                                            className="mb-2"
                                             isInvalid={bioInput.length > 256}
                                         />
                                         <div className="d-flex justify-content-end">
@@ -356,7 +354,7 @@ function ProfileDetail() {
                         <TabPanel value={activeTab} index={1}>
                             {followers ? followers.map((follow, index) => (
                                 <Card key={follow.follower || index}
-                                      className={`my-4 ${modeClasses.bgClass} shadow`}>
+                                      className="my-4 shadow">
                                     <Card.Body className="d-flex align-items-center">
                                         <Link to={`/users/${follow.follower}`}
                                               className="text-start text-info text-decoration-none d-flex align-items-center">
@@ -374,7 +372,7 @@ function ProfileDetail() {
                         <TabPanel value={activeTab} index={2}>
                             {following ? following.map((follow, index) => (
                                 <Card key={follow.following || index}
-                                      className={`my-4 ${modeClasses.bgClass} shadow`}>
+                                      className="my-4 shadow">
                                     <Card.Body className="d-flex align-items-center">
                                         <Link to={`/users/${follow.following}`}
                                               className="text-start text-info text-decoration-none d-flex align-items-center">
