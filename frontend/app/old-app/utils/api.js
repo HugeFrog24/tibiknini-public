@@ -58,6 +58,11 @@ function getCookie(name) {
 }
 
 api.interceptors.request.use(request => {
+    // Add /api prefix to URLs if not already present
+    if (request.url && !request.url.startsWith('/api')) {
+        request.url = `/api${request.url}`;
+    }
+    
     if (isClient) {
         request.headers['X-CSRFToken'] = getCookie('csrftoken');
     }

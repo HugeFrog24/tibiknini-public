@@ -6,6 +6,7 @@ import { Typography, Button, Box, Pagination } from '@mui/material';
 import { Warning as WarningIcon, Add as AddIcon } from '@mui/icons-material';
 import { useCallback, useState } from "react";
 import { getApiUrl } from "../env.server";
+import api from '../old-app/utils/api'; // Assuming you have an api utility in this file
 
 // Types for our data
 interface BlogPost {
@@ -31,9 +32,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const page = parseInt(url.searchParams.get("page") || "1");
   
   try {
-    const apiUrl = getApiUrl();
-    const response = await fetch(`${apiUrl}/api/blog/posts/?page=${page}`);
-    const data = await response.json();
+    const response = await api.get(`/blog/posts/?page=${page}`);
+    const data = response.data;
     
     // Get auth status from session (implement your auth logic here)
     const isAuthenticated = true; // Replace with actual auth check

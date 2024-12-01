@@ -2,15 +2,10 @@ import { json, LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import { Box, Alert } from "@mui/material";
 import BlogPostDetail from "../old-app/components/BlogPostDetail";
-import api, { setApiUrl } from "../old-app/utils/api";
-import { getApiUrl } from "../env.server";
+import api from "../old-app/utils/api";
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const postId = params.postId;
-  
-  // Set API URL for server-side requests
-  const apiUrl = getApiUrl();
-  setApiUrl(apiUrl);
   
   try {
     const response = await api.get(`/blog/posts/id/${postId}/`);
