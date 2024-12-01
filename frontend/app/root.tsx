@@ -13,15 +13,8 @@ import { json } from "@remix-run/node";
 import { fetchSiteTitle } from "./utils/server-fetch";
 
 // Import your styles
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'react-toastify/dist/ReactToastify.css';
 import './old-app/App.css';
 import './old-app/styles/custom-bootstrap.css';
-
-export const links = () => [
-  { rel: "stylesheet", href: "bootstrap/dist/css/bootstrap.min.css" },
-  { rel: "stylesheet", href: "react-toastify/dist/ReactToastify.css" },
-];
 
 export async function loader() {
   try {
