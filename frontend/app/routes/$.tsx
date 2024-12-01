@@ -18,26 +18,44 @@ export default function CatchAll() {
   const path = location.pathname;
 
   // Map paths to components
+  let component;
   switch (path) {
     case '/blog/new':
-      return <BlogPostForm />;
+      component = <BlogPostForm />;
+      break;
     case '/blog':
-      return <BlogPostsList />;
+      component = <BlogPostsList />;
+      break;
     case '/contact':
-      return <Contact />;
+      component = <Contact />;
+      break;
     case '/online-users':
-      return <OnlineUsersPage />;
+      component = <OnlineUsersPage />;
+      break;
     case '/profile':
-      return <ProfileDetail />;
-    case '/settings':
-      return <ProfileSettings />;
+      component = <ProfileDetail />;
+      break;
+    case '/profile/settings':
+      component = <ProfileSettings />;
+      break;
     case '/register':
-      return <RegistrationWizard />;
-    case '/reset-password':
-      return <ResetPassword />;
+      component = <RegistrationWizard />;
+      break;
     case '/setup':
-      return <SetupWizard />;
+      component = <SetupWizard />;
+      break;
+    case '/forgot-password':
+      component = <ForgotPassword />;
+      break;
+    case '/reset-password':
+      component = <ResetPassword />;
+      break;
     default:
-      return <ErrorComponent />;
+      throw new Response("Not Found", {
+        status: 404,
+        statusText: "Not Found"
+      });
   }
+
+  return component;
 }
