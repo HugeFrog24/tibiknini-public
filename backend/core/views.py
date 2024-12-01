@@ -1,6 +1,6 @@
 from rest_framework import generics
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 
 from .models import PrivacyPolicy, SiteInfo, TermsOfService
 from .serializers import (
@@ -30,7 +30,7 @@ class SiteInfoView(generics.RetrieveUpdateAPIView):
 class SiteTitleView(generics.RetrieveUpdateAPIView):
     queryset = SiteInfo.objects.all()
     serializer_class = SiteTitleSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_object(self):
         return SiteInfo.objects.first()

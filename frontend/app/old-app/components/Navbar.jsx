@@ -16,7 +16,6 @@ import {
   Toolbar,
   Typography,
   useTheme,
-  useMediaQuery,
   Slide,
   useScrollTrigger,
 } from "@mui/material";
@@ -50,7 +49,6 @@ const NavigationBar = ({ toggleDarkMode }) => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget);
@@ -70,15 +68,6 @@ const NavigationBar = ({ toggleDarkMode }) => {
     { path: "/contact", icon: <EmailIcon />, label: "Contact" },
   ];
 
-  const getLinkStyle = (path) => {
-    const isActive = location.pathname === path;
-    return {
-      textDecoration: 'none',
-      color: 'inherit',
-      backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
-    };
-  };
-
   const renderNavLinks = () => (
     <Box sx={{ display: { xs: 'none', sm: 'flex' } }}>
       {navItems.map((item) => (
@@ -87,7 +76,8 @@ const NavigationBar = ({ toggleDarkMode }) => {
           to={item.path}
           style={{
             textDecoration: 'none',
-            color: 'inherit'
+            color: 'inherit',
+            backgroundColor: location.pathname === item.path ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
           }}
         >
           <Button
@@ -107,46 +97,6 @@ const NavigationBar = ({ toggleDarkMode }) => {
           </Button>
         </Link>
       ))}
-    </Box>
-  );
-
-  const renderMobileNavLinks = () => (
-    <Box sx={{ width: 250 }} role="presentation">
-      <Typography variant="h6" sx={{ p: 2 }}>
-        Menu
-      </Typography>
-      <List>
-        {navItems.map((item) => (
-          <ListItem key={item.path} disablePadding>
-            <Link
-              to={item.path}
-              style={{
-                textDecoration: 'none',
-                color: 'inherit',
-                width: '100%'
-              }}
-            >
-              <Button
-                fullWidth
-                color="inherit"
-                sx={{
-                  justifyContent: 'flex-start',
-                  px: 3,
-                  py: 1,
-                  ...(location.pathname === item.path && {
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)'
-                  })
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: 40 }}>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText primary={item.label} />
-              </Button>
-            </Link>
-          </ListItem>
-        ))}
-      </List>
     </Box>
   );
 

@@ -198,6 +198,8 @@ CSRF_TRUSTED_ORIGINS = [
     "https://127.0.0.1",
     "http://localhost",
     "https://localhost",
+    "http://localhost:3000",
+    "https://localhost:3000",
     f"https://*.{os.getenv('DOMAIN_NAME')}",
 ]
 

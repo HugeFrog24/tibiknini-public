@@ -110,11 +110,11 @@ function DocumentRenderer({ endpoint }) {
                         <Typography variant="subtitle1" gutterBottom>Last updated: {lastUpdated}</Typography>
                         <ReactMarkdown 
                             components={{
-                                h1: ({node, ...props}) => <Typography variant="h4" gutterBottom {...props} />,
-                                h2: ({node, ...props}) => <Typography variant="h5" gutterBottom {...props} />,
-                                h3: ({node, ...props}) => <Typography variant="h6" gutterBottom {...props} />,
-                                p: ({node, ...props}) => <Typography variant="body1" component="p" sx={{marginBottom: theme.spacing(2)}} {...props} />,
-                                a: ({node, href, ...props}) => <CustomLink href={href} {...props} />
+                                h1: ({...props}) => <Typography variant="h4" gutterBottom {...props} />,
+                                h2: ({...props}) => <Typography variant="h5" gutterBottom {...props} />,
+                                h3: ({...props}) => <Typography variant="h6" gutterBottom {...props} />,
+                                p: ({...props}) => <Typography variant="body1" component="p" sx={{marginBottom: theme.spacing(2)}} {...props} />,
+                                a: ({href, ...props}) => <CustomLink href={href} {...props} />
                             }}
                             rehypePlugins={[
                                 rehypeSlug,

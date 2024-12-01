@@ -3,7 +3,9 @@ import { Box, Typography } from '@mui/material';
 import { errorData } from './constants/errorMessages';
 
 function ErrorComponent({errorCode = 404}) {
-    const validErrorCode = errorData.hasOwnProperty(errorCode) ? errorCode : 'Unknown';
+    const validErrorCode = Object.prototype.hasOwnProperty.call(errorData, errorCode) 
+        ? errorCode 
+        : 'Unknown';
     const errorInfo = errorData[validErrorCode] || errorData['default'];
     const randomMessage = errorInfo.messages[Math.floor(Math.random() * errorInfo.messages.length)];
     const Icon = errorInfo.emoji;

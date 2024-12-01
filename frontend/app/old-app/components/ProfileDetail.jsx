@@ -1,18 +1,26 @@
 import {useCallback, useContext, useEffect, useRef, useState} from "react";
-import {Link, useNavigate, useParams, useLocation} from "@remix-run/react";
-import {Button, Card, Col, Container, Form, Row} from "react-bootstrap";
+import { useNavigate, useParams, useLocation} from "@remix-run/react";
 import {
-    CheckCircle as CheckCircleIcon,
     Edit as EditIcon,
     Save as SaveIcon,
     Close as CloseIcon
 } from '@mui/icons-material';
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
-import { Tabs } from '@mui/material'
-import { Tab } from '@mui/material'
-import { Box } from '@mui/material'
-import { Avatar } from '@mui/material'
+import { 
+    Tabs, 
+    Tab, 
+    Box, 
+    Avatar,
+    Button,
+    Container,
+    Grid,
+    Card,
+    CardContent,
+    TextField,
+    Typography,
+    Link as MUILink
+} from '@mui/material';
 
 import UserContext from "./contexts/UserContext";
 import {REDIRECT_REASONS} from "./constants/Constants";
@@ -48,16 +56,16 @@ function a11yProps(index) {
     };
 }
 
-function ProfileDetail() {
+function ProfileDetail({ initialUser }) {
     const { user: authenticatedUser, isAuthenticated } = useContext(UserContext);
     const { username } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
-    const [bio, setBio] = useState('');
-    const [loading, setLoading] = useState(true);
+    const [bio, setBio] = useState(initialUser?.bio || '');
+    const [loading, setLoading] = useState(false);
 
     const [activeTab, setActiveTab] = useState(0);
-    const [profile, setProfile] = useState({});
+    const [profile, setProfile] = useState(initialUser);
     const [isFollowing, setIsFollowing] = useState(false);
     const [followers, setFollowers] = useState([]);
     const [following, setFollowing] = useState([]);
@@ -66,32 +74,20 @@ function ProfileDetail() {
     const fileInputRef = useRef(null);
 
     const [isEditingBio, setIsEditingBio] = useState(false);
-    const [bioInput, setBioInput] = useState('');
+    const [bioInput, setBioInput] = useState(initialUser?.bio || '');
 
-    const fetchProfile = useCallback(async (username) => {
-        setLoading(true);
+    // Only fetch additional authenticated data if needed
+    const fetchAuthenticatedData = useCallback(async () => {
+        if (!authenticatedUser) return;
 
         try {
-            const response = await api.get(`/users/${username}/`);
-            setProfile(response.data);
+            // Check following status only if authenticated
+            const followResponse = await api.get(`/users/${authenticatedUser.username}/follows/${username}/`);
+            setIsFollowing(followResponse.status === 200);
         } catch (error) {
-            if (error?.response?.status === 404) {
-                navigate(`/error/${error?.response?.status}`, { state: { errorCode: 404 } });
-            }
-            console.error(error);
+            console.error('Error fetching authenticated data:', error);
         }
-
-        // Only check the following status if there's an authenticated user
-        if (authenticatedUser) {
-            try {
-                const followResponse = await api.get(`/users/${authenticatedUser.username}/follows/${username}/`);
-                setIsFollowing(followResponse.status === 200);
-            } catch (error) {
-                console.error(error);
-            }
-        }
-        setLoading(false);
-    }, [setIsFollowing, setProfile, navigate, authenticatedUser]);
+    }, [authenticatedUser, username]);
 
     const handleImageUpload = async (event) => {
         const file = event.target.files[0];
@@ -102,7 +98,8 @@ function ProfileDetail() {
     
         try {
             await api.put(`/users/me/image/update/`, formData);
-            await fetchProfile(username);
+            const response = await api.get(`/users/${username}/`);
+            setProfile(response.data);
         } catch (error) {
             console.error(error);
         }
@@ -111,7 +108,8 @@ function ProfileDetail() {
     const handleImageDelete = async () => {
         try {
             await api.delete(`/users/me/image/delete/`);
-            await fetchProfile(username);
+            const response = await api.get(`/users/${username}/`);
+            setProfile(response.data);
         } catch (error) {
             console.error(error);
         }
@@ -132,15 +130,18 @@ function ProfileDetail() {
     );
 
     const handleEditBio = () => {
-        setBioInput(bio || '');  // Use the bio state variable
+        setBioInput(bio || '');
         setIsEditingBio(true);
     };
 
     const handleSaveBio = async () => {
         try {
             await api.patch(`/users/${username}/bio/`, { bio: bioInput });
-            setBio(bioInput); // Update the local state
+            setBio(bioInput);
             setIsEditingBio(false);
+            // Update profile data
+            const response = await api.get(`/users/${username}/`);
+            setProfile(response.data);
         } catch (error) {
             console.error(error);
         }
@@ -151,26 +152,12 @@ function ProfileDetail() {
     };
 
     useEffect(() => {
-        const fetchBio = async () => {
-            try {
-                const response = await api.get(`/users/${username}/bio/`);
-                setBio(response.data.bio);
-            } catch (error) {
-                console.error(error);
-            }
-        };
-        fetchBio();
-    }, [username]);
-
-    useEffect(() => {
         // Reset isFollowing state when switching profiles
         setIsFollowing(false);
-
-        // Fetch profile and blog posts
-        (async () => {
-            await fetchProfile(username);
-        })();
-    }, [username, fetchProfile]);
+        
+        // Fetch authenticated data if needed
+        fetchAuthenticatedData();
+    }, [username, fetchAuthenticatedData]);
 
     useEffect(() => {
         // Fetch followers and following regardless of the active tab
@@ -218,178 +205,167 @@ function ProfileDetail() {
     };
 
     return (
-        <Container className="profile-detail">
-            <Row>
-                <Col>
-                    <Container>
-                        <Row className="align-items-center">
-                            <Col>
-                                <Row>
-                                    {loading ? (
-                                        <Skeleton circle={true} height={120} width={120} />
-                                    ) : (
-                                        <ProfileImage
-                                            imageSrc={profile.image}
-                                            imageAlt={profile.username}
-                                            width={120}
-                                            height={120}
-                                            showOptions={isOwner}
-                                            onImageUpload={handleImageUpload}
-                                            onImageDelete={handleImageDelete}
-                                            fileInputRef={fileInputRef}
-                                        />
-                                    )}
-                                    <Container className="d-flex justify-content-center align-items-center">
-                                        <h3>
-                                            {loading ? <Skeleton width={150} /> : profile.username}
-                                        </h3>
-                                        {profile.is_staff && (
-                                            <CheckCircleIcon className="ms-2 text-primary" style={{width: "15px", height: "15px"}} />
-                                        )}
-                                    </Container>
-                                </Row>
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col xs={12}>
-                                {
-                                    (!authenticatedUser || authenticatedUser.username !== username) && username !== "me" && (
-                                        <Button
-                                            onClick={handleFollowToggle}
-                                            variant={isFollowing ? "secondary" : "primary"}
-                                            className="my-1 shadow"
-                                        >
-                                            {isFollowing ? "Unfollow" : "Follow"}
-                                        </Button>
-                                    )
-                                }
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col xs={12}>
-                                <i className="opacity-75 mt-2">
-                                    Member since {formatDate(profile.date_joined)}
-                                </i>
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col xs={12}>
-                                {isEditingBio ? (
-                                    <div className="d-flex flex-column">
-                                        <Form.Control
-                                            as="textarea"
-                                            value={bioInput}
-                                            onChange={(e) => setBioInput(e.target.value)}
-                                            className="mb-2"
-                                            isInvalid={bioInput.length > 256}
-                                        />
-                                        <div className="d-flex justify-content-end">
-                                            <Button
-                                                variant="success"
-                                                size="sm"
-                                                onClick={handleSaveBio}
-                                                className="me-2"
-                                                startIcon={<SaveIcon />}
-                                            >
-                                                Save
-                                            </Button>
-                                            <Button
-                                                variant="secondary"
-                                                size="sm"
-                                                onClick={handleCancelBioEdit}
-                                                startIcon={<CloseIcon />}
-                                            >
-                                                Cancel
-                                            </Button>
-                                        </div>
-                                        {bioInput.length > 256 && (
-                                            <Form.Text className="text-danger">
-                                                Bio cannot exceed 256 characters.
-                                            </Form.Text>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="d-flex align-items-center">
-                                        <span className="me-2">
-                                            {loading ? (
-                                                <Skeleton width={200} />
-                                            ) : (
-                                                bio || `Hello, my name is ${profile.username} 👋`
-                                            )}
-                                        </span>
-                                        {(isOwner || username === "me") && (
-                                            <Button
-                                                variant="outline-primary"
-                                                size="sm"
-                                                onClick={handleEditBio}
-                                                startIcon={<EditIcon />}
-                                            >
-                                                Edit Bio
-                                            </Button>
-                                        )}
-                                    </div>
+        <Container maxWidth="lg">
+            <Card sx={{ mb: 4, mt: 2 }}>
+                <CardContent>
+                    <Grid container spacing={3}>
+                        <Grid item xs={12} md={4} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            {loading ? (
+                                <Skeleton circle width={200} height={200} />
+                            ) : (
+                                <>
+                                    <ProfileImage
+                                        username={username}
+                                        imageUrl={profile.profile_image}
+                                        size={200}
+                                        isOwner={isOwner}
+                                        onImageClick={() => isOwner && fileInputRef.current?.click()}
+                                    />
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        onChange={handleImageUpload}
+                                        style={{ display: 'none' }}
+                                        accept="image/*"
+                                    />
+                                </>
+                            )}
+                        </Grid>
+                        <Grid item xs={12} md={8}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                <Typography variant="h4" component="h1" sx={{ mr: 2 }}>
+                                    {loading ? <Skeleton width={200} /> : profile.username}
+                                </Typography>
+                                {!loading && !isOwner && isAuthenticated && (
+                                    <Button
+                                        variant="contained"
+                                        color={isFollowing ? "secondary" : "primary"}
+                                        onClick={handleFollowToggle}
+                                        sx={{ minWidth: 100 }}
+                                    >
+                                        {isFollowing ? 'Unfollow' : 'Follow'}
+                                    </Button>
                                 )}
-                            </Col>
-                        </Row>
-                    </Container>
-                </Col>
-                <Col lg={8} md={6} sm={12}>
-                    <Box sx={{ width: '100%' }}>
-                        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                            <Tabs
-                                value={activeTab}
-                                onChange={handleChange}
-                                variant="scrollable"
-                                scrollButtons="auto"
-                                aria-label="profile tabs"
-                            >
-                                <Tab label="Posts" {...a11yProps(0)} component={Link} to="#posts" />
-                                <Tab label="Followers" {...a11yProps(1)} component={Link} to="#followers" />
-                                <Tab label="Following" {...a11yProps(2)} component={Link} to="#following" />
-                            </Tabs>
-                        </Box>
-                        <TabPanel value={activeTab} index={0}>
-                            <BlogPostsTab username={username} />
-                        </TabPanel>
-                        <TabPanel value={activeTab} index={1}>
-                            {followers ? followers.map((follow, index) => (
-                                <Card key={follow.follower || index}
-                                      className="my-4 shadow">
-                                    <Card.Body className="d-flex align-items-center">
-                                        <Link to={`/users/${follow.follower}`}
-                                              className="text-start text-info text-decoration-none d-flex align-items-center">
-                                            <Avatar
-                                                src={follow.follower_image}
-                                                alt={follow.follower}
-                                                sx={{ width: 50, height: 50, marginRight: 2 }}
-                                            />
-                                            <Card.Title className="mb-0">{follow.follower}</Card.Title>
-                                        </Link>
-                                    </Card.Body>
-                                </Card>
-                            )) : 'Loading...'}
-                        </TabPanel>
-                        <TabPanel value={activeTab} index={2}>
-                            {following ? following.map((follow, index) => (
-                                <Card key={follow.following || index}
-                                      className="my-4 shadow">
-                                    <Card.Body className="d-flex align-items-center">
-                                        <Link to={`/users/${follow.following}`}
-                                              className="text-start text-info text-decoration-none d-flex align-items-center">
-                                            <Avatar
-                                                src={follow.following_image}
-                                                alt={follow.following}
-                                                sx={{ width: 50, height: 50, marginRight: 2 }}
-                                            />
-                                            <Card.Title className="mb-0">{follow.following}</Card.Title>
-                                        </Link>
-                                    </Card.Body>
-                                </Card>
-                            )) : 'Loading...'}
-                        </TabPanel>
-                    </Box>
-                </Col>
-            </Row>
+                            </Box>
+                            <Box sx={{ mb: 2 }}>
+                                {loading ? (
+                                    <Skeleton count={3} />
+                                ) : (
+                                    <>
+                                        {isEditingBio ? (
+                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                                <TextField
+                                                    fullWidth
+                                                    multiline
+                                                    rows={3}
+                                                    value={bioInput}
+                                                    onChange={(e) => setBioInput(e.target.value)}
+                                                    variant="outlined"
+                                                />
+                                                <Button
+                                                    onClick={handleSaveBio}
+                                                    variant="contained"
+                                                    color="primary"
+                                                    startIcon={<SaveIcon />}
+                                                >
+                                                    Save
+                                                </Button>
+                                                <Button
+                                                    onClick={handleCancelBioEdit}
+                                                    variant="outlined"
+                                                    color="secondary"
+                                                    startIcon={<CloseIcon />}
+                                                >
+                                                    Cancel
+                                                </Button>
+                                            </Box>
+                                        ) : (
+                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                                <Typography>
+                                                    {profile.bio || "No bio yet"}
+                                                </Typography>
+                                                {isOwner && (
+                                                    <Button
+                                                        onClick={handleEditBio}
+                                                        variant="outlined"
+                                                        size="small"
+                                                        startIcon={<EditIcon />}
+                                                    >
+                                                        Edit Bio
+                                                    </Button>
+                                                )}
+                                            </Box>
+                                        )}
+                                    </>
+                                )}
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                <Typography variant="body1" sx={{ mr: 2 }}>
+                                    Member since {formatDate(profile.date_joined)}
+                                </Typography>
+                            </Box>
+                        </Grid>
+                    </Grid>
+                </CardContent>
+            </Card>
+            <Box sx={{ width: '100%' }}>
+                <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                    <Tabs
+                        value={activeTab}
+                        onChange={handleChange}
+                        variant="scrollable"
+                        scrollButtons="auto"
+                        aria-label="profile tabs"
+                    >
+                        <Tab label="Posts" {...a11yProps(0)} component={MUILink} to="#posts" />
+                        <Tab label="Followers" {...a11yProps(1)} component={MUILink} to="#followers" />
+                        <Tab label="Following" {...a11yProps(2)} component={MUILink} to="#following" />
+                    </Tabs>
+                </Box>
+                <TabPanel value={activeTab} index={0}>
+                    <BlogPostsTab username={username} />
+                </TabPanel>
+                <TabPanel value={activeTab} index={1}>
+                    {followers ? followers.map((follow, index) => (
+                        <Card key={follow.follower || index} sx={{ mb: 2 }}>
+                            <CardContent>
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                    <MUILink to={`/users/${follow.follower}`} underline="none">
+                                        <Avatar
+                                            src={follow.follower_image}
+                                            alt={follow.follower}
+                                            sx={{ width: 50, height: 50, marginRight: 2 }}
+                                        />
+                                        <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                                            {follow.follower}
+                                        </Typography>
+                                    </MUILink>
+                                </Box>
+                            </CardContent>
+                        </Card>
+                    )) : 'Loading...'}
+                </TabPanel>
+                <TabPanel value={activeTab} index={2}>
+                    {following ? following.map((follow, index) => (
+                        <Card key={follow.following || index} sx={{ mb: 2 }}>
+                            <CardContent>
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                    <MUILink to={`/users/${follow.following}`} underline="none">
+                                        <Avatar
+                                            src={follow.following_image}
+                                            alt={follow.following}
+                                            sx={{ width: 50, height: 50, marginRight: 2 }}
+                                        />
+                                        <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                                            {follow.following}
+                                        </Typography>
+                                    </MUILink>
+                                </Box>
+                            </CardContent>
+                        </Card>
+                    )) : 'Loading...'}
+                </TabPanel>
+            </Box>
         </Container>
     );
 }

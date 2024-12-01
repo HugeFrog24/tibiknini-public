@@ -23,6 +23,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import FlagIcon from '@mui/icons-material/Flag';
 import UserContext from "./contexts/UserContext";
+import PropTypes from 'prop-types';
 
 const BlogPostComments = ({ postId }) => {
   const { comments = [], reportReasons = [] } = useLoaderData();
@@ -46,6 +47,7 @@ const BlogPostComments = ({ postId }) => {
       { 
         _action: 'create',
         content: newComment.trim(),
+        postId: postId,
       },
       { method: 'post' }
     );
@@ -268,6 +270,10 @@ const BlogPostComments = ({ postId }) => {
       </Dialog>
     </Box>
   );
+};
+
+BlogPostComments.propTypes = {
+  postId: PropTypes.string.isRequired,
 };
 
 export default BlogPostComments;

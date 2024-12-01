@@ -7,7 +7,7 @@ import { Avatar } from '@mui/material'
 
 function ProfileImage({
     imageSrc,
-    imageAlt,
+    username,
     width,
     height,
     showOptions,
@@ -17,9 +17,6 @@ function ProfileImage({
 }) {
     const [isHovered, setIsHovered] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
-
-    // Calculate font size based on avatar dimensions
-    const fontSize = Math.min(Number(width), Number(height)) / 2;
 
     const handleDocumentClick = (e) => {
         if (!e.target.closest("#profile-image-dropdown")) {
@@ -83,16 +80,16 @@ function ProfileImage({
                     >
                     <Avatar
                         src={imageSrc}
-                        alt={imageAlt}
                         sx={{
-                            width: width,
-                            height: height,
-                            fontSize: `${fontSize}px`,
+                            width,
+                            height,
+                            bgcolor: '#1976d2',
+                            fontSize: Math.min(width, height) * 0.4,
                             fontWeight: 'bold'
                         }}
                         className={`shadow ${isHovered ? "opacity-50" : ""}`}
                     >
-                        {imageAlt.charAt(0).toUpperCase()}
+                        {username ? username.charAt(0).toUpperCase() : '?'}
                     </Avatar>
                 </Button>
                 {isHovered && showOptions && (
