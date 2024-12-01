@@ -32,7 +32,8 @@ import { showToast } from '../utils/toastUtils';
 import { useNavigate } from 'react-router-dom';
 
 const BlogPostComments = ({ postId }) => {
-  const [comments, setComments] = useState(null);
+  const [comments, setComments] = useState([]);  
+  const [error, setError] = useState(null);
   const [loadingComments, setLoadingComments] = useState(true);
   const [newComment, setNewComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -165,13 +166,16 @@ const BlogPostComments = ({ postId }) => {
 
   const fetchComments = async () => {
     setLoadingComments(true);
+    setError(null);
     try {
       const response = await api.get(`/blog/posts/id/${postId}/comments/`);
       if (response.status === 200) {
-        setComments(response.data.results);
+        setComments(response.data.results || []);
       }
     } catch (error) {
+      setError('Failed to load comments. Please try again later.');
       showToast('error', 'Failed to load comments');
+      setComments([]);
     } finally {
       setLoadingComments(false);
     }
@@ -271,29 +275,17 @@ const BlogPostComments = ({ postId }) => {
       )}
 
       {loadingComments ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
           <CircularProgress />
         </Box>
-      ) : comments === null ? (
-        <Box sx={{ my: 4 }}>
-          <Alert severity="error">
-            Failed to load comments. Please try again later.
-          </Alert>
-        </Box>
+      ) : error ? (
+        <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
+      ) : comments.length === 0 ? (
+        <Typography variant="body1" color="text.secondary" sx={{ p: 2, textAlign: 'center' }}>
+          No comments yet. Be the first to comment!
+        </Typography>
       ) : (
         <Stack spacing={2}>
-          {comments.length === 0 && (
-            <Box>
-              <Alert severity="info">
-                No comments yet. Be the first one to share your thoughts!
-                {!isAuthenticated && (
-                  <Box sx={{ mt: 1 }}>
-                    <Link href="/login" underline="hover">Log in</Link> to leave a comment.
-                  </Box>
-                )}
-              </Alert>
-            </Box>
-          )}
           {Array.isArray(comments) && comments.map((comment) => (
             <Card key={comment?.id || 'unknown'}>
               <CardContent>
