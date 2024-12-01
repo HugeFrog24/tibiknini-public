@@ -28,7 +28,6 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
-import config from '../old-app/config.json';
 import { handleLogout } from '../utils/auth';
 import UserContext, { User, UserContextType } from '../contexts/UserContext';
 import type { Theme } from "@mui/material/styles";
@@ -40,6 +39,7 @@ interface HideOnScrollProps {
 
 interface NavigationBarProps {
   toggleDarkMode: () => void;
+  siteTitle: string;
 }
 
 interface NavItem {
@@ -61,7 +61,7 @@ function HideOnScroll(props: HideOnScrollProps) {
   );
 }
 
-const NavigationBar: React.FC<NavigationBarProps> = ({ toggleDarkMode }) => {
+const NavigationBar: React.FC<NavigationBarProps> = ({ toggleDarkMode, siteTitle }) => {
   const theme = useTheme<Theme>();
   const { user, isAuthenticated, updateUser } = useContext<UserContextType>(UserContext);
   const location = useLocation();
@@ -200,7 +200,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ toggleDarkMode }) => {
   const drawer = (
     <Box onClick={handleDrawerToggle} sx={{ width: 250 }}>
       <Typography variant="h6" sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-        {config.siteName}
+        {siteTitle}
       </Typography>
       <List>
         {navItems.map((item) => (
@@ -251,7 +251,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ toggleDarkMode }) => {
               <MenuIcon />
             </IconButton>
             <Typography variant="h6" component="div" sx={{ display: { xs: 'none', sm: 'block' } }}>
-              {config.siteName}
+              {siteTitle}
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
