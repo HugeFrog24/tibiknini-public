@@ -5,8 +5,12 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-const mode = process.env.NODE_ENV || "development";
+const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development';
 const port = process.env.PORT || 3000;
+
+// Handle static files
+app.use(express.static('public'));
+app.use(express.static('build/client'));
 
 // Handle CORS preflight requests
 app.options("*", (req, res) => {
