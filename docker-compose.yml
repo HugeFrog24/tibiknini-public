@@ -197,10 +197,8 @@ services:
       - ./frontend:/app:cached
       - /app/node_modules
     environment:
-      - VITE_API_URL=http://nginx-dev
-      - CHOKIDAR_USEPOLLING=true
-      - WATCHPACK_POLLING=true
-      - DOMAIN_NAME=localhost
+      - NODE_ENV=development
+      - DOMAIN_NAME=nginx-dev
     networks:
       - app_network
     depends_on:

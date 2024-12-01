@@ -10,5 +10,11 @@ export function getApiUrl(): string {
   const domain = process.env.DOMAIN_NAME || 'localhost';
   const isDev = process.env.NODE_ENV !== 'production';
   const protocol = isDev ? 'http' : 'https';
+  console.log('Environment Debug:', {
+    NODE_ENV: process.env.NODE_ENV,
+    isDev,
+    domain,
+    protocol
+  });
   return `${protocol}://${domain}`; 
 }
