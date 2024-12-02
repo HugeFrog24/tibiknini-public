@@ -1,6 +1,6 @@
 services:
   nginx:
-    image: ghcr.io/${OWNER_LC}/nginx:latest
+    image: ghcr.io/${OWNER_LC:-hugefrog24}/nginx:latest
     profiles: ["prod"]
     ports:
       - "80:80"
@@ -32,7 +32,7 @@ services:
       - app_network
 
   django:
-    image: ghcr.io/hugefrog24/tibiknini:latest
+    image: ghcr.io/${OWNER_LC:-hugefrog24}/tibiknini:latest
     profiles: ["prod"]
     volumes:
       - static_volume:/usr/src/app/staticfiles
@@ -77,7 +77,7 @@ services:
       - recaptcha_secret_key
 
   celery_worker:
-    image: ghcr.io/hugefrog24/tibiknini:latest
+    image: ghcr.io/${OWNER_LC:-hugefrog24}/tibiknini:latest
     profiles: ["prod"]
     volumes:
       - media_volume:/var/www/media
@@ -124,7 +124,7 @@ services:
       - email_host_password
 
   celery_beat:
-    image: ghcr.io/hugefrog24/tibiknini:latest
+    image: ghcr.io/${OWNER_LC:-hugefrog24}/tibiknini:latest
     profiles: ["prod"]
     volumes:
       - media_volume:/var/www/media
