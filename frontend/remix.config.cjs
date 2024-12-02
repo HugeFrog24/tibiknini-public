@@ -20,5 +20,8 @@ module.exports = {
     "@emotion/serialize",
     "@emotion/sheet",
     "@emotion/utils"
-  ]
+  ],
+  serverEnv: {
+    RECAPTCHA_SITE_KEY: true
+  }
 };

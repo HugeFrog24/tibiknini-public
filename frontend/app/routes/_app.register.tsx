@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from '@remix-run/react';
 import ReCAPTCHA from "react-google-recaptcha";
 import { useFormik } from 'formik';
@@ -132,6 +132,11 @@ export default function RegistrationWizard() {
   const [registrationComplete, setRegistrationComplete] = useState<boolean>(false);
   const navigate = useNavigate();
   const recaptchaRef = useRef<ReCAPTCHA>(null);
+  const [isBrowser, setIsBrowser] = useState(false);
+
+  useEffect(() => {
+    setIsBrowser(true);
+  }, []);
 
   const formik = useFormik<FormValues>({
     initialValues: {
@@ -311,12 +316,14 @@ export default function RegistrationWizard() {
                 </Typography>
               )}
 
-              <ReCAPTCHA
-                ref={recaptchaRef}
-                sitekey={typeof window !== 'undefined' ? window.ENV.RECAPTCHA_SITE_KEY : ''}
-                size="invisible"
-                onChange={(recaptchaToken) => recaptchaToken && finalizeRegistration(recaptchaToken)}
-              />
+              {isBrowser && (
+                <ReCAPTCHA
+                  ref={recaptchaRef}
+                  sitekey={window.ENV?.RECAPTCHA_SITE_KEY ?? ''}
+                  size="invisible"
+                  onChange={(recaptchaToken) => recaptchaToken && finalizeRegistration(recaptchaToken)}
+                />
+              )}
 
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
                 <Button

@@ -24,10 +24,19 @@ import './old-app/styles/custom-bootstrap.css';
 export async function loader() {
   try {
     const siteData = await fetchSiteTitle();
-    return json({ siteData });
+    return json({
+      siteData,
+      ENV: {
+        RECAPTCHA_SITE_KEY: process.env.RECAPTCHA_SITE_KEY
+      }
+    });
   } catch (error) {
-    // Fallback to default title if API call fails
-    return json({ siteData: { site_name: "Our Platform" } });
+    return json({
+      siteData: { site_name: "Our Platform" },
+      ENV: {
+        RECAPTCHA_SITE_KEY: process.env.RECAPTCHA_SITE_KEY
+      }
+    });
   }
 }
 
@@ -45,7 +54,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 };
 
 export default function App() {
-  const { siteData } = useLoaderData<typeof loader>();
+  const { siteData, ENV } = useLoaderData<typeof loader>();
 
   return (
     <html lang="en">
@@ -62,6 +71,11 @@ export default function App() {
         </ThemeProvider>
         <ScrollRestoration />
         <Scripts />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.ENV = ${JSON.stringify(ENV)}`,
+          }}
+        />
         <LiveReload />
       </body>
     </html>
