@@ -13,7 +13,8 @@ import {
   Stepper,
   TextField,
   Typography,
-  Alert
+  Alert,
+  LinearProgress
 } from "@mui/material";
 import CelebrationIcon from '@mui/icons-material/Celebration';
 
@@ -133,6 +134,7 @@ export default function RegistrationWizard() {
   const navigate = useNavigate();
   const recaptchaRef = useRef<ReCAPTCHA>(null);
   const [isBrowser, setIsBrowser] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState<number>(0);
 
   useEffect(() => {
     setIsBrowser(true);
@@ -235,6 +237,22 @@ export default function RegistrationWizard() {
   const currentStep = steps[activeStep];
   const currentFields = currentStep.fields;
 
+  const calculatePasswordStrength = (password: string): number => {
+    let score = 0;
+    if (/[a-z]/.test(password)) score += 25; // Lowercase
+    if (/[A-Z]/.test(password)) score += 25; // Uppercase
+    if (/\d/.test(password)) score += 25; // Number
+    if (/[^A-Za-z0-9]/.test(password)) score += 25; // Special character
+    return score;
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    formik.handleChange(e);
+    if (e.target.name === "password") {
+      setPasswordStrength(calculatePasswordStrength(e.target.value));
+    }
+  };
+
   return (
     <Container component="main" maxWidth="sm">
       <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
@@ -302,7 +320,7 @@ export default function RegistrationWizard() {
                   label={field.label}
                   type={field.type}
                   value={formik.values[field.id]}
-                  onChange={formik.handleChange}
+                  onChange={field.id === "password" ? handlePasswordChange : formik.handleChange}
                   onBlur={formik.handleBlur}
                   error={formik.touched[field.id] && Boolean(formik.errors[field.id])}
                   helperText={formik.touched[field.id] && formik.errors[field.id]}
@@ -311,9 +329,20 @@ export default function RegistrationWizard() {
               ))}
 
               {currentStep.id === "platform_representation" && (
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 2, mb: 2 }}>
-                  A strong password, known only to you, ensures your account's security and privacy.
-                </Typography>
+                <>
+                  <LinearProgress
+                    variant="determinate"
+                    value={passwordStrength}
+                    color={
+                      passwordStrength <= 25 ? "error" :
+                      passwordStrength <= 75 ? "warning" : "success"
+                    }
+                    sx={{ mb: 2 }}
+                  />
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 2, mb: 2 }}>
+                    A strong password, known only to you, ensures your account's security and privacy.
+                  </Typography>
+                </>
               )}
 
               {isBrowser && (
