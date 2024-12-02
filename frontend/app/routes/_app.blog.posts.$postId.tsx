@@ -1,7 +1,7 @@
 import * as React from "react";
 import { json, LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import BlogPostDetail from "../old-app/components/BlogPostDetail";
+import BlogPostDetail from "../components/BlogPostDetail";
 import { fetchPublicBlogPost } from "../utils/server-fetch";
 
 export async function loader({ params }: LoaderFunctionArgs) {
