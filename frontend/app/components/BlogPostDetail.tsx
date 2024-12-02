@@ -21,6 +21,7 @@ import {
 
 import UserContext, { type UserContextType } from "../contexts/UserContext";
 import BlogPostComments from "./BlogPostComments";
+import api from "../utils/api";
 
 interface Author {
     id: number;
@@ -43,6 +44,11 @@ export interface BlogPost {
 
 interface BlogPostDetailProps {
     post: BlogPost;
+}
+
+interface LikeResponse {
+    likes_count: number;
+    is_liked: boolean;
 }
 
 export default function BlogPostDetail({ post }: BlogPostDetailProps) {
@@ -83,15 +89,7 @@ export default function BlogPostDetail({ post }: BlogPostDetailProps) {
 
     const handleDelete = async () => {
         try {
-            const response = await fetch(`/api/blog/posts/id/${post.id}/`, {
-                method: 'DELETE',
-                credentials: 'include',
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to delete post');
-            }
-
+            await api.delete(`/blog/posts/id/${post.id}/`);
             navigate('/blog', { 
                 state: { redirectReason: 'POST_DELETED' }
             });
@@ -108,18 +106,10 @@ export default function BlogPostDetail({ post }: BlogPostDetailProps) {
         }
 
         try {
-            const response = await fetch(`/api/blog/posts/id/${post.id}/like/`, {
-                method: 'POST',
-                credentials: 'include',
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to like post');
-            }
-
-            const data = await response.json();
-            setLikesCount(data.likes_count);
-            setIsLiked(data.is_liked);
+            const response = await api.post<LikeResponse>(`/blog/posts/id/${post.id}/like/`);
+            const { likes_count, is_liked } = response.data;
+            setLikesCount(likes_count);
+            setIsLiked(is_liked);
         } catch (error) {
             console.error('Error liking post:', error);
             toast.error('Failed to like post');

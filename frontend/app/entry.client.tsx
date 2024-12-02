@@ -1,7 +1,8 @@
+import * as React from "react";
 import { RemixBrowser } from "@remix-run/react";
 import { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
-import { setApiUrl } from "./old-app/utils/api";
+import { setApiUrl } from "./utils/api";
 
 // For client-side, we can use the current domain
 const protocol = window.location.protocol;
