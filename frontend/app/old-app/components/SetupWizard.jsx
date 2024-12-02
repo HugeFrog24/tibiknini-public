@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Container, TextField, Button, CircularProgress, Typography, Box, styled, LinearProgress } from "@mui/material";
 import { Stepper, Step, StepLabel, StepConnector, stepConnectorClasses } from '@mui/material';
 import { useNavigate } from '@remix-run/react';
-import api from '../utils/api';
+import api from '../../utils/api';
 import { object, string, number, boolean, ref } from 'yup';
 import { useFormik } from 'formik';
 import { showToast } from '../utils/toastUtils';

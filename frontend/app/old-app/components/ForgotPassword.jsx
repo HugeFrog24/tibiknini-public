@@ -3,7 +3,7 @@ import { Container, Grid, Box } from '@mui/material';
 import { TextField, Typography, Button, CircularProgress } from '@mui/material';
 import { useNavigate } from '@remix-run/react';
 import { showToast } from '../utils/toastUtils';
-import api from '../utils/api';
+import api from '../../utils/api';  // Updated import path to use new TypeScript version
 
 function ForgotPassword() {
     const [email, setEmail] = useState('');

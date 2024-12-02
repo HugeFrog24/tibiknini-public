@@ -1,4 +1,4 @@
-import api from './api';
+import api from '../../utils/api';
 
 const FetchUserFollows = async (username, followType, setFollows) => {
     try {

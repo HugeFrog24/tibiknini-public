@@ -4,7 +4,7 @@ import { RemixServer } from "@remix-run/react";
 import { renderToPipeableStream } from "react-dom/server";
 import { isbot } from "isbot";
 import * as React from "react";
-import { setApiUrl } from "./old-app/utils/api";
+import { setApiUrl } from "./utils/api";
 import { getApiUrl } from "./env.server";
 
 const ABORT_DELAY = 5000;

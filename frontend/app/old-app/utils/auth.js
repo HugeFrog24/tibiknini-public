@@ -1,4 +1,4 @@
-import api from './api';
+import api from '../../utils/api';
 import { toast } from 'react-toastify';
 
 export const fetchUser = async () => {

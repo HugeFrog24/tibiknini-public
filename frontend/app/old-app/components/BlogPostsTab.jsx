@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect, useState} from "react";
 import BlogPostCard from "./BlogPostCard";
-import api from '../utils/api';  // Adjust the path to point to your api file
+import api from '../../utils/api';  // Updated import path to use new TypeScript version
 
 const BlogPostsTab = ({username}) => {
     const [blogPosts, setBlogPosts] = useState([]);

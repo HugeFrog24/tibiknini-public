@@ -27,7 +27,7 @@ import {REDIRECT_REASONS} from "./constants/Constants";
 import BlogPostsTab from "./BlogPostsTab";
 import ProfileImage from "./ProfileImage";
 import FetchUserFollows from '../utils/FetchUserFollows';
-import api from '../utils/api';
+import api from '../../utils/api';  // Updated import path to use new TypeScript version
 
 function TabPanel(props) {
     const { children, value, index, ...other } = props;

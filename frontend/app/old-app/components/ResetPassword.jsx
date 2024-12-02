@@ -3,7 +3,7 @@ import { Container, Row, Col, Form } from 'react-bootstrap';
 import { TextField, Typography, Button, CircularProgress } from '@mui/material';
 import { useNavigate, useSearchParams } from '@remix-run/react';
 import { showToast } from '../utils/toastUtils';
-import api from '../utils/api';
+import api from '../../utils/api';
 
 function ResetPassword() {
     const [searchParams] = useSearchParams();
