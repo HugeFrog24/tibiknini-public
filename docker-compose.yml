@@ -4,13 +4,14 @@ services:
     profiles: ["prod"]
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - static_volume:/var/www/staticfiles
       - media_volume:/var/www/media
     depends_on:
       - django
     restart: always
+    environment:
+      - SERVER_NAME=${SERVER_NAME:-_}  # Default to catch-all if not set
 
   nginx-dev:
     build:

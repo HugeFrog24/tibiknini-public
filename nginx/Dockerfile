@@ -10,5 +10,18 @@ RUN npm run build
 # Production NGINX
 FROM nginx:stable-alpine
 ARG ENVIRONMENT=prod
-COPY nginx/nginx.conf.${ENVIRONMENT} /etc/nginx/conf.d/default.conf
+
+# Install envsubst
+RUN apk add --no-cache gettext
+
+# Copy nginx config template
+COPY nginx/nginx.conf.${ENVIRONMENT} /etc/nginx/conf.d/default.conf.template
+
+# Copy static files
 COPY --from=frontend-builder /app/public /var/www/html
+
+# Use entrypoint script to substitute environment variables
+COPY nginx/docker-entrypoint.sh /
+RUN chmod +x /docker-entrypoint.sh
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["nginx", "-g", "daemon off;"]

@@ -1,14 +1,6 @@
 server {
-    listen 443 ssl http2;
-    server_name boger.dev www.boger.dev;
-
-    ssl_certificate /etc/nginx/ssl/cloudflare-origin.pem;
-    ssl_certificate_key /etc/nginx/ssl/cloudflare-origin.key;
-
-    # SSL settings
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_prefer_server_ciphers on;
-    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+    listen 80;
+    server_name ${SERVER_NAME};
 
     location /django-static/ {
         alias /var/www/staticfiles/;
@@ -42,10 +34,4 @@ server {
     location /media/ {
         alias /var/www/media/;
     }
-}
-
-server {
-    listen 80;
-    server_name boger.dev www.boger.dev;
-    return 301 https://$host$request_uri;
 }
