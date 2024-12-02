@@ -25,11 +25,10 @@ export async function fetchSiteTitle() {
 }
 
 export async function fetchAuthenticatedUser(request: Request) {
-  // Forward the cookies from the incoming request
   return fetchFromApi('/users/me/', {
     headers: {
       Cookie: request.headers.get('Cookie') || '',
-    }
+    },
   });
 }
 
@@ -48,4 +47,12 @@ export async function fetchPublicBlogPost(postId: string) {
 
 export async function fetchPublicComments(postId: string) {
   return fetchFromApi(`/blog/posts/id/${postId}/comments/`);
+}
+
+export async function fetchPrivacyPolicy() {
+  return fetchFromApi('/privacy_policy/');
+}
+
+export async function fetchTermsOfService() {
+  return fetchFromApi('/terms_of_service/');
 }

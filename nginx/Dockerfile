@@ -11,4 +11,4 @@ RUN npm run build
 FROM nginx:stable-alpine
 ARG ENVIRONMENT=prod
 COPY nginx/nginx.conf.${ENVIRONMENT} /etc/nginx/conf.d/default.conf
-COPY --from=frontend-builder /app/dist /var/www/html
+COPY --from=frontend-builder /app/public /var/www/html

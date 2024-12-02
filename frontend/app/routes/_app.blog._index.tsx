@@ -1,18 +1,23 @@
 import * as React from "react";
-import { json } from "@remix-run/node";
+import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { Box } from "@mui/material";
-import BlogPostsList from "../old-app/components/BlogPostsList";
+import { useLoaderData } from "@remix-run/react";
+import BlogPostsList, { type BlogPostsResponse } from "../components/BlogPostsList";
+import { fetchPublicBlogPosts } from "../utils/server-fetch";
 
-export async function loader() {
-  // BlogPostsList handles its own data fetching on the client side
-  // This ensures proper handling of authentication and pagination
-  return json({});
+export async function loader({ request }: LoaderFunctionArgs) {
+  const url = new URL(request.url);
+  const page = url.searchParams.get("page") || "1";
+  const posts = await fetchPublicBlogPosts(parseInt(page));
+  return json(posts);
 }
 
 export default function BlogIndex() {
+  const data = useLoaderData<typeof loader>() as BlogPostsResponse;
+  
   return (
     <Box sx={{ p: 2 }}>
-      <BlogPostsList />
+      <BlogPostsList initialData={data} />
     </Box>
   );
 }

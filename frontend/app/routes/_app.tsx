@@ -1,30 +1,41 @@
 import React from 'react';
 import { Outlet, useLoaderData } from "@remix-run/react";
 import { ThemeProvider, CssBaseline } from '@mui/material';
-import { json } from "@remix-run/node";
+import { json, LoaderFunction } from "@remix-run/node";
 import { lightTheme } from '../old-app/themes/theme';
 import Navbar from '../components/Navbar';
-import Footer from '../old-app/components/Footer';
+import Footer from '../components/Footer';
 import { ToastContainer } from 'react-toastify';
 import UserContext, { UserContextType, User } from '../contexts/UserContext';
-import { fetchSiteTitle } from '../utils/server-fetch';
+import { fetchSiteTitle, fetchAuthenticatedUser } from '../utils/server-fetch';
 
-export async function loader() {
-  try {
-    const siteData = await fetchSiteTitle();
-    return json({ siteData });
-  } catch (error) {
-    return json({ siteData: { site_name: "Our Platform" } });
-  }
+export interface LoaderData {
+  siteData: { site_name: string };
+  user: User | null;
 }
 
+export const loader: LoaderFunction = async ({ request }) => {
+  try {
+    const [siteData, user] = await Promise.all([
+      fetchSiteTitle(),
+      fetchAuthenticatedUser(request),
+    ]);
+    return json<LoaderData>({ siteData, user });
+  } catch (error) {
+    return json<LoaderData>({
+      siteData: { site_name: "Our Platform" },
+      user: null,
+    });
+  }
+};
+
 export default function AppLayout() {
-  const { siteData } = useLoaderData<typeof loader>();
-  const [user, setUser] = React.useState<User | null>(null);
+  const { siteData, user } = useLoaderData<LoaderData>();
+  const [currentUser, setUser] = React.useState<User | null>(user);
 
   const userContextValue: UserContextType = {
-    user,
-    isAuthenticated: !!user,
+    user: currentUser,
+    isAuthenticated: !!currentUser,
     updateUser: setUser,
   };
 

@@ -1,4 +1,4 @@
-import ProfileSettings from "../old-app/components/ProfileSettings";
+import ProfileSettings from "../components/ProfileSettings";
 
 export default function SettingsPage() {
   return <ProfileSettings />;

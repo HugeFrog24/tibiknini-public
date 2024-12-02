@@ -29,7 +29,7 @@ import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
 import { handleLogout } from '../utils/auth';
-import UserContext, { User, UserContextType } from '../contexts/UserContext';
+import UserContext, { UserContextType } from '../contexts/UserContext';
 import type { Theme } from "@mui/material/styles";
 
 interface HideOnScrollProps {

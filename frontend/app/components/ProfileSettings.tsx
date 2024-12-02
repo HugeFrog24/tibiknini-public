@@ -1,4 +1,5 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { useNavigate } from '@remix-run/react';
 import {
   Button,
@@ -16,11 +17,28 @@ import {
   Divider,
   Skeleton,
 } from '@mui/material';
-import api from '../utils/api';
-import UserContext from './contexts/UserContext';
-import { handleLogout } from '../utils/auth';
+import type { SxProps, Theme } from '@mui/material';
+import api from '../old-app/utils/api';
+import UserContext from '../contexts/UserContext';
+import { handleLogout } from '../old-app/utils/auth';
 
-const ProfileSettings = () => {
+interface NotificationState {
+  open: boolean;
+  message: string;
+  isError: boolean;
+}
+
+const containerStyles: SxProps<Theme> = {
+  p: 3,
+  maxWidth: 'md',
+  mx: 'auto',
+};
+
+const sectionStyles: SxProps<Theme> = {
+  mb: 4,
+};
+
+export default function ProfileSettings() {
   const [open, setOpen] = useState(false);
   const [deleteInProgress, setDeleteInProgress] = useState(false);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
@@ -29,7 +47,12 @@ const ProfileSettings = () => {
   const [siteTitle, setSiteTitle] = useState('');
   const [savingTitle, setSavingTitle] = useState(false);
   const [loadingTitle, setLoadingTitle] = useState(false);
-  const [notification, setNotification] = useState({ open: false, message: '', isError: false });
+  const [notification, setNotification] = useState<NotificationState>({ 
+    open: false, 
+    message: '', 
+    isError: false 
+  });
+
   const { user, isAuthenticated } = useContext(UserContext);
   const navigate = useNavigate();
 
@@ -266,6 +289,4 @@ const ProfileSettings = () => {
       </Dialog>
     </Box>
   );
-};
-
-export default ProfileSettings;
+}

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import type { FC, ChangeEvent } from "react";
-import { Container, Grid, Box } from '@mui/material';
+import { Container, Grid } from '@mui/material';
 import { useNavigate, Form, useSubmit } from '@remix-run/react';
 import { TextField, Typography, Button, CircularProgress } from '@mui/material';
 import ReCAPTCHA from 'react-google-recaptcha';
