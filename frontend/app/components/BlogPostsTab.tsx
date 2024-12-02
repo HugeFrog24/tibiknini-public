@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect, useState} from "react";
 import { Typography, Box, Alert } from '@mui/material';
-import BlogPostCard, { BlogPost } from "./BlogPostCard";
+import BlogPostCard, { BlogPost } from "../components/BlogPostCard";
 import api from '../utils/api';
 
 interface BlogPostsTabProps {

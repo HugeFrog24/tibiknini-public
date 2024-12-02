@@ -18,7 +18,7 @@ import {
   Skeleton,
 } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material';
-import api from '../old-app/utils/api';
+import api from '../utils/api';
 import UserContext from '../contexts/UserContext';
 import { handleLogout } from '../old-app/utils/auth';
 

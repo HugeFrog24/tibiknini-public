@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { useLocation } from "@remix-run/react";
 import OnlineUsersPage from "../old-app/components/OnlineUsersPage";
-import RegistrationWizard from "../old-app/components/RegistrationWizard";
 import SetupWizard from "../old-app/components/SetupWizard";
 import ForgotPassword from "../old-app/components/ForgotPassword";
 import ResetPassword from "../old-app/components/ResetPassword";
@@ -15,9 +14,6 @@ export default function CatchAll() {
   switch (path) {
     case '/online-users':
       component = <OnlineUsersPage />;
-      break;
-    case '/register':
-      component = <RegistrationWizard />;
       break;
     case '/setup':
       component = <SetupWizard />;
