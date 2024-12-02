@@ -22,14 +22,13 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./frontend/dist:/var/www/html
+      - ./frontend/public:/var/www/html
       - ./media:/var/www/media
     depends_on:
       - django-dev
+      - frontend-dev
     networks:
       - app_network
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
 
   django:
     image: ghcr.io/${OWNER_LC}/tibiknini:latest
@@ -201,8 +200,6 @@ services:
       - DOMAIN_NAME=nginx-dev
     networks:
       - app_network
-    depends_on:
-      - nginx-dev
 
   redis:
     image: redis:7-alpine

@@ -21,6 +21,7 @@ import UserContext from "./contexts/UserContext";
 import {REDIRECT_REASONS} from "./constants/Constants";
 import BlogPostComments from "./BlogPostComments";
 import api from "../utils/api";
+import { getApiUrl } from "../../env.server";
 
 const BlogPostDetail = ({ post }) => {
     const navigate = useNavigate();
@@ -73,9 +74,19 @@ const BlogPostDetail = ({ post }) => {
         }
 
         try {
-            const response = await api.post(`/blog/posts/id/${post.id}/like/`);
-            setLikesCount(response.data.likes_count);
-            setIsLiked(response.data.is_liked);
+            const apiUrl = getApiUrl();
+            const response = await fetch(`${apiUrl}/api/blog/posts/id/${post.id}/like/`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to like post');
+            }
+            
+            const data = await response.json();
+            setLikesCount(data.likes_count);
+            setIsLiked(data.is_liked);
         } catch (error) {
             console.error('Error liking post:', error);
             toast.error('Failed to like post');
