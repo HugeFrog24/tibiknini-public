@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@emotion/server": "^11.11.0"
+  }
+}

@@ -5,7 +5,6 @@ import RegistrationWizard from "../old-app/components/RegistrationWizard";
 import SetupWizard from "../old-app/components/SetupWizard";
 import ForgotPassword from "../old-app/components/ForgotPassword";
 import ResetPassword from "../old-app/components/ResetPassword";
-import { ErrorBoundary as CustomErrorBoundary } from "../components/ErrorComponent";
 
 export default function CatchAll() {
   const location = useLocation();
@@ -38,6 +37,3 @@ export default function CatchAll() {
 
   return component;
 }
-
-// Export the error boundary
-export { CustomErrorBoundary as ErrorBoundary };
