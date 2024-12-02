@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useNavigate } from "@remix-run/react";
+import { useNavigate, useLoaderData } from "@remix-run/react";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import {
@@ -50,6 +50,7 @@ export default function BlogPostDetail({ post }: BlogPostDetailProps) {
     const { user, isAuthenticated } = React.useContext<UserContextType>(UserContext);
     const [likesCount, setLikesCount] = React.useState(post?.likes_count || 0);
     const [isLiked, setIsLiked] = React.useState(post?.is_liked || false);
+    const { comments = [], reportReasons = [] } = useLoaderData<{ comments: any[]; reportReasons: any[]; }>();
 
     if (!post) {
         return null;
@@ -245,7 +246,11 @@ export default function BlogPostDetail({ post }: BlogPostDetailProps) {
                 </Box>
             </Paper>
 
-            <BlogPostComments postId={post.id} />
+            <BlogPostComments 
+                postId={post.id} 
+                comments={comments} 
+                reportReasons={reportReasons} 
+            />
         </Container>
     );
 }

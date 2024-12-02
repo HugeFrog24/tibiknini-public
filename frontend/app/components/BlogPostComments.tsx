@@ -1,171 +1,288 @@
 import * as React from "react";
-import { toast } from 'react-toastify';
+import { useFetcher, Link } from "@remix-run/react";
 import {
-    Box,
-    Typography,
-    TextField,
-    Button,
-    Avatar,
-    Paper,
-    Divider
+  Box,
+  TextField,
+  Button,
+  Typography,
+  Card,
+  CardContent,
+  Avatar,
+  IconButton,
+  Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Tooltip
 } from '@mui/material';
-import UserContext, { type UserContextType } from "../contexts/UserContext";
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import FlagIcon from '@mui/icons-material/Flag';
+import UserContext from "../contexts/UserContext";
+import type { UserContextType } from "../contexts/UserContext";
+
+interface Author {
+  id: number;
+  username: string;
+  profile_picture?: string;
+}
 
 interface Comment {
-    id: number;
-    content: string;
-    author: {
-        id: number;
-        username: string;
-        profile_picture?: string;
-    };
-    created_at: string;
-    pinned: boolean;
-    hidden: boolean;
+  id: number;
+  content: string;
+  author: Author;
+  created_at: string;
+}
+
+interface ReportReason {
+  id: number;
+  name: string;
 }
 
 interface BlogPostCommentsProps {
-    postId: number;
+  postId: number;
+  comments?: Comment[];
+  reportReasons?: ReportReason[];
 }
 
-export default function BlogPostComments({ postId }: BlogPostCommentsProps) {
-    const { isAuthenticated } = React.useContext<UserContextType>(UserContext);
-    const [comments, setComments] = React.useState<Comment[]>([]);
-    const [newComment, setNewComment] = React.useState("");
-    const [isLoading, setIsLoading] = React.useState(false);
+export default function BlogPostComments({ postId, comments = [], reportReasons = [] }: BlogPostCommentsProps) {
+  const fetcher = useFetcher();
+  const { user, isAuthenticated } = React.useContext<UserContextType>(UserContext);
+  
+  const [editingCommentId, setEditingCommentId] = React.useState<number | null>(null);
+  const [editContent, setEditContent] = React.useState("");
+  const [newComment, setNewComment] = React.useState("");
+  
+  // Report dialog state
+  const [reportDialogOpen, setReportDialogOpen] = React.useState(false);
+  const [selectedReason, setSelectedReason] = React.useState('');
+  const [reportDescription, setReportDescription] = React.useState('');
+  const [reportingCommentId, setReportingCommentId] = React.useState<number | null>(null);
 
-    const fetchComments = React.useCallback(async () => {
-        try {
-            const response = await fetch(`/api/blog/posts/id/${postId}/comments/`, {
-                credentials: 'include'
-            });
-            if (!response.ok) throw new Error('Failed to fetch comments');
-            const data = await response.json();
-            setComments(data);
-        } catch (error) {
-            console.error('Error fetching comments:', error);
-            toast.error('Failed to load comments');
-        }
-    }, [postId]);
+  const handleSubmitComment = () => {
+    if (!newComment.trim()) return;
 
-    React.useEffect(() => {
-        fetchComments();
-    }, [fetchComments]);
+    const formData = new FormData();
+    formData.append('_action', 'create');
+    formData.append('content', newComment.trim());
+    formData.append('postId', postId.toString());
 
-    const handleSubmitComment = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!isAuthenticated) {
-            toast.error('Please log in to comment');
-            return;
-        }
+    fetcher.submit(formData, { method: 'post' });
+    setNewComment("");
+  };
 
-        if (!newComment.trim()) {
-            toast.error('Comment cannot be empty');
-            return;
-        }
+  const handleEditComment = (comment: Comment) => {
+    setEditingCommentId(comment.id);
+    setEditContent(comment.content);
+  };
 
-        setIsLoading(true);
-        try {
-            const response = await fetch(`/api/blog/posts/id/${postId}/comments/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify({ content: newComment }),
-            });
+  const handleUpdateComment = () => {
+    if (!editContent.trim() || !editingCommentId) return;
 
-            if (!response.ok) throw new Error('Failed to post comment');
+    const formData = new FormData();
+    formData.append('_action', 'update');
+    formData.append('commentId', editingCommentId.toString());
+    formData.append('content', editContent.trim());
 
-            await fetchComments();
-            setNewComment("");
-            toast.success('Comment posted successfully');
-        } catch (error) {
-            console.error('Error posting comment:', error);
-            toast.error('Failed to post comment');
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    fetcher.submit(formData, { method: 'post' });
+    setEditingCommentId(null);
+    setEditContent("");
+  };
 
-    return (
-        <Paper elevation={0} sx={{ p: 3, my: 3 }}>
-            <Typography variant="h5" component="h2" gutterBottom>
-                Comments
-            </Typography>
+  const handleDeleteComment = (commentId: number) => {
+    if (window.confirm('Are you sure you want to delete this comment?')) {
+      const formData = new FormData();
+      formData.append('_action', 'delete');
+      formData.append('commentId', commentId.toString());
 
-            {isAuthenticated && (
-                <Box component="form" onSubmit={handleSubmitComment} sx={{ mb: 4 }}>
-                    <TextField
-                        fullWidth
-                        multiline
-                        rows={3}
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="Write a comment..."
-                        variant="outlined"
-                        sx={{ mb: 2 }}
-                    />
-                    <Button
-                        type="submit"
-                        variant="contained"
-                        disabled={isLoading}
-                        sx={{ float: 'right' }}
-                    >
-                        {isLoading ? 'Posting...' : 'Post Comment'}
-                    </Button>
+      fetcher.submit(formData, { method: 'post' });
+    }
+  };
+
+  const handleOpenReportDialog = (commentId: number) => {
+    setReportingCommentId(commentId);
+    setReportDialogOpen(true);
+  };
+
+  const handleCloseReportDialog = () => {
+    setReportDialogOpen(false);
+    setReportingCommentId(null);
+    setSelectedReason('');
+    setReportDescription('');
+  };
+
+  const handleSubmitReport = () => {
+    if (!selectedReason || !reportingCommentId) return;
+
+    const formData = new FormData();
+    formData.append('_action', 'report');
+    formData.append('commentId', reportingCommentId.toString());
+    formData.append('reason', selectedReason);
+    formData.append('description', reportDescription.trim());
+
+    fetcher.submit(formData, { method: 'post' });
+    handleCloseReportDialog();
+  };
+
+  return (
+    <Box sx={{ mt: 4 }}>
+      <Typography variant="h6" gutterBottom>
+        Comments ({Array.isArray(comments) ? comments.length : 0})
+      </Typography>
+
+      {isAuthenticated ? (
+        <Box sx={{ mb: 3 }}>
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            variant="outlined"
+            placeholder="Write a comment..."
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+          />
+          <Button
+            variant="contained"
+            onClick={handleSubmitComment}
+            disabled={!newComment.trim()}
+            sx={{ mt: 1 }}
+          >
+            Post Comment
+          </Button>
+        </Box>
+      ) : (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Please <Link to="/login">log in</Link> to post comments.
+        </Typography>
+      )}
+
+      <Stack spacing={2}>
+        {Array.isArray(comments) && comments.map((comment) => (
+          <Card key={comment.id}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Avatar
+                  src={comment.author?.profile_picture}
+                  alt={comment.author?.username}
+                  sx={{ width: 32, height: 32, mr: 1 }}
+                />
+                <Box>
+                  <Typography variant="subtitle2">
+                    {comment.author?.username}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {new Date(comment.created_at).toLocaleDateString()}
+                  </Typography>
                 </Box>
-            )}
+              </Box>
 
-            <Box sx={{ mt: 4 }}>
-                {comments.length === 0 ? (
-                    <Typography color="text.secondary" align="center">
-                        No comments yet. Be the first to comment!
-                    </Typography>
-                ) : (
-                    comments.map((comment) => (
-                        !comment.hidden && (
-                            <Box key={comment.id} sx={{ mb: 3 }}>
-                                <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
-                                    <Avatar
-                                        src={comment.author.profile_picture}
-                                        alt={comment.author.username}
-                                    />
-                                    <Box>
-                                        <Typography variant="subtitle2">
-                                            {comment.author.username}
-                                            {comment.pinned && (
-                                                <Typography
-                                                    component="span"
-                                                    variant="caption"
-                                                    sx={{
-                                                        ml: 1,
-                                                        color: 'primary.main',
-                                                        fontWeight: 'medium'
-                                                    }}
-                                                >
-                                                    (Pinned)
-                                                </Typography>
-                                            )}
-                                        </Typography>
-                                        <Typography variant="caption" color="text.secondary">
-                                            {new Date(comment.created_at).toLocaleDateString(undefined, {
-                                                year: 'numeric',
-                                                month: 'long',
-                                                day: 'numeric'
-                                            })}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                                <Typography variant="body2" sx={{ ml: 7 }}>
-                                    {comment.content}
-                                </Typography>
-                                {comments.length > 1 && <Divider sx={{ mt: 2 }} />}
-                            </Box>
-                        )
-                    ))
-                )}
-            </Box>
-        </Paper>
-    );
+              {editingCommentId === comment.id ? (
+                <Box>
+                  <TextField
+                    fullWidth
+                    multiline
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    sx={{ mb: 1 }}
+                  />
+                  <Button
+                    variant="contained"
+                    onClick={handleUpdateComment}
+                    disabled={!editContent.trim()}
+                    size="small"
+                    sx={{ mr: 1 }}
+                  >
+                    Save
+                  </Button>
+                  <Button
+                    onClick={() => setEditingCommentId(null)}
+                    size="small"
+                  >
+                    Cancel
+                  </Button>
+                </Box>
+              ) : (
+                <Box>
+                  <Typography variant="body2">{comment.content}</Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                    {isAuthenticated && user?.id === comment.author?.id && (
+                      <>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleEditComment(comment)}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDeleteComment(comment.id)}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </>
+                    )}
+                    {isAuthenticated && user?.id !== comment.author?.id && (
+                      <Tooltip title="Report comment">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleOpenReportDialog(comment.id)}
+                        >
+                          <FlagIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </Box>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </Stack>
+
+      <Dialog open={reportDialogOpen} onClose={handleCloseReportDialog}>
+        <DialogTitle>Report Comment</DialogTitle>
+        <DialogContent>
+          <FormControl fullWidth sx={{ mt: 2 }}>
+            <InputLabel>Reason</InputLabel>
+            <Select
+              value={selectedReason}
+              onChange={(e) => setSelectedReason(e.target.value)}
+              label="Reason"
+            >
+              {reportReasons.map((reason) => (
+                <MenuItem key={reason.id} value={reason.id}>
+                  {reason.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            label="Additional Details (Optional)"
+            value={reportDescription}
+            onChange={(e) => setReportDescription(e.target.value)}
+            sx={{ mt: 2 }}
+          />
+          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+            <Button onClick={handleCloseReportDialog} sx={{ mr: 1 }}>
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleSubmitReport}
+              disabled={!selectedReason}
+            >
+              Submit Report
+            </Button>
+          </Box>
+        </DialogContent>
+      </Dialog>
+    </Box>
+  );
 }
