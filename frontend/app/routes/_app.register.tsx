@@ -43,7 +43,7 @@ interface Field {
   type: string;
 }
 
-interface Step {
+interface RegistrationStep {
   id: string;
   label: string;
   description: string;
@@ -52,7 +52,7 @@ interface Step {
 }
 
 export default function RegistrationWizard() {
-  const steps: Step[] = [
+  const steps: RegistrationStep[] = [
     {
       id: "personal_details",
       label: "Personal Details",
@@ -268,7 +268,7 @@ export default function RegistrationWizard() {
               </Button>
             </Box>
           ) : (
-            <>
+            < >
               <Typography variant="h5" gutterBottom align="center">
                 {activeStep === 2 && formik.values.first_name
                   ? `Welcome, ${formik.values.first_name}.`
@@ -335,7 +335,7 @@ export default function RegistrationWizard() {
                   {activeStep === steps.length - 2 ? (isSubmitting ? 'Submitting...' : 'Finish') : 'Next'}
                 </Button>
               </Box>
-            </>
+            </ >
           )}
         </Box>
       </Paper>
