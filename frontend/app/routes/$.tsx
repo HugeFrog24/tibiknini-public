@@ -1,13 +1,11 @@
-// This is a catch-all route that will render your existing React Router app
+import * as React from 'react';
 import { useLocation } from "@remix-run/react";
-import BlogPostForm from "../old-app/components/BlogPostForm";
-import BlogPostsList from "../old-app/components/BlogPostsList";
-import Contact from "../old-app/components/Contact";
-import ForgotPassword from "../old-app/components/ForgotPassword";
 import OnlineUsersPage from "../old-app/components/OnlineUsersPage";
 import RegistrationWizard from "../old-app/components/RegistrationWizard";
-import ResetPassword from "../old-app/components/ResetPassword";
 import SetupWizard from "../old-app/components/SetupWizard";
+import ForgotPassword from "../old-app/components/ForgotPassword";
+import ResetPassword from "../old-app/components/ResetPassword";
+import { ErrorBoundary as CustomErrorBoundary } from "../components/ErrorComponent";
 
 export default function CatchAll() {
   const location = useLocation();
@@ -40,3 +38,6 @@ export default function CatchAll() {
 
   return component;
 }
+
+// Export the error boundary
+export { CustomErrorBoundary as ErrorBoundary };
