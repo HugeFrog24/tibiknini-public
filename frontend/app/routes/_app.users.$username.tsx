@@ -4,14 +4,12 @@ import { useLoaderData } from "@remix-run/react";
 import { Box } from "@mui/material";
 import ProfileDetail from "../components/ProfileDetail";
 import { fetchPublicProfile, fetchAuthenticatedUser } from "../utils/server-fetch";
+import type { User } from "../types/user";
 
-// Define the user type
-type User = {
-  username: string;
-  bio?: string;
-  profile_image?: string;
-  date_joined: string;
-};
+interface LoaderData {
+  user: User;
+  authenticatedUser: User | null;
+}
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
   const { username } = params;
@@ -20,22 +18,30 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     throw new Response("Username is required", { status: 400 });
   }
 
-  // If the route is /users/me, fetch the authenticated user from Django API
-  if (username === 'me') {
-    try {
-      const user = await fetchAuthenticatedUser(request);
-      // Redirect to the actual username route
-      return redirect(`/users/${user.username}`);
-    } catch (error) {
-      // If unauthorized or any other error, redirect to login
-      return redirect('/login');
-    }
-  }
-  
   try {
-    // Only fetch public profile data server-side
+    // Get the authenticated user if available
+    let authenticatedUser: User | null = null;
+    try {
+      authenticatedUser = await fetchAuthenticatedUser(request);
+    } catch (error) {
+      // Ignore auth errors - user might not be logged in
+    }
+
+    // If the route is /users/me, redirect to the actual username route
+    if (username === 'me') {
+      if (!authenticatedUser) {
+        return redirect('/login');
+      }
+      return redirect(`/users/${authenticatedUser.username}`);
+    }
+    
+    // Fetch public profile data
     const userData = await fetchPublicProfile(username);
-    return json({ user: userData });
+
+    return json<LoaderData>({ 
+      user: userData,
+      authenticatedUser
+    });
   } catch (error: any) {
     if (error instanceof Response) throw error;
     console.error("Error loading user profile:", error);
@@ -53,7 +59,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 
   const user = data.user;
   const title = `${user.username}'s Profile`;
-  const description = user.bio || `Check out ${user.username}'s profile and blog posts`;
+  const description = `Check out ${user.username}'s profile and blog posts`;
 
   return [
     { title },
@@ -62,23 +68,22 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     { property: "og:title", content: title },
     { property: "og:description", content: description },
     { property: "og:type", content: "profile" },
-    { property: "og:image", content: user.profile_image || "/default-profile-image.jpg" },
+    { property: "og:image", content: user.image || "/default-profile-image.jpg" },
     { property: "profile:username", content: user.username },
     // Twitter Card tags
     { name: "twitter:card", content: "summary" },
     { name: "twitter:title", content: title },
     { name: "twitter:description", content: description },
-    { name: "twitter:image", content: user.profile_image || "/default-profile-image.jpg" }
+    { name: "twitter:image", content: user.image || "/default-profile-image.jpg" }
   ];
 };
 
 export default function UserProfile() {
-  const { user } = useLoaderData<typeof loader>();
+  const { user, authenticatedUser } = useLoaderData<typeof loader>();
   
   return (
     <Box sx={{ p: 2 }}>
-      {/* @ts-ignore - ProfileDetail is a JS component that accepts initialUser prop */}
-      <ProfileDetail initialUser={user} />
+      <ProfileDetail initialUser={user} authenticatedUser={authenticatedUser} />
     </Box>
   );
 }

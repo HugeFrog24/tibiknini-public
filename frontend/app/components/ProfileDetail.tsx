@@ -1,7 +1,7 @@
 import * as React from "react";
 import type { ReactNode, SyntheticEvent } from "react";
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams, useLocation, useLoaderData, Link } from "@remix-run/react";
+import { useNavigate, useParams, useLocation, Link } from "@remix-run/react";
 import {
     Edit as EditIcon,
     Save as SaveIcon,
@@ -28,7 +28,6 @@ import {
 import {REDIRECT_REASONS} from "../old-app/components/constants/Constants";
 import BlogPostsTab from "./BlogPostsTab";
 import ProfileImage from "./ProfileImage";
-import FetchUserFollows from '../old-app/utils/FetchUserFollows';
 import api from '../utils/api';
 import type { User, Follow } from '../types/user';
 
@@ -40,6 +39,7 @@ interface TabPanelProps {
 
 interface ProfileDetailProps {
     initialUser: User;
+    authenticatedUser: User | null;
 }
 
 interface BioResponse {
@@ -71,8 +71,7 @@ const a11yProps = (index: number) => {
     };
 };
 
-const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser }) => {
-    const { user: authenticatedUser } = useLoaderData<{ user: User }>();
+const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser, authenticatedUser }) => {
     const { username } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
@@ -90,6 +89,17 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser }) => {
 
     const [isEditingBio, setIsEditingBio] = useState<boolean>(false);
     const [bioInput, setBioInput] = useState<string>('');
+
+    // Reset state when username changes
+    useEffect(() => {
+        setProfile(initialUser);
+        setIsFollowing(false);
+        setBio('');
+        setBioInput('');
+        setIsEditingBio(false);
+        setFollowers([]);
+        setFollowing([]);
+    }, [initialUser]);
 
     const fetchBio = useCallback(async () => {
         if (!username) return;
@@ -109,7 +119,7 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser }) => {
             const followResponse = await api.get(`/users/${authenticatedUser.username}/follows/${username}/`);
             setIsFollowing(followResponse.status === 200);
         } catch (error) {
-            console.error('Error fetching authenticated data:', error);
+            setIsFollowing(false);
         }
     }, [authenticatedUser, username]);
 
@@ -120,19 +130,21 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser }) => {
         }));
     };
 
-    const fetchFollowers = useCallback(
-        async (username: string) => {
-            FetchUserFollows(username, 'followers', setFollowers);
-        },
-        []
-    );
-
-    const fetchFollowing = useCallback(
-        async (username: string) => {
-            FetchUserFollows(username, 'following', setFollowing);
-        },
-        []
-    );
+    const fetchFollows = useCallback(async () => {
+        if (!username) return;
+        
+        try {
+            const [followersRes, followingRes] = await Promise.all([
+                api.get<{ followers: Follow[] }>(`/users/${username}/followers/`),
+                api.get<{ following: Follow[] }>(`/users/${username}/following/`)
+            ]);
+            
+            setFollowers(followersRes.data.followers);
+            setFollowing(followingRes.data.following);
+        } catch (error) {
+            console.error('Error fetching follows:', error);
+        }
+    }, [username]);
 
     const handleEditBio = () => {
         setBioInput(bio);
@@ -157,17 +169,10 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser }) => {
     };
 
     useEffect(() => {
-        setIsFollowing(false);
         fetchAuthenticatedData();
         fetchBio();
-    }, [username, fetchAuthenticatedData, fetchBio]);
-
-    useEffect(() => {
-        if (username) {
-            fetchFollowers(username);
-            fetchFollowing(username);
-        }
-    }, [username, fetchFollowers, fetchFollowing]);
+        fetchFollows();
+    }, [username, fetchAuthenticatedData, fetchBio, fetchFollows]);
 
     useEffect(() => {
         const hash = location.hash.replace('#', '');
@@ -328,7 +333,7 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser }) => {
                     <BlogPostsTab username={username || ''} />
                 </TabPanel>
                 <TabPanel value={activeTab} index={1}>
-                    {followers ? followers.map((follow, index) => (
+                    {followers.map((follow, index) => (
                         <Card key={follow.follower || index} sx={{ mb: 2 }}>
                             <CardContent>
                                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -345,10 +350,10 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser }) => {
                                 </Box>
                             </CardContent>
                         </Card>
-                    )) : 'Loading...'}
+                    ))}
                 </TabPanel>
                 <TabPanel value={activeTab} index={2}>
-                    {following ? following.map((follow, index) => (
+                    {following.map((follow, index) => (
                         <Card key={follow.following || index} sx={{ mb: 2 }}>
                             <CardContent>
                                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -365,7 +370,7 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser }) => {
                                 </Box>
                             </CardContent>
                         </Card>
-                    )) : 'Loading...'}
+                    ))}
                 </TabPanel>
             </Box>
         </Container>
