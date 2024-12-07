@@ -1,10 +1,5 @@
 import { createContext } from "react";
-
-export interface User {
-  id: number;
-  username: string;
-  is_staff: boolean;
-}
+import { User } from "../types/user";
 
 export interface UserContextType {
   user: User | null;

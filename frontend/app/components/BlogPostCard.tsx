@@ -3,15 +3,11 @@ import { useNavigate } from '@remix-run/react';
 import { Card, CardContent, CardMedia, Typography, Button, Skeleton, Grid } from '@mui/material';
 import Avatar from '@mui/material/Avatar';
 import ImageIcon from '@mui/icons-material/Image';
+import { User } from '../types/user';
 
 export interface Author {
     username: string;
     image: string;
-}
-
-export interface User {
-    username: string;
-    is_staff?: boolean;
 }
 
 export interface BlogPost {
