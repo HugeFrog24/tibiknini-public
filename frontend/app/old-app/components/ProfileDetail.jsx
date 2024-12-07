@@ -234,6 +234,12 @@ function ProfileDetail({ initialUser }) {
                                                     value={bioInput}
                                                     onChange={(e) => setBioInput(e.target.value)}
                                                     variant="outlined"
+                                                    slotProps={{
+                                                        input: {
+                                                            maxLength: 256
+                                                        }
+                                                    }}
+                                                    helperText={`${bioInput.length}/256 characters`}
                                                 />
                                                 <Button
                                                     onClick={handleSaveBio}
@@ -255,7 +261,7 @@ function ProfileDetail({ initialUser }) {
                                         ) : (
                                             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
                                                 <Typography>
-                                                    {profile.bio || "No bio yet"}
+                                                    {profile.bio || `Hello, my name is ${profile.username} 👋`}
                                                 </Typography>
                                                 {isOwner && (
                                                     <Button
