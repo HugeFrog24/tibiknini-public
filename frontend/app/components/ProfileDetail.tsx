@@ -135,12 +135,13 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser, authenticate
         
         try {
             const [followersRes, followingRes] = await Promise.all([
-                api.get<{ followers: Follow[] }>(`/users/${username}/followers/`),
-                api.get<{ following: Follow[] }>(`/users/${username}/following/`)
+                api.get<Follow[]>(`/users/${username}/followers/`),
+                api.get<Follow[]>(`/users/${username}/following/`)
             ]);
             
-            setFollowers(followersRes.data.followers || []);
-            setFollowing(followingRes.data.following || []);
+            // Update to handle direct array responses
+            setFollowers(followersRes.data || []);
+            setFollowing(followingRes.data || []);
         } catch (error) {
             console.error('Error fetching follows:', error);
             setFollowers([]);
@@ -196,6 +197,8 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser, authenticate
                 await api.post(`/users/${authenticatedUser.username}/follows/${username}/`);
                 setIsFollowing(true);
             }
+            // Refresh follows after toggling
+            await fetchFollows();
         } catch (error) {
             console.error('Error toggling follow:', error);
         }
@@ -216,6 +219,12 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser, authenticate
     };
 
     const avatarSx: SxProps<Theme> = { width: 50, height: 50, marginRight: 2 };
+    const userLinkSx: SxProps<Theme> = { 
+        display: 'flex', 
+        alignItems: 'center', 
+        textDecoration: 'none', 
+        color: 'inherit'
+    };
 
     return (
         <Container maxWidth="lg">
@@ -327,19 +336,22 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser, authenticate
                         aria-label="profile tabs"
                     >
                         <Tab label="Posts" {...a11yProps(0)} href="#posts" />
-                        <Tab label="Followers" {...a11yProps(1)} href="#followers" />
-                        <Tab label="Following" {...a11yProps(2)} href="#following" />
+                        <Tab label={`Followers (${followers.length})`} {...a11yProps(1)} href="#followers" />
+                        <Tab label={`Following (${following.length})`} {...a11yProps(2)} href="#following" />
                     </Tabs>
                 </Box>
                 <TabPanel value={activeTab} index={0}>
                     <BlogPostsTab username={username || ''} />
                 </TabPanel>
                 <TabPanel value={activeTab} index={1}>
-                    {followers?.map((follow, index) => (
-                        <Card key={follow.follower || index} sx={{ mb: 2 }}>
-                            <CardContent>
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                    <Link to={`/users/${follow.follower}`} style={{ textDecoration: 'none' }}>
+                    {followers.length > 0 ? (
+                        followers.map((follow, index) => (
+                            <Card key={`${follow.follower}-${index}`} sx={{ mb: 2 }}>
+                                <CardContent>
+                                    <Link 
+                                        to={`/users/${follow.follower}`} 
+                                        style={userLinkSx as React.CSSProperties}
+                                    >
                                         <Avatar
                                             src={follow.follower_image || undefined}
                                             alt={follow.follower}
@@ -349,17 +361,24 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser, authenticate
                                             {follow.follower}
                                         </Typography>
                                     </Link>
-                                </Box>
-                            </CardContent>
-                        </Card>
-                    ))}
+                                </CardContent>
+                            </Card>
+                        ))
+                    ) : (
+                        <Typography variant="body1" sx={{ textAlign: 'center', mt: 2 }}>
+                            No followers yet
+                        </Typography>
+                    )}
                 </TabPanel>
                 <TabPanel value={activeTab} index={2}>
-                    {following?.map((follow, index) => (
-                        <Card key={follow.following || index} sx={{ mb: 2 }}>
-                            <CardContent>
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                    <Link to={`/users/${follow.following}`} style={{ textDecoration: 'none' }}>
+                    {following.length > 0 ? (
+                        following.map((follow, index) => (
+                            <Card key={`${follow.following}-${index}`} sx={{ mb: 2 }}>
+                                <CardContent>
+                                    <Link 
+                                        to={`/users/${follow.following}`} 
+                                        style={userLinkSx as React.CSSProperties}
+                                    >
                                         <Avatar
                                             src={follow.following_image || undefined}
                                             alt={follow.following}
@@ -369,10 +388,14 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser, authenticate
                                             {follow.following}
                                         </Typography>
                                     </Link>
-                                </Box>
-                            </CardContent>
-                        </Card>
-                    ))}
+                                </CardContent>
+                            </Card>
+                        ))
+                    ) : (
+                        <Typography variant="body1" sx={{ textAlign: 'center', mt: 2 }}>
+                            Not following anyone yet
+                        </Typography>
+                    )}
                 </TabPanel>
             </Box>
         </Container>
