@@ -2,10 +2,10 @@ import React, { type MouseEvent as ReactMouseEvent, type ChangeEvent } from 'rea
 import { useState, useEffect, useRef } from "react";
 import { Button, Menu, MenuItem, IconButton, Box } from '@mui/material';
 import { PhotoCamera, Delete, Upload } from '@mui/icons-material';
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import { Avatar } from '@mui/material';
 import api from '../utils/api';
+import { showToast } from '../utils/toastUtils';
+import { TOAST_MESSAGES } from '../constants/toastMessages';
 
 interface ProfileImageProps {
     imageSrc?: string | null;
@@ -15,6 +15,27 @@ interface ProfileImageProps {
     showOptions?: boolean;
     onImageChange?: (newImageUrl: string | null) => void;
 }
+
+const validateImage = (file: File): Promise<boolean> => {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                // Valid image if we can load it and get dimensions
+                resolve(img.width > 0 && img.height > 0);
+            };
+            img.onerror = () => {
+                resolve(false);
+            };
+            img.src = e.target?.result as string;
+        };
+        reader.onerror = () => {
+            resolve(false);
+        };
+        reader.readAsDataURL(file);
+    });
+};
 
 export default function ProfileImage({
     imageSrc,
@@ -57,7 +78,23 @@ export default function ProfileImage({
         if (!file) return;
 
         if (file.size > 2 * 1024 * 1024) {  // 2 MB
-            toast.error('Image size must be less than 2 MB');
+            showToast(TOAST_MESSAGES.PROFILE_IMAGE.SIZE_ERROR, 'error');
+            e.target.value = '';
+            return;
+        }
+
+        // Validate file type using both MIME type and actual image validation
+        const isValidMimeType = /^image\/(jpeg|png|gif|webp)$/.test(file.type);
+        if (!isValidMimeType) {
+            showToast(TOAST_MESSAGES.PROFILE_IMAGE.TYPE_ERROR, 'error');
+            e.target.value = '';
+            return;
+        }
+
+        // Validate that it's a real image by trying to load it
+        const isValidImage = await validateImage(file);
+        if (!isValidImage) {
+            showToast(TOAST_MESSAGES.PROFILE_IMAGE.TYPE_ERROR, 'error');
             e.target.value = '';
             return;
         }
@@ -75,10 +112,10 @@ export default function ProfileImage({
 
             if (response.data?.image) {
                 onImageChange?.(response.data.image);
-                toast.success('Profile image updated successfully');
+                showToast(TOAST_MESSAGES.PROFILE_IMAGE.UPDATE_SUCCESS, 'success');
             }
         } catch (error) {
-            toast.error('Failed to update profile image');
+            showToast(TOAST_MESSAGES.PROFILE_IMAGE.UPDATE_ERROR, 'error');
             console.error('Error uploading profile image:', error);
         } finally {
             setIsUploading(false);
@@ -93,9 +130,9 @@ export default function ProfileImage({
             setIsUploading(true);
             await api.delete('/users/me/profile-image/');
             onImageChange?.(null);
-            toast.success('Profile image removed successfully');
+            showToast(TOAST_MESSAGES.PROFILE_IMAGE.REMOVE_SUCCESS, 'success');
         } catch (error) {
-            toast.error('Failed to remove profile image');
+            showToast(TOAST_MESSAGES.PROFILE_IMAGE.REMOVE_ERROR, 'error');
             console.error('Error deleting profile image:', error);
         } finally {
             setIsUploading(false);
@@ -209,7 +246,7 @@ export default function ProfileImage({
                 id="file-input"
                 ref={fileInputRef}
                 onChange={handleFileInputChange}
-                accept="image/*"
+                accept="image/jpeg,image/png,image/gif,image/webp"
                 sx={{ display: 'none' }}
             />
         </Box>
