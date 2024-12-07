@@ -2,7 +2,7 @@ import * as React from "react";
 import { LoaderFunctionArgs, json, MetaFunction, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { Box } from "@mui/material";
-import ProfileDetail from "../old-app/components/ProfileDetail";
+import ProfileDetail from "../components/ProfileDetail";
 import { fetchPublicProfile, fetchAuthenticatedUser } from "../utils/server-fetch";
 
 // Define the user type

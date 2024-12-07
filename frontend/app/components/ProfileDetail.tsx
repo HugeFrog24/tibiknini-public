@@ -1,5 +1,7 @@
-import {useCallback, useEffect, useState} from "react";
-import { useNavigate, useParams, useLocation, useLoaderData} from "@remix-run/react";
+import * as React from "react";
+import type { ReactNode, SyntheticEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate, useParams, useLocation, useLoaderData, Link } from "@remix-run/react";
 import {
     Edit as EditIcon,
     Save as SaveIcon,
@@ -19,18 +21,32 @@ import {
     CardContent,
     TextField,
     Typography,
-    Link as MUILink
+    SxProps,
+    Theme
 } from '@mui/material';
 
-import {REDIRECT_REASONS} from "./constants/Constants";
+import {REDIRECT_REASONS} from "../old-app/components/constants/Constants";
 import BlogPostsTab from "./BlogPostsTab";
-import ProfileImage from "../../components/ProfileImage";
-import FetchUserFollows from '../utils/FetchUserFollows';
-import api from '../../utils/api';
+import ProfileImage from "./ProfileImage";
+import FetchUserFollows from '../old-app/utils/FetchUserFollows';
+import api from '../utils/api';
+import type { User, Follow } from '../types/user';
 
-function TabPanel(props) {
-    const { children, value, index, ...other } = props;
+interface TabPanelProps {
+    children?: ReactNode;
+    value: number;
+    index: number;
+}
 
+interface ProfileDetailProps {
+    initialUser: User;
+}
+
+interface BioResponse {
+    bio: string;
+}
+
+const TabPanel: React.FC<TabPanelProps> = ({ children, value, index, ...other }) => {
     return (
         <div
             role="tabpanel"
@@ -46,41 +62,50 @@ function TabPanel(props) {
             )}
         </div>
     );
-}
+};
 
-function a11yProps(index) {
+const a11yProps = (index: number) => {
     return {
         id: `simple-tab-${index}`,
         'aria-controls': `simple-tabpanel-${index}`,
     };
-}
+};
 
-function ProfileDetail({ initialUser }) {
-    const { user: authenticatedUser } = useLoaderData();
+const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser }) => {
+    const { user: authenticatedUser } = useLoaderData<{ user: User }>();
     const { username } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
-    const [bio, setBio] = useState(initialUser?.bio || '');
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState<boolean>(false);
 
-    const [activeTab, setActiveTab] = useState(0);
-    const [profile, setProfile] = useState(initialUser);
-    const [isFollowing, setIsFollowing] = useState(false);
-    const [followers, setFollowers] = useState([]);
-    const [following, setFollowing] = useState([]);
+    const [activeTab, setActiveTab] = useState<number>(0);
+    const [profile, setProfile] = useState<User>(initialUser);
+    const [bio, setBio] = useState<string>('');
+    const [isFollowing, setIsFollowing] = useState<boolean>(false);
+    const [followers, setFollowers] = useState<Follow[]>([]);
+    const [following, setFollowing] = useState<Follow[]>([]);
 
     const isOwner = authenticatedUser?.username === username;
     const isAuthenticated = !!authenticatedUser;
 
-    const [isEditingBio, setIsEditingBio] = useState(false);
-    const [bioInput, setBioInput] = useState(initialUser?.bio || '');
+    const [isEditingBio, setIsEditingBio] = useState<boolean>(false);
+    const [bioInput, setBioInput] = useState<string>('');
 
-    // Only fetch additional authenticated data if needed
+    const fetchBio = useCallback(async () => {
+        if (!username) return;
+        try {
+            const response = await api.get<BioResponse>(`/users/${username}/bio/`);
+            setBio(response.data.bio || '');
+            setBioInput(response.data.bio || '');
+        } catch (error) {
+            console.error('Error fetching bio:', error);
+        }
+    }, [username]);
+
     const fetchAuthenticatedData = useCallback(async () => {
-        if (!authenticatedUser) return;
+        if (!authenticatedUser || !username) return;
 
         try {
-            // Check following status only if authenticated
             const followResponse = await api.get(`/users/${authenticatedUser.username}/follows/${username}/`);
             setIsFollowing(followResponse.status === 200);
         } catch (error) {
@@ -88,62 +113,60 @@ function ProfileDetail({ initialUser }) {
         }
     }, [authenticatedUser, username]);
 
-    const handleImageChange = async (newImageUrl) => {
-        // Update the profile state with the new image URL
+    const handleImageChange = async (newImageUrl: string | null) => {
         setProfile(prev => ({
             ...prev,
-            profile_image: newImageUrl
+            image: newImageUrl || prev.image
         }));
     };
 
     const fetchFollowers = useCallback(
-        async (username) => {
+        async (username: string) => {
             FetchUserFollows(username, 'followers', setFollowers);
         },
         []
     );
 
     const fetchFollowing = useCallback(
-        async (username) => {
+        async (username: string) => {
             FetchUserFollows(username, 'following', setFollowing);
         },
         []
     );
 
     const handleEditBio = () => {
-        setBioInput(bio || '');
+        setBioInput(bio);
         setIsEditingBio(true);
     };
 
     const handleSaveBio = async () => {
+        if (!username) return;
+        
         try {
             await api.patch(`/users/${username}/bio/`, { bio: bioInput });
             setBio(bioInput);
             setIsEditingBio(false);
-            // Update profile data
-            const response = await api.get(`/users/${username}/`);
-            setProfile(response.data);
         } catch (error) {
-            console.error(error);
+            console.error('Error updating bio:', error);
         }
     };
 
     const handleCancelBioEdit = () => {
+        setBioInput(bio);
         setIsEditingBio(false);
     };
 
     useEffect(() => {
-        // Reset isFollowing state when switching profiles
         setIsFollowing(false);
-        
-        // Fetch authenticated data if needed
         fetchAuthenticatedData();
-    }, [username, fetchAuthenticatedData]);
+        fetchBio();
+    }, [username, fetchAuthenticatedData, fetchBio]);
 
     useEffect(() => {
-        // Fetch followers and following regardless of the active tab
-        fetchFollowers(username);
-        fetchFollowing(username);
+        if (username) {
+            fetchFollowers(username);
+            fetchFollowing(username);
+        }
     }, [username, fetchFollowers, fetchFollowing]);
 
     useEffect(() => {
@@ -154,7 +177,7 @@ function ProfileDetail({ initialUser }) {
     }, [location]);
 
     const handleFollowToggle = async () => {
-        if (!authenticatedUser) {
+        if (!authenticatedUser || !username) {
             navigate("/login", {state: {reason: REDIRECT_REASONS.FOLLOW_USER}});
             return;
         }
@@ -167,23 +190,25 @@ function ProfileDetail({ initialUser }) {
                 setIsFollowing(true);
             }
         } catch (error) {
-            console.error(error);
+            console.error('Error toggling follow:', error);
         }
     };
 
-    const handleChange = (event, newValue) => {
+    const handleChange = (_event: SyntheticEvent, newValue: number) => {
         setActiveTab(newValue);
         const tabNames = ['posts', 'followers', 'following'];
         navigate(`#${tabNames[newValue]}`, { replace: true });
     };
 
-    const formatDate = (date) => {
+    const formatDate = (date: string) => {
         return new Date(date).toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
             year: "numeric",
         });
     };
+
+    const avatarSx: SxProps<Theme> = { width: 50, height: 50, marginRight: 2 };
 
     return (
         <Container maxWidth="lg">
@@ -195,8 +220,8 @@ function ProfileDetail({ initialUser }) {
                                 <Skeleton circle width={200} height={200} />
                             ) : (
                                 <ProfileImage
-                                    imageSrc={profile.profile_image}
-                                    username={username}
+                                    imageSrc={profile.image}
+                                    username={username || ''}
                                     width={200}
                                     height={200}
                                     showOptions={isOwner}
@@ -234,10 +259,8 @@ function ProfileDetail({ initialUser }) {
                                                     value={bioInput}
                                                     onChange={(e) => setBioInput(e.target.value)}
                                                     variant="outlined"
-                                                    slotProps={{
-                                                        input: {
-                                                            maxLength: 256
-                                                        }
+                                                    inputProps={{
+                                                        maxLength: 256
                                                     }}
                                                     helperText={`${bioInput.length}/256 characters`}
                                                 />
@@ -261,7 +284,7 @@ function ProfileDetail({ initialUser }) {
                                         ) : (
                                             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
                                                 <Typography>
-                                                    {profile.bio || `Hello, my name is ${profile.username} 👋`}
+                                                    {bio || `Hello, my name is ${profile.username} 👋`}
                                                 </Typography>
                                                 {isOwner && (
                                                     <Button
@@ -296,29 +319,29 @@ function ProfileDetail({ initialUser }) {
                         scrollButtons="auto"
                         aria-label="profile tabs"
                     >
-                        <Tab label="Posts" {...a11yProps(0)} component={MUILink} to="#posts" />
-                        <Tab label="Followers" {...a11yProps(1)} component={MUILink} to="#followers" />
-                        <Tab label="Following" {...a11yProps(2)} component={MUILink} to="#following" />
+                        <Tab label="Posts" {...a11yProps(0)} href="#posts" />
+                        <Tab label="Followers" {...a11yProps(1)} href="#followers" />
+                        <Tab label="Following" {...a11yProps(2)} href="#following" />
                     </Tabs>
                 </Box>
                 <TabPanel value={activeTab} index={0}>
-                    <BlogPostsTab username={username} />
+                    <BlogPostsTab username={username || ''} />
                 </TabPanel>
                 <TabPanel value={activeTab} index={1}>
                     {followers ? followers.map((follow, index) => (
                         <Card key={follow.follower || index} sx={{ mb: 2 }}>
                             <CardContent>
                                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                    <MUILink to={`/users/${follow.follower}`} underline="none">
+                                    <Link to={`/users/${follow.follower}`} style={{ textDecoration: 'none' }}>
                                         <Avatar
-                                            src={follow.follower_image}
+                                            src={follow.follower_image || undefined}
                                             alt={follow.follower}
-                                            sx={{ width: 50, height: 50, marginRight: 2 }}
+                                            sx={avatarSx}
                                         />
                                         <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
                                             {follow.follower}
                                         </Typography>
-                                    </MUILink>
+                                    </Link>
                                 </Box>
                             </CardContent>
                         </Card>
@@ -329,16 +352,16 @@ function ProfileDetail({ initialUser }) {
                         <Card key={follow.following || index} sx={{ mb: 2 }}>
                             <CardContent>
                                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                    <MUILink to={`/users/${follow.following}`} underline="none">
+                                    <Link to={`/users/${follow.following}`} style={{ textDecoration: 'none' }}>
                                         <Avatar
-                                            src={follow.following_image}
+                                            src={follow.following_image || undefined}
                                             alt={follow.following}
-                                            sx={{ width: 50, height: 50, marginRight: 2 }}
+                                            sx={avatarSx}
                                         />
                                         <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
                                             {follow.following}
                                         </Typography>
-                                    </MUILink>
+                                    </Link>
                                 </Box>
                             </CardContent>
                         </Card>
@@ -347,6 +370,6 @@ function ProfileDetail({ initialUser }) {
             </Box>
         </Container>
     );
-}
+};
 
 export default ProfileDetail;
