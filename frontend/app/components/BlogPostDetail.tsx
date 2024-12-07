@@ -1,7 +1,5 @@
 import * as React from "react";
 import { useNavigate, useLoaderData } from "@remix-run/react";
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import {
     Favorite as FavoriteIcon,
     Edit as EditIcon,
@@ -22,6 +20,8 @@ import {
 import UserContext, { type UserContextType } from "../contexts/UserContext";
 import BlogPostComments from "./BlogPostComments";
 import api from "../utils/api";
+import { showToast } from "../utils/toastUtils";
+import { TOAST_MESSAGES } from "../constants/toastMessages";
 
 interface Author {
     id: number;
@@ -53,13 +53,9 @@ interface LikeResponse {
 export default function BlogPostDetail({ post }: BlogPostDetailProps) {
     const navigate = useNavigate();
     const { user, isAuthenticated } = React.useContext<UserContextType>(UserContext);
-    const [likesCount, setLikesCount] = React.useState(post?.likes_count || 0);
-    const [isLiked, setIsLiked] = React.useState(post?.is_liked || false);
+    const [likesCount, setLikesCount] = React.useState(post.likes_count);
+    const [isLiked, setIsLiked] = React.useState(post.is_liked);
     const { comments = [], reportReasons = [] } = useLoaderData<{ comments: any[]; reportReasons: any[]; }>();
-
-    if (!post) {
-        return null;
-    }
 
     const handleShare = async () => {
         const url = window.location.href;
@@ -72,12 +68,12 @@ export default function BlogPostDetail({ post }: BlogPostDetailProps) {
                 });
             } else {
                 await navigator.clipboard.writeText(url);
-                toast.success('Link copied to clipboard!');
+                showToast('Link copied to clipboard!', 'success');
             }
         } catch (error) {
             if (error instanceof Error && error.name !== 'AbortError') {
                 await navigator.clipboard.writeText(url);
-                toast.success('Link copied to clipboard!');
+                showToast('Link copied to clipboard!', 'success');
             }
         }
     };
@@ -94,24 +90,29 @@ export default function BlogPostDetail({ post }: BlogPostDetailProps) {
             });
         } catch (error) {
             console.error('Error deleting post:', error);
-            toast.error('Failed to delete post');
+            showToast('Failed to delete post', 'error');
         }
     };
 
     const handleLike = async () => {
         if (!isAuthenticated) {
-            toast.error('Please log in to like posts');
+            showToast(TOAST_MESSAGES.AUTH.LOGIN_REQUIRED, 'error');
             return;
         }
 
         try {
-            const response = await api.post<LikeResponse>(`/blog/posts/id/${post.id}/like/`);
+            let response;
+            if (isLiked) {
+                response = await api.delete<LikeResponse>(`/blog/posts/id/${post.id}/like/`);
+            } else {
+                response = await api.post<LikeResponse>(`/blog/posts/id/${post.id}/like/`);
+            }
             const { likes_count, is_liked } = response.data;
             setLikesCount(likes_count);
             setIsLiked(is_liked);
         } catch (error) {
-            console.error('Error liking post:', error);
-            toast.error('Failed to like post');
+            console.error('Error toggling like:', error);
+            showToast(isLiked ? 'Failed to unlike post' : 'Failed to like post', 'error');
         }
     };
 
@@ -196,10 +197,14 @@ export default function BlogPostDetail({ post }: BlogPostDetailProps) {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <IconButton
                             onClick={handleLike}
-                            color={isLiked ? "primary" : "default"}
                             aria-label={isLiked ? "Unlike post" : "Like post"}
                         >
-                            <FavoriteIcon />
+                            <FavoriteIcon 
+                                sx={{ 
+                                    color: isLiked ? '#ff1744' : 'action.active',
+                                    transition: 'color 0.2s ease-in-out'
+                                }} 
+                            />
                         </IconButton>
                         <Typography variant="body2" component="span">
                             {likesCount} {likesCount === 1 ? 'like' : 'likes'}

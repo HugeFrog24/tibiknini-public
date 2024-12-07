@@ -41,8 +41,14 @@ export async function fetchPublicBlogPosts(page?: number) {
   return fetchFromApi(`/blog/posts/${query}`);
 }
 
-export async function fetchPublicBlogPost(postId: string) {
-  return fetchFromApi(`/blog/posts/id/${postId}/`);
+export async function fetchPublicBlogPost(postId: string, request?: Request) {
+  const options: RequestInit = {};
+  if (request) {
+    options.headers = {
+      Cookie: request.headers.get('Cookie') || '',
+    };
+  }
+  return fetchFromApi(`/blog/posts/id/${postId}/`, options);
 }
 
 export async function fetchPublicComments(postId: string) {

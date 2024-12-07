@@ -5,7 +5,7 @@ import BlogPostDetail from "../components/BlogPostDetail";
 import { fetchPublicBlogPost } from "../utils/server-fetch";
 import type { LoaderData } from "../routes/_app";
 
-export async function loader({ params }: LoaderFunctionArgs) {
+export async function loader({ params, request }: LoaderFunctionArgs) {
   const { postId } = params;
   
   if (!postId) {
@@ -13,7 +13,8 @@ export async function loader({ params }: LoaderFunctionArgs) {
   }
 
   try {
-    const post = await fetchPublicBlogPost(postId);
+    // Pass the request object to ensure cookies are forwarded
+    const post = await fetchPublicBlogPost(postId, request);
     return json({ post });
   } catch (error) {
     if (error instanceof Response) throw error;
