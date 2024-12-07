@@ -47,8 +47,8 @@ export const meta: MetaFunction<typeof loader, { 'routes/_app': LoaderData }> = 
     { property: "og:description", content: post.description || post.title },
     { property: "og:type", content: "article" },
     { property: "og:site_name", content: siteName },
-    { property: "article:published_time", content: post.created_at },
-    { property: "article:modified_time", content: post.updated_at },
+    { property: "article:published_time", content: post.pub_date },
+    { property: "article:modified_time", content: post.pub_date },
     { property: "article:author", content: post.author.username },
     // Twitter Card tags
     { name: "twitter:card", content: "summary" },

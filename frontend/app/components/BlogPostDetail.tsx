@@ -34,8 +34,7 @@ export interface BlogPost {
     title: string;
     content: string;
     author: Author;
-    created_at: string;
-    updated_at: string;
+    pub_date: string;
     tags: string[];
     likes_count: number;
     is_liked: boolean;
@@ -148,7 +147,7 @@ export default function BlogPostDetail({ post }: BlogPostDetailProps) {
                             {post.author?.username}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                            {new Date(post.created_at).toLocaleDateString(undefined, {
+                            {new Date(post.pub_date).toLocaleDateString(undefined, {
                                 year: 'numeric',
                                 month: 'long',
                                 day: 'numeric'
