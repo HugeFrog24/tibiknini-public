@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from '@remix-run/react';
-import { Card, CardContent, CardMedia, Typography, Button, Skeleton, Grid } from '@mui/material';
+import { Card, CardContent, CardMedia, Typography, Button, Skeleton } from '@mui/material';
+import Grid2 from '@mui/material/Grid2';
 import Avatar from '@mui/material/Avatar';
 import ImageIcon from '@mui/icons-material/Image';
 import { User } from '../types/user';
@@ -44,22 +45,22 @@ const BlogPostCard: React.FC<BlogPostCardProps> = ({ post }) => {
             <Card className={"my-4"}>
                 <Skeleton variant="rectangular" height={200} />
                 <CardContent>
-                    <Grid container spacing={2} alignItems="center" justifyContent="space-between">
-                        <Grid item>
+                    <Grid2 container spacing={2} alignItems="center" justifyContent="space-between">
+                        <Grid2 flex={1}>
                             <Skeleton width="200px" height="32px" />
-                            <Grid container spacing={2} alignItems="center" className="mt-3">
-                                <Grid item>
+                            <Grid2 container spacing={2} alignItems="center" className="mt-3">
+                                <Grid2 flex={0}>
                                     <Skeleton variant="circular" width={32} height={32} />
-                                </Grid>
-                                <Grid item>
+                                </Grid2>
+                                <Grid2 flex={0}>
                                     <Skeleton width="100px" />
-                                </Grid>
-                            </Grid>
-                        </Grid>
-                        <Grid item>
+                                </Grid2>
+                            </Grid2>
+                        </Grid2>
+                        <Grid2 flex={0}>
                             <Skeleton variant="rectangular" width={50} height={40} />
-                        </Grid>
-                    </Grid>
+                        </Grid2>
+                    </Grid2>
                 </CardContent>
             </Card>
         );
@@ -81,39 +82,57 @@ const BlogPostCard: React.FC<BlogPostCardProps> = ({ post }) => {
                     style={{ cursor: 'pointer' }}
                 />
             ) : (
-                <Grid container justifyContent="center" alignItems="center" 
+                <Grid2 container justifyContent="center" alignItems="center" 
                       onClick={() => navigate(`/blog/posts/${post.id}`)}
                       style={{ cursor: 'pointer', height: 200, backgroundColor: getBackgroundColor() }}>
                     <ImageIcon fontSize="large" />
-                </Grid>
+                </Grid2>
             )}
-            <CardContent>
-                <Grid container spacing={2} alignItems="center" justifyContent="space-between">
-                    <Grid item xs>
-                        <Typography variant="h5" component="div" className="mb-1">
-                            <Button onClick={() => navigate(`/blog/posts/${post.id}`)} 
-                                    className={`text-decoration-none`}>
+            <CardContent sx={{ py: 2 }}>
+                <Grid2 container spacing={2} alignItems="center">
+                    <Grid2>
+                        <Avatar src={post.author.image} alt={post.author.username} />
+                    </Grid2>
+                    <Grid2 flex={1} sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                        <Button 
+                            onClick={() => navigate(`/blog/posts/${post.id}`)} 
+                            className="text-decoration-none"
+                            sx={{ 
+                                textAlign: 'left', 
+                                display: 'block',
+                                p: 0,
+                                '&:hover': { backgroundColor: 'transparent' }
+                            }}
+                        >
+                            <Typography variant="h5" component="div">
                                 {post.title}
-                            </Button>
-                        </Typography>
-                        <Grid container spacing={2} alignItems="center">
-                            <Grid item>
-                                <Avatar src={post.author.image} alt={post.author.username} />
-                            </Grid>
-                            <Grid item>
-                                <Button onClick={() => navigate(`/users/${post.author.username}`)}
-                                        className={`text-decoration-none`}>
-                                    <Typography variant="subtitle1">{post.author.username}</Typography>
-                                </Button>
-                            </Grid>
-                        </Grid>
-                    </Grid>
-                    <Grid item>
-                        <Button variant="contained" onClick={() => navigate(`/blog/posts/${post.id}`)}>
+                            </Typography>
+                        </Button>
+                        <Button 
+                            onClick={() => navigate(`/users/${post.author.username}`)}
+                            className="text-decoration-none"
+                            sx={{ 
+                                justifyContent: 'flex-start', 
+                                p: 0,
+                                minHeight: 0,
+                                '&:hover': { backgroundColor: 'transparent' }
+                            }}
+                        >
+                            <Typography variant="subtitle1" sx={{ lineHeight: 1 }}>
+                                {post.author.username}
+                            </Typography>
+                        </Button>
+                    </Grid2>
+                    <Grid2 sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Button 
+                            variant="contained" 
+                            onClick={() => navigate(`/blog/posts/${post.id}`)}
+                            sx={{ minWidth: '80px' }}
+                        >
                             Go!
                         </Button>
-                    </Grid>
-                </Grid>
+                    </Grid2>
+                </Grid2>
             </CardContent>
         </Card>
     );

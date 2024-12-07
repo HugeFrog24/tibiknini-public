@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useState} from "react";
-import BlogPostCard from "./BlogPostCard";
+import BlogPostCard from "../../components/BlogPostCard";
 import api from '../../utils/api';  // Updated import path to use new TypeScript version
 
 const BlogPostsTab = ({username}) => {

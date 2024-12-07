@@ -5,7 +5,7 @@ import { Typography, Button, useTheme, Divider } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { Container, Grid, Box } from '@mui/material';
 
-import BlogPostCard, { BlogPost, User } from "../old-app/components/BlogPostCard";
+import BlogPostCard, { BlogPost } from "../components/BlogPostCard";
 import UserContext from "../contexts/UserContext";
 
 export interface BlogPostsResponse {
