@@ -1,5 +1,5 @@
-import {useCallback, useContext, useEffect, useRef, useState} from "react";
-import { useNavigate, useParams, useLocation} from "@remix-run/react";
+import {useCallback, useEffect, useState} from "react";
+import { useNavigate, useParams, useLocation, useLoaderData} from "@remix-run/react";
 import {
     Edit as EditIcon,
     Save as SaveIcon,
@@ -22,12 +22,11 @@ import {
     Link as MUILink
 } from '@mui/material';
 
-import UserContext from "./contexts/UserContext";
 import {REDIRECT_REASONS} from "./constants/Constants";
 import BlogPostsTab from "./BlogPostsTab";
 import ProfileImage from "../../components/ProfileImage";
 import FetchUserFollows from '../utils/FetchUserFollows';
-import api from '../../utils/api';  // Updated import path to use new TypeScript version
+import api from '../../utils/api';
 
 function TabPanel(props) {
     const { children, value, index, ...other } = props;
@@ -57,7 +56,7 @@ function a11yProps(index) {
 }
 
 function ProfileDetail({ initialUser }) {
-    const { user: authenticatedUser, isAuthenticated } = useContext(UserContext);
+    const { user: authenticatedUser } = useLoaderData();
     const { username } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
@@ -70,8 +69,8 @@ function ProfileDetail({ initialUser }) {
     const [followers, setFollowers] = useState([]);
     const [following, setFollowing] = useState([]);
 
-    const isOwner = authenticatedUser && authenticatedUser.username === username;
-    const fileInputRef = useRef(null);
+    const isOwner = authenticatedUser?.username === username;
+    const isAuthenticated = !!authenticatedUser;
 
     const [isEditingBio, setIsEditingBio] = useState(false);
     const [bioInput, setBioInput] = useState(initialUser?.bio || '');
@@ -89,30 +88,12 @@ function ProfileDetail({ initialUser }) {
         }
     }, [authenticatedUser, username]);
 
-    const handleImageUpload = async (event) => {
-        const file = event.target.files[0];
-        if (!file) return;
-    
-        const formData = new FormData();
-        formData.append("image", file);
-    
-        try {
-            await api.put(`/users/me/image/update/`, formData);
-            const response = await api.get(`/users/${username}/`);
-            setProfile(response.data);
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
-    const handleImageDelete = async () => {
-        try {
-            await api.delete(`/users/me/image/delete/`);
-            const response = await api.get(`/users/${username}/`);
-            setProfile(response.data);
-        } catch (error) {
-            console.error(error);
-        }
+    const handleImageChange = async (newImageUrl) => {
+        // Update the profile state with the new image URL
+        setProfile(prev => ({
+            ...prev,
+            profile_image: newImageUrl
+        }));
     };
 
     const fetchFollowers = useCallback(
@@ -213,22 +194,14 @@ function ProfileDetail({ initialUser }) {
                             {loading ? (
                                 <Skeleton circle width={200} height={200} />
                             ) : (
-                                <>
-                                    <ProfileImage
-                                        username={username}
-                                        imageUrl={profile.profile_image}
-                                        size={200}
-                                        isOwner={isOwner}
-                                        onImageClick={() => isOwner && fileInputRef.current?.click()}
-                                    />
-                                    <input
-                                        type="file"
-                                        ref={fileInputRef}
-                                        onChange={handleImageUpload}
-                                        style={{ display: 'none' }}
-                                        accept="image/*"
-                                    />
-                                </>
+                                <ProfileImage
+                                    imageSrc={profile.profile_image}
+                                    username={username}
+                                    width={200}
+                                    height={200}
+                                    showOptions={isOwner}
+                                    onImageChange={handleImageChange}
+                                />
                             )}
                         </Grid>
                         <Grid item xs={12} md={8}>
