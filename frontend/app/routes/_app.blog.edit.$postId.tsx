@@ -47,5 +47,5 @@ export const meta: MetaFunction<typeof loader, { 'routes/_app': LoaderData }> = 
 
 export default function EditBlogPost() {
   const { post } = useLoaderData<typeof loader>();
-  return <BlogPostForm />;
+  return <BlogPostForm initialPost={post} />;
 }

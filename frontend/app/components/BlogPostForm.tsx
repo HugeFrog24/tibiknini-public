@@ -18,6 +18,7 @@ import { useBlogPost, type BlogPost, type BlogPostInput } from "../hooks/useBlog
 
 interface BlogPostFormProps {
     previousPath?: string;
+    initialPost?: BlogPost;
 }
 
 const StyledBox = styled(Box)(({ theme }) => ({
@@ -29,16 +30,16 @@ const StyledBox = styled(Box)(({ theme }) => ({
     },
 }));
 
-const BlogPostForm: React.FC<BlogPostFormProps> = ({ previousPath }) => {
+const BlogPostForm: React.FC<BlogPostFormProps> = ({ previousPath, initialPost }) => {
     const navigate = useNavigate();
     const { fetchBlogPost, createBlogPost, updateBlogPost } = useBlogPost();
     const { postId } = useParams();
     const { user, isAuthenticated } = useContext(UserContext);
 
-    const [post, setPost] = useState<BlogPost | null>(null);
-    const [isDraft, setIsDraft] = useState(false);
-    const [title, setTitle] = useState("");
-    const [content, setContent] = useState("");
+    const [post, setPost] = useState<BlogPost | null>(initialPost || null);
+    const [isDraft, setIsDraft] = useState(initialPost?.is_draft ?? false);
+    const [title, setTitle] = useState(initialPost?.title ?? "");
+    const [content, setContent] = useState(initialPost?.content ?? "");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleToggleDraft = () => setIsDraft(!isDraft);
@@ -98,7 +99,7 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ previousPath }) => {
 
     useEffect(() => {
         const fetchPostForEditing = async () => {
-            if (postId) {
+            if (postId && !initialPost) {
                 try {
                     const fetchedPost = await fetchBlogPost(postId);
                     if (!isAuthenticated) {
@@ -122,7 +123,7 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ previousPath }) => {
         };
 
         fetchPostForEditing();
-    }, [postId, fetchBlogPost, user, navigate, isAuthenticated]);
+    }, [postId, fetchBlogPost, user, navigate, isAuthenticated, initialPost]);
 
     return (
         <StyledBox>
