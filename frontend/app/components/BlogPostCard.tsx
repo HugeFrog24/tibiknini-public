@@ -40,39 +40,13 @@ const BlogPostCard: React.FC<BlogPostCardProps> = ({ post }) => {
         return "#e0e0e0";
     };
 
-    if (!post) {
-        return (
-            <Card className={"my-4"}>
-                <Skeleton variant="rectangular" height={200} />
-                <CardContent>
-                    <Grid2 container spacing={2} alignItems="center" justifyContent="space-between">
-                        <Grid2 flex={1}>
-                            <Skeleton width="200px" height="32px" />
-                            <Grid2 container spacing={2} alignItems="center" className="mt-3">
-                                <Grid2 flex={0}>
-                                    <Skeleton variant="circular" width={32} height={32} />
-                                </Grid2>
-                                <Grid2 flex={0}>
-                                    <Skeleton width="100px" />
-                                </Grid2>
-                            </Grid2>
-                        </Grid2>
-                        <Grid2 flex={0}>
-                            <Skeleton variant="rectangular" width={50} height={40} />
-                        </Grid2>
-                    </Grid2>
-                </CardContent>
-            </Card>
-        );
-    }
+    const renderMedia = () => {
+        if (!post) {
+            return <Skeleton variant="rectangular" height={200} />;
+        }
 
-    return (
-        <Card 
-            className={"my-4"} 
-            id={`post-${post.id}`}
-            sx={{ '& .MuiButton-root': { textTransform: 'none' } }}
-        >
-            {post.image ? (
+        if (post.image) {
+            return (
                 <CardMedia
                     component="img"
                     height="200"
@@ -81,56 +55,102 @@ const BlogPostCard: React.FC<BlogPostCardProps> = ({ post }) => {
                     onClick={() => navigate(`/blog/posts/${post.id}`)}
                     style={{ cursor: 'pointer' }}
                 />
-            ) : (
-                <Grid2 container justifyContent="center" alignItems="center" 
-                      onClick={() => navigate(`/blog/posts/${post.id}`)}
-                      style={{ cursor: 'pointer', height: 200, backgroundColor: getBackgroundColor() }}>
-                    <ImageIcon fontSize="large" />
-                </Grid2>
-            )}
+            );
+        }
+
+        return (
+            <Grid2 container justifyContent="center" alignItems="center" 
+                  onClick={() => navigate(`/blog/posts/${post.id}`)}
+                  style={{ cursor: 'pointer', height: 200, backgroundColor: getBackgroundColor() }}>
+                <ImageIcon fontSize="large" />
+            </Grid2>
+        );
+    };
+
+    const renderAvatar = () => {
+        if (!post) {
+            return <Skeleton variant="circular" width={40} height={40} />;
+        }
+        return <Avatar src={post.author.image} alt={post.author.username} />;
+    };
+
+    const renderContent = () => {
+        if (!post) {
+            return (
+                <>
+                    <Skeleton variant="text" width="80%" height={32} />
+                    <Skeleton variant="text" width="40%" height={24} />
+                </>
+            );
+        }
+
+        return (
+            <>
+                <Button 
+                    onClick={() => navigate(`/blog/posts/${post.id}`)} 
+                    className="text-decoration-none"
+                    sx={{ 
+                        textAlign: 'left', 
+                        display: 'block',
+                        p: 0,
+                        '&:hover': { backgroundColor: 'transparent' }
+                    }}
+                >
+                    <Typography variant="h5" component="div">
+                        {post.title}
+                    </Typography>
+                </Button>
+                <Button 
+                    onClick={() => navigate(`/users/${post.author.username}`)}
+                    className="text-decoration-none"
+                    sx={{ 
+                        justifyContent: 'flex-start', 
+                        p: 0,
+                        minHeight: 0,
+                        '&:hover': { backgroundColor: 'transparent' }
+                    }}
+                >
+                    <Typography variant="subtitle1" sx={{ lineHeight: 1 }}>
+                        {post.author.username}
+                    </Typography>
+                </Button>
+            </>
+        );
+    };
+
+    const renderAction = () => {
+        if (!post) {
+            return <Skeleton variant="rectangular" width={80} height={36} />;
+        }
+
+        return (
+            <Button 
+                variant="contained" 
+                onClick={() => navigate(`/blog/posts/${post.id}`)}
+                sx={{ minWidth: '80px' }}
+            >
+                Go!
+            </Button>
+        );
+    };
+
+    return (
+        <Card 
+            className={"my-4"} 
+            id={post ? `post-${post.id}` : undefined}
+            sx={{ '& .MuiButton-root': { textTransform: 'none' } }}
+        >
+            {renderMedia()}
             <CardContent sx={{ py: 2 }}>
                 <Grid2 container spacing={2} alignItems="center">
                     <Grid2>
-                        <Avatar src={post.author.image} alt={post.author.username} />
+                        {renderAvatar()}
                     </Grid2>
                     <Grid2 flex={1} sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                        <Button 
-                            onClick={() => navigate(`/blog/posts/${post.id}`)} 
-                            className="text-decoration-none"
-                            sx={{ 
-                                textAlign: 'left', 
-                                display: 'block',
-                                p: 0,
-                                '&:hover': { backgroundColor: 'transparent' }
-                            }}
-                        >
-                            <Typography variant="h5" component="div">
-                                {post.title}
-                            </Typography>
-                        </Button>
-                        <Button 
-                            onClick={() => navigate(`/users/${post.author.username}`)}
-                            className="text-decoration-none"
-                            sx={{ 
-                                justifyContent: 'flex-start', 
-                                p: 0,
-                                minHeight: 0,
-                                '&:hover': { backgroundColor: 'transparent' }
-                            }}
-                        >
-                            <Typography variant="subtitle1" sx={{ lineHeight: 1 }}>
-                                {post.author.username}
-                            </Typography>
-                        </Button>
+                        {renderContent()}
                     </Grid2>
                     <Grid2 sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Button 
-                            variant="contained" 
-                            onClick={() => navigate(`/blog/posts/${post.id}`)}
-                            sx={{ minWidth: '80px' }}
-                        >
-                            Go!
-                        </Button>
+                        {renderAction()}
                     </Grid2>
                 </Grid2>
             </CardContent>
