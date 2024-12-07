@@ -139,10 +139,12 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser, authenticate
                 api.get<{ following: Follow[] }>(`/users/${username}/following/`)
             ]);
             
-            setFollowers(followersRes.data.followers);
-            setFollowing(followingRes.data.following);
+            setFollowers(followersRes.data.followers || []);
+            setFollowing(followingRes.data.following || []);
         } catch (error) {
             console.error('Error fetching follows:', error);
+            setFollowers([]);
+            setFollowing([]);
         }
     }, [username]);
 
@@ -333,7 +335,7 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser, authenticate
                     <BlogPostsTab username={username || ''} />
                 </TabPanel>
                 <TabPanel value={activeTab} index={1}>
-                    {followers.map((follow, index) => (
+                    {followers?.map((follow, index) => (
                         <Card key={follow.follower || index} sx={{ mb: 2 }}>
                             <CardContent>
                                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -353,7 +355,7 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser, authenticate
                     ))}
                 </TabPanel>
                 <TabPanel value={activeTab} index={2}>
-                    {following.map((follow, index) => (
+                    {following?.map((follow, index) => (
                         <Card key={follow.following || index} sx={{ mb: 2 }}>
                             <CardContent>
                                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
