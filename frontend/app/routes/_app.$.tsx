@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { useLocation } from "@remix-run/react";
 import OnlineUsersPage from "../old-app/components/OnlineUsersPage";
-import SetupWizard from "../old-app/components/SetupWizard";
 
 export default function CatchAll() {
   const location = useLocation();
@@ -12,9 +11,6 @@ export default function CatchAll() {
   switch (path) {
     case '/online-users':
       component = <OnlineUsersPage />;
-      break;
-    case '/setup':
-      component = <SetupWizard />;
       break;
     default:
       throw new Response("Not Found", {

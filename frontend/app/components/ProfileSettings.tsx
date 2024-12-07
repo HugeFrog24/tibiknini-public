@@ -21,6 +21,7 @@ import type { SxProps, Theme } from '@mui/material';
 import api from '../utils/api';
 import UserContext from '../contexts/UserContext';
 import { handleLogout } from '../old-app/utils/auth';
+import ProfileImage from './ProfileImage';
 
 interface NotificationState {
   open: boolean;
@@ -53,7 +54,7 @@ export default function ProfileSettings() {
     isError: false 
   });
 
-  const { user, isAuthenticated } = useContext(UserContext);
+  const { user, isAuthenticated, updateUser } = useContext(UserContext);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -130,8 +131,17 @@ export default function ProfileSettings() {
     setDeleteInProgress(false);
   };
 
-  if (!isAuthenticated) {
-    return null; // Optionally, you can return a loading spinner or a message here
+  const handleProfileImageChange = (newImageUrl: string | null) => {
+    if (user) {
+      updateUser({
+        ...user,
+        image: newImageUrl || user.image
+      });
+    }
+  };
+
+  if (!isAuthenticated || !user) {
+    return null;
   }
 
   return (
@@ -140,27 +150,41 @@ export default function ProfileSettings() {
         Settings
       </Typography>
 
-      <Box sx={{ mb: 4 }}>
+      <Box sx={sectionStyles}>
         <Typography variant="h5" gutterBottom>
           Profile Settings
         </Typography>
         <Divider />
-        <Typography variant="h6" gutterBottom>
-          Welcome, {user.first_name} {user.last_name}!
-        </Typography>
+        
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', mt: 3, gap: 4 }}>
+          <ProfileImage
+            imageSrc={user.image}
+            username={user.username}
+            width={120}
+            height={120}
+            showOptions={true}
+            onImageChange={handleProfileImageChange}
+          />
+          
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h6" gutterBottom>
+              Welcome, {user.first_name} {user.last_name}!
+            </Typography>
 
-        <Button
-          variant="contained"
-          color="error"
-          onClick={handleClickOpen}
-          sx={{ mt: 2 }}
-        >
-          Delete Account
-        </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={handleClickOpen}
+              sx={{ mt: 2 }}
+            >
+              Delete Account
+            </Button>
+          </Box>
+        </Box>
       </Box>
 
       {user.is_superuser && (
-        <Box sx={{ mb: 4 }}>
+        <Box sx={sectionStyles}>
           <Typography variant="h5" gutterBottom>
             System Settings
           </Typography>

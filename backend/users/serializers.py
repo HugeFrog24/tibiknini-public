@@ -13,7 +13,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         source="profile.user.username"
     )  # Access the username field of the related User model through the 'profile' related name
     email = serializers.SerializerMethodField()
-    image = serializers.ImageField(source="profile.image")
+    image = serializers.ImageField(source="profile.image", allow_null=True)
     date_joined = serializers.CharField(source="profile.user.date_joined")
     is_anonymous = serializers.BooleanField()
     is_staff = serializers.BooleanField(source="profile.user.is_staff")
@@ -42,19 +42,10 @@ class ProfileSerializer(serializers.ModelSerializer):
             "last_name",
         ]
 
-    def to_representation(self, instance):
-        ret = super().to_representation(instance)
-        if not instance.profile.image:
-            request = self.context.get("request")
-            ret["image"] = request.build_absolute_uri(
-                f"{settings.MEDIA_URL}profile_pics/default.png"
-            )
-        return ret
-
     def get_email(self, obj):
         # Check if the request user has administrative permissions
-        user = self.context.get("request").user
-        if user.is_staff:
+        request = self.context.get("request")
+        if request and request.user and request.user.is_staff:
             return obj.profile.user.email
         return None
 
@@ -65,14 +56,14 @@ class ProfileSerializer(serializers.ModelSerializer):
         return FollowSerializer(obj.following.all(), many=True).data
 
     def get_first_name(self, obj):
-        user = self.context.get("request").user
-        if user == obj.profile.user:
+        request = self.context.get("request")
+        if request and request.user and request.user == obj.profile.user:
             return obj.profile.user.first_name
         return None
 
     def get_last_name(self, obj):
-        user = self.context.get("request").user
-        if user == obj.profile.user:
+        request = self.context.get("request")
+        if request and request.user and request.user == obj.profile.user:
             return obj.profile.user.last_name
         return None
 
