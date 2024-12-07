@@ -7,6 +7,7 @@ import {
     Checkbox,
     FormControlLabel,
     TextField,
+    Typography,
     styled
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
@@ -127,34 +128,39 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ previousPath, initialPost }
 
     return (
         <StyledBox>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-                <FormControlLabel
-                    control={
-                        <Checkbox
-                            checked={isDraft}
-                            onChange={handleToggleDraft}
-                            color="primary"
-                        />
-                    }
-                    label="Draft"
-                />
-                <Button
-                    variant={isSubmitting ? 'text' : 'contained'}
-                    color="primary"
-                    startIcon={<SaveIcon />}
-                    onClick={() => handleSave(isDraft)}
-                    disabled={isSubmitting}
-                >
-                    {isSubmitting ? 'Saving...' : 'Save'}
-                </Button>
-                <Button
-                    variant="outlined"
-                    color="secondary"
-                    startIcon={<CancelIcon />}
-                    onClick={handleCancel}
-                >
-                    Cancel
-                </Button>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                    {initialPost ? "Edit Post" : "New Post"}
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={isDraft}
+                                onChange={handleToggleDraft}
+                                color="primary"
+                            />
+                        }
+                        label="Draft"
+                    />
+                    <Button
+                        variant={isSubmitting ? 'text' : 'contained'}
+                        color="primary"
+                        startIcon={<SaveIcon />}
+                        onClick={() => handleSave(isDraft)}
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting ? 'Saving...' : 'Save'}
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        color="secondary"
+                        startIcon={<CancelIcon />}
+                        onClick={handleCancel}
+                    >
+                        Cancel
+                    </Button>
+                </Box>
             </Box>
             <TextField
                 label="Title"
