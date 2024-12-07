@@ -2,8 +2,6 @@ import * as React from 'react';
 import { useLocation } from "@remix-run/react";
 import OnlineUsersPage from "../old-app/components/OnlineUsersPage";
 import SetupWizard from "../old-app/components/SetupWizard";
-import ForgotPassword from "../old-app/components/ForgotPassword";
-import ResetPassword from "../old-app/components/ResetPassword";
 
 export default function CatchAll() {
   const location = useLocation();
@@ -17,12 +15,6 @@ export default function CatchAll() {
       break;
     case '/setup':
       component = <SetupWizard />;
-      break;
-    case '/forgot-password':
-      component = <ForgotPassword />;
-      break;
-    case '/reset-password':
-      component = <ResetPassword />;
       break;
     default:
       throw new Response("Not Found", {

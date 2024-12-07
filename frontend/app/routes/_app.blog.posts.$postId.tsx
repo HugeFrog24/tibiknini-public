@@ -3,6 +3,7 @@ import { json, LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import BlogPostDetail from "../components/BlogPostDetail";
 import { fetchPublicBlogPost } from "../utils/server-fetch";
+import type { LoaderData } from "../routes/_app";
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const { postId } = params;
@@ -21,29 +22,39 @@ export async function loader({ params }: LoaderFunctionArgs) {
   }
 }
 
-export const meta: MetaFunction<typeof loader> = ({ data }) => {
+export const meta: MetaFunction<typeof loader, { 'routes/_app': LoaderData }> = ({ data, matches }) => {
+  const parentData = matches.find(
+    (match) => match.id === "routes/_app"
+  )?.data as LoaderData | undefined;
+  
+  const siteName = parentData?.siteData?.site_name || "Our Platform";
+
   if (!data?.post) {
     return [
-      { title: "Post Not Found" },
+      { title: `Post Not Found - ${siteName}` },
       { name: "description", content: "This blog post could not be found." }
     ];
   }
 
   const post = data.post;
+  const title = `${post.title} - ${siteName}`;
+  
   return [
-    { title: post.title },
+    { title },
     { name: "description", content: post.description || post.title },
     // OpenGraph tags
-    { property: "og:title", content: post.title },
+    { property: "og:title", content: title },
     { property: "og:description", content: post.description || post.title },
     { property: "og:type", content: "article" },
+    { property: "og:site_name", content: siteName },
     { property: "article:published_time", content: post.created_at },
     { property: "article:modified_time", content: post.updated_at },
     { property: "article:author", content: post.author.username },
     // Twitter Card tags
     { name: "twitter:card", content: "summary" },
-    { name: "twitter:title", content: post.title },
-    { name: "twitter:description", content: post.description || post.title }
+    { name: "twitter:title", content: title },
+    { name: "twitter:description", content: post.description || post.title },
+    { name: "twitter:site", content: `@${siteName.replace(/\s+/g, '')}` }
   ];
 };
 

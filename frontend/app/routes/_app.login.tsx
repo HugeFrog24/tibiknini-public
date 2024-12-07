@@ -1,7 +1,7 @@
 import { json } from "@remix-run/node";
 import * as React from "react";
 import { useLoaderData } from "@remix-run/react";
-import Login from "../old-app/components/Login";
+import Login from "../components/Login";
 import Typography from "@mui/material/Typography";
 import CircularProgress from "@mui/material/CircularProgress";
 
