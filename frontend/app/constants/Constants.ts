@@ -1,5 +1,6 @@
 export const REDIRECT_REASONS = {
     EDIT_POST: 'EDIT_POST',
+    NEW_POST: 'NEW_POST',
     // Add other redirect reasons as needed
 } as const;
 

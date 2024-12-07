@@ -1,10 +1,25 @@
+interface Tag {
+    name: string;
+    color: string;
+}
+
 interface BlogPost {
     id: number;
     title: string;
     content: string;
     is_draft: boolean;
+    pub_date: string;
+    image: string | null;
+    tags: Tag[];
+    likes_count: number;
+    is_liked: boolean;
+    accent_color: string | null;
     author: {
         id: number;
+        username: string;
+        image: string;
+        is_staff: boolean;
+        bio: string;
     };
 }
 
@@ -58,4 +73,4 @@ export const useBlogPost = () => {
     };
 };
 
-export type { BlogPost, BlogPostInput };
+export type { BlogPost, BlogPostInput, Tag };

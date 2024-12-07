@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useContext, useEffect } from 'react';
 import { json, LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useNavigate } from "@remix-run/react";
 import BlogPostForm from "../components/BlogPostForm";
 import { fetchPublicBlogPost } from "../utils/server-fetch";
 import type { LoaderData } from "../routes/_app";
+import UserContext from "../contexts/UserContext";
+import { REDIRECT_REASONS } from "../constants/Constants";
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const { postId } = params;
@@ -47,5 +49,25 @@ export const meta: MetaFunction<typeof loader, { 'routes/_app': LoaderData }> = 
 
 export default function EditBlogPost() {
   const { post } = useLoaderData<typeof loader>();
+  const { user, isAuthenticated } = useContext(UserContext);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/login", { state: { reason: REDIRECT_REASONS.EDIT_POST } });
+      return;
+    }
+
+    // Check if user has permission to edit this post
+    if (!(user?.is_staff || user?.id === post.author.id)) {
+      navigate("/blog/posts/" + post.id);
+    }
+  }, [isAuthenticated, user, post, navigate]);
+
+  // Only render the form if authenticated and authorized
+  if (!isAuthenticated || !(user?.is_staff || user?.id === post.author.id)) {
+    return null;
+  }
+
   return <BlogPostForm initialPost={post} />;
 }

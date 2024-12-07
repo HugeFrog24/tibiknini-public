@@ -8,13 +8,13 @@ import {
     FormControlLabel,
     TextField,
     Typography,
-    styled
+    styled,
+    Alert
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
 
 import UserContext from "../contexts/UserContext";
-import { REDIRECT_REASONS } from "../constants/Constants";
 import { useBlogPost, type BlogPost, type BlogPostInput } from "../hooks/useBlogPost";
 
 interface BlogPostFormProps {
@@ -35,7 +35,7 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ previousPath, initialPost }
     const navigate = useNavigate();
     const { fetchBlogPost, createBlogPost, updateBlogPost } = useBlogPost();
     const { postId } = useParams();
-    const { user, isAuthenticated } = useContext(UserContext);
+    const { user } = useContext(UserContext);
 
     const [post, setPost] = useState<BlogPost | null>(initialPost || null);
     const [isDraft, setIsDraft] = useState(initialPost?.is_draft ?? false);
@@ -43,22 +43,12 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ previousPath, initialPost }
     const [content, setContent] = useState(initialPost?.content ?? "");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const isAdminEditingOthersPost = user?.is_staff && post?.author?.id !== user?.id;
+
     const handleToggleDraft = () => setIsDraft(!isDraft);
 
     const handleSave = async (isDraft: boolean) => {
         setIsSubmitting(true);
-
-        if (!isAuthenticated) {
-            toast.warning("You must be logged in to save this post.");
-            setIsSubmitting(false);
-            return;
-        }
-
-        if (postId && post && !(user?.is_staff || user?.id === post.author.id)) {
-            toast.warning("You do not have permission to save this post.");
-            setIsSubmitting(false);
-            return;
-        }
 
         if (!title.trim() || !content.trim()) {
             toast.warning("Please fill all fields before saving.");
@@ -103,19 +93,10 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ previousPath, initialPost }
             if (postId && !initialPost) {
                 try {
                     const fetchedPost = await fetchBlogPost(postId);
-                    if (!isAuthenticated) {
-                        navigate("/login", { state: { reason: REDIRECT_REASONS.EDIT_POST } });
-                        return;
-                    }
-
-                    if (user?.is_staff || user?.id === fetchedPost.author.id) {
-                        setPost(fetchedPost);
-                        setTitle(fetchedPost.title);
-                        setContent(fetchedPost.content);
-                        setIsDraft(fetchedPost.is_draft ?? false);
-                    } else {
-                        navigate("/login", { state: { reason: REDIRECT_REASONS.EDIT_POST } });
-                    }
+                    setPost(fetchedPost);
+                    setTitle(fetchedPost.title);
+                    setContent(fetchedPost.content);
+                    setIsDraft(fetchedPost.is_draft ?? false);
                 } catch (error) {
                     console.error("Failed to fetch post for editing:", error);
                     toast.error("Failed to load the post for editing.");
@@ -124,7 +105,7 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ previousPath, initialPost }
         };
 
         fetchPostForEditing();
-    }, [postId, fetchBlogPost, user, navigate, isAuthenticated, initialPost]);
+    }, [postId, fetchBlogPost, initialPost]);
 
     return (
         <StyledBox>
@@ -162,6 +143,14 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ previousPath, initialPost }
                     </Button>
                 </Box>
             </Box>
+            {isAdminEditingOthersPost && (
+                <Alert 
+                    severity="warning" 
+                    sx={{ mb: 2 }}
+                >
+                    You are editing {post?.author?.username}'s post as an administrator
+                </Alert>
+            )}
             <TextField
                 label="Title"
                 fullWidth
