@@ -57,7 +57,16 @@ class ReCaptchaLoginView(APIView):
 
         if user is not None:
             auth_login(request, user)
-            return JsonResponse({"detail": "Successfully logged in."})
+            return JsonResponse({
+                "detail": "Successfully logged in.",
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "is_staff": user.is_staff,
+                    "is_superuser": user.is_superuser,
+                },
+            })
         else:
             return JsonResponse(
                 {"detail": "Invalid login credentials."},

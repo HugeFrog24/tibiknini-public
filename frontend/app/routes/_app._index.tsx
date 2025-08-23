@@ -1,5 +1,5 @@
 import React from 'react';
-import type { MetaFunction } from "@remix-run/node";
+import type { MetaFunction } from "react-router";
 import Home from "../components/Home";
 
 export const meta: MetaFunction = () => {

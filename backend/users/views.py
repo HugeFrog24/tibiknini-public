@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.mail import send_mail
@@ -28,6 +29,7 @@ from .serializers import (
     ProfileBioSerializer,
     ProfileImageSerializer,
     ProfileSerializer,
+    UserProfileUpdateSerializer,
     UserRegistrationSerializer,
 )
 from .utils import process_profile_image
@@ -50,7 +52,18 @@ class ProfileListView(generics.ListAPIView):
 class ProfileDetailView(generics.RetrieveAPIView):
     queryset = CustomUser.objects.select_related("profile").all()
     serializer_class = ProfileSerializer
-    lookup_field = "username"
+    lookup_field = 'username'
+
+
+class ProfileDetailByIdView(generics.RetrieveAPIView):
+    """
+    Retrieve a user profile by user ID.
+    This is a separate endpoint from username-based lookup for security and clarity.
+    """
+    queryset = CustomUser.objects.select_related("profile").all()
+    serializer_class = ProfileSerializer
+    lookup_url_kwarg = 'user_id'
+    lookup_field = 'id'
 
 
 class CheckUsernameView(APIView):
@@ -83,6 +96,32 @@ class CurrentUserView(generics.RetrieveAPIView):
         return self.request.user
 
 
+class UserProfileUpdateView(generics.UpdateAPIView):
+    """Update user profile information (first_name, last_name)"""
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserProfileUpdateSerializer
+
+    def get_object(self):
+        return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        response = super().update(request, *args, **kwargs)
+        # Return the updated user data in the same format as the login response
+        user = self.get_object()
+        return Response({
+            "detail": "Profile updated successfully.",
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "is_staff": user.is_staff,
+                "is_superuser": user.is_superuser,
+            }
+        })
+
+
 class UserBioRetrieveUpdateView(generics.RetrieveUpdateAPIView):
     """
     Retrieve or update the bio of the specified user.
@@ -113,8 +152,8 @@ class ProfileImageUpdateView(generics.UpdateAPIView):
         profile.image.save(image.name, image)
         process_profile_image(profile.image.path)
 
-        serializer = ProfileImageSerializer(profile)  # Add this line
-        return Response(serializer.data, status=status.HTTP_200_OK)  # Add this line
+        serializer = ProfileImageSerializer(profile)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ProfileImageDeleteView(APIView):
@@ -169,6 +208,8 @@ class FollowView(APIView):
 
     def delete(self, request, follower_username, following_username, format=None):
         follow = self.get_object(follower_username, following_username)
+        if isinstance(follow, Response):
+            return follow
         follow.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -228,16 +269,55 @@ class ChangePasswordView(APIView):
         user = request.user
         old_password = request.data.get("old_password")
         new_password = request.data.get("new_password")
+        confirm_password = request.data.get("confirm_password")
 
+        # Validate required fields
+        if not old_password:
+            return Response(
+                {"error": "Current password is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        if not new_password:
+            return Response(
+                {"error": "New password is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        if not confirm_password:
+            return Response(
+                {"error": "Password confirmation is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check if new password matches confirmation
+        if new_password != confirm_password:
+            return Response(
+                {"error": "New password and confirmation do not match"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check current password
         if not user.check_password(old_password):
             return Response(
                 {"error": "Current password is incorrect"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Validate new password using Django's password validators
+        try:
+            validate_password(new_password, user)
+        except ValidationError as e:
+            return Response(
+                {"error": list(e.messages)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Set new password
         user.set_password(new_password)
         user.save()  # This will trigger our password change signal
 
+        logger.info(f"Password changed successfully for user: {user.username}")
         return Response(
             {"message": "Password changed successfully"}, status=status.HTTP_200_OK
         )

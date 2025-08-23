@@ -1,6 +1,6 @@
 import React from 'react';
 import { useState, useContext, useEffect } from 'react';
-import { useNavigate } from '@remix-run/react';
+import { useNavigate } from 'react-router';
 import {
   Button,
   Dialog,
@@ -16,12 +16,17 @@ import {
   TextField,
   Divider,
   Skeleton,
+  Card,
+  CardContent,
+  Grid,
 } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material';
 import api from '../utils/api';
 import UserContext from '../contexts/UserContext';
-import { handleLogout } from '../old-app/utils/auth';
+import { handleLogout as handleLogoutUtil } from '../utils/auth';
 import ProfileImage from './ProfileImage';
+import { PasswordField, validatePassword, validatePasswordMatch } from '../utils/passwordValidation';
+
 
 interface NotificationState {
   open: boolean;
@@ -48,26 +53,45 @@ export default function ProfileSettings() {
   const [siteTitle, setSiteTitle] = useState('');
   const [savingTitle, setSavingTitle] = useState(false);
   const [loadingTitle, setLoadingTitle] = useState(false);
-  const [notification, setNotification] = useState<NotificationState>({ 
-    open: false, 
-    message: '', 
-    isError: false 
+  const [notification, setNotification] = useState<NotificationState>({
+    open: false,
+    message: '',
+    isError: false
   });
+  const [editingName, setEditingName] = useState(false);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [savingName, setSavingName] = useState(false);
+  
+  // Password change state
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
 
-  const { user, isAuthenticated, updateUser } = useContext(UserContext);
+  const { user, isAuthenticated, isLoading, updateUser } = useContext(UserContext);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    // Only redirect if loading is complete and user is not authenticated
+    if (!isLoading && !isAuthenticated) {
       navigate('/login');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isLoading, navigate]);
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchSiteInfo();
     }
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (user) {
+      setFirstName(user.first_name || '');
+      setLastName(user.last_name || '');
+    }
+  }, [user]);
 
   const fetchSiteInfo = async () => {
     setLoadingTitle(true);
@@ -84,6 +108,8 @@ export default function ProfileSettings() {
     setSavingTitle(true);
     try {
       await api.put('/core/site-title/', { site_name: siteTitle });
+      // Invalidate the site title cache after successful update
+      
       setSiteSettingsOpen(false);
       setNotification({
         open: true,
@@ -114,8 +140,9 @@ export default function ProfileSettings() {
     setOpen(false);
     setConfirmDelete(false);
     if (deleteSuccess) {
+      // Create a wrapper function that matches the expected signature
+      const handleLogout = () => handleLogoutUtil(navigate, () => updateUser(null));
       await handleLogout();
-      navigate('/login');
     }
   };
 
@@ -126,7 +153,6 @@ export default function ProfileSettings() {
       setDeleteSuccess(true);
     } catch (error) {
       console.error('Error deleting profile:', error);
-      // Handle error, e.g., show error message to the user
     }
     setDeleteInProgress(false);
   };
@@ -140,12 +166,108 @@ export default function ProfileSettings() {
     }
   };
 
+  const handleSaveName = async () => {
+    setSavingName(true);
+    try {
+      const response = await api.put('/users/me/update/', {
+        first_name: firstName,
+        last_name: lastName,
+      });
+      
+      // Update user context with the new data
+      updateUser(response.data.user);
+      setEditingName(false);
+      setNotification({
+        open: true,
+        message: 'Name updated successfully!',
+        isError: false
+      });
+    } catch (error) {
+      console.error('Error updating name:', error);
+      setNotification({
+        open: true,
+        message: 'Failed to update name. Please try again.',
+        isError: true
+      });
+    }
+    setSavingName(false);
+  };
+
+  const handleCancelEditName = () => {
+    setFirstName(user?.first_name || '');
+    setLastName(user?.last_name || '');
+    setEditingName(false);
+  };
+
+  const handleChangePassword = async () => {
+    // Validate passwords before submitting
+    const passwordError = validatePassword(newPassword);
+    const confirmError = validatePasswordMatch(newPassword, confirmPassword);
+    
+    if (passwordError || confirmError) {
+      setNotification({
+        open: true,
+        message: passwordError || confirmError || 'Please check your password requirements.',
+        isError: true
+      });
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      await api.post('/users/me/change-password/', {
+        old_password: oldPassword,
+        new_password: newPassword,
+        confirm_password: confirmPassword,
+      });
+      
+      setChangePasswordOpen(false);
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setNotification({
+        open: true,
+        message: 'Password changed successfully!',
+        isError: false
+      });
+    } catch (error: any) {
+      console.error('Error changing password:', error);
+      const errorMessage = error.response?.data?.error || 'Failed to change password. Please try again.';
+      setNotification({
+        open: true,
+        message: Array.isArray(errorMessage) ? errorMessage.join(' ') : errorMessage,
+        isError: true
+      });
+    }
+    setChangingPassword(false);
+  };
+
+  const handleCancelChangePassword = () => {
+    setOldPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setChangePasswordOpen(false);
+  };
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <Box sx={containerStyles}>
+        <Typography variant="h4" gutterBottom>
+          Settings
+        </Typography>
+        <Typography>Loading...</Typography>
+      </Box>
+    );
+  }
+
+  // Only show content if authenticated
   if (!isAuthenticated || !user) {
     return null;
   }
 
   return (
-    <Box className="container">
+    <Box sx={containerStyles}>
       <Typography variant="h4" gutterBottom>
         Settings
       </Typography>
@@ -168,8 +290,88 @@ export default function ProfileSettings() {
           
           <Box sx={{ flex: 1 }}>
             <Typography variant="h6" gutterBottom>
-              Welcome, {user.first_name} {user.last_name}!
+              Welcome{user.first_name || user.last_name ? `, ${user.first_name} ${user.last_name}`.trim() : `, ${user.username}`}!
             </Typography>
+
+            <Card sx={{ mt: 2, mb: 2 }}>
+              <CardContent>
+                <Typography variant="subtitle1" gutterBottom>
+                  Personal Information
+                </Typography>
+                {editingName ? (
+                  <Box>
+                    <Grid container spacing={2} sx={{ mb: 2 }}>
+                      <Grid size={6}>
+                        <TextField
+                          fullWidth
+                          label="First Name"
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          disabled={savingName}
+                        />
+                      </Grid>
+                      <Grid size={6}>
+                        <TextField
+                          fullWidth
+                          label="Last Name"
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                          disabled={savingName}
+                        />
+                      </Grid>
+                    </Grid>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Button
+                        variant="contained"
+                        onClick={handleSaveName}
+                        disabled={savingName}
+                      >
+                        {savingName ? 'Saving...' : 'Save'}
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        onClick={handleCancelEditName}
+                        disabled={savingName}
+                      >
+                        Cancel
+                      </Button>
+                    </Box>
+                  </Box>
+                ) : (
+                  <Box>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>First Name:</strong> {user.first_name || 'Not set'}
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                      <strong>Last Name:</strong> {user.last_name || 'Not set'}
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      onClick={() => setEditingName(true)}
+                    >
+                      Edit Name
+                    </Button>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card sx={{ mt: 2, mb: 2 }}>
+              <CardContent>
+                <Typography variant="subtitle1" gutterBottom>
+                  Security
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Keep your account secure by using a strong password.
+                </Typography>
+                <Button
+                  variant="outlined"
+                  onClick={() => setChangePasswordOpen(true)}
+                >
+                  Change Password
+                </Button>
+              </CardContent>
+            </Card>
 
             <Button
               variant="contained"
@@ -257,7 +459,7 @@ export default function ProfileSettings() {
           ) : (
             <>
               <DialogContentText>
-              Are you sure you want to delete your profile, {user.first_name}?
+                Are you sure you want to delete your profile, {user.first_name || user.username}?
                 <Typography variant="body1" fontWeight="bold" component="div" gutterBottom>
                   This action is permanent and cannot be undone.
                 </Typography>
@@ -308,6 +510,67 @@ export default function ProfileSettings() {
             color={notification.isError ? "error" : "primary"}
           >
             Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Change Password Dialog */}
+      <Dialog open={changePasswordOpen} onClose={handleCancelChangePassword} maxWidth="sm" fullWidth>
+        <DialogTitle>Change Password</DialogTitle>
+        <DialogContent>
+          {changingPassword ? (
+            <Box sx={{ width: '100%', my: 2 }}>
+              <LinearProgress />
+            </Box>
+          ) : (
+            <>
+              <DialogContentText sx={{ mb: 2 }}>
+                Enter your current password and choose a new secure password.
+              </DialogContentText>
+              <TextField
+                autoFocus
+                margin="dense"
+                label="Current Password"
+                type="password"
+                fullWidth
+                variant="outlined"
+                value={oldPassword}
+                onChange={(e) => setOldPassword(e.target.value)}
+                disabled={changingPassword}
+                sx={{ mb: 3 }}
+              />
+              <Box sx={{ mb: 2 }}>
+                <PasswordField
+                  password={newPassword}
+                  setPassword={setNewPassword}
+                  label="New Password"
+                  showStrengthMeter={true}
+                />
+              </Box>
+              <Box sx={{ mb: 2 }}>
+                <PasswordField
+                  password={confirmPassword}
+                  setPassword={setConfirmPassword}
+                  label="Confirm New Password"
+                  showStrengthMeter={false}
+                />
+              </Box>
+              <Typography variant="caption" color="text.secondary">
+                Password must contain at least 8 characters with uppercase, lowercase, and numbers.
+              </Typography>
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelChangePassword} disabled={changingPassword}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleChangePassword}
+            disabled={changingPassword || !oldPassword || !newPassword || !confirmPassword}
+            variant="contained"
+          >
+            {changingPassword ? 'Changing...' : 'Change Password'}
           </Button>
         </DialogActions>
       </Dialog>

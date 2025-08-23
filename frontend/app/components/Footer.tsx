@@ -1,6 +1,6 @@
 import React from 'react';
 import { Container, Box, Link as MuiLink, Theme, Tooltip } from '@mui/material';
-import { Link } from '@remix-run/react';
+import { Link } from 'react-router';
 import { useTheme } from '@mui/material';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import TagIcon from '@mui/icons-material/Tag';

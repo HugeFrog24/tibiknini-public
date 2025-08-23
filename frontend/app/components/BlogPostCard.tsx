@@ -1,9 +1,10 @@
 import React from 'react';
-import { useNavigate } from '@remix-run/react';
+import { useNavigate, Link } from 'react-router';
 import { Card, CardContent, CardMedia, Typography, Button, Skeleton } from '@mui/material';
-import Grid2 from '@mui/material/Grid2';
+import Grid from '@mui/material/Grid';
 import Avatar from '@mui/material/Avatar';
 import ImageIcon from '@mui/icons-material/Image';
+import slugify from 'slugify';
 import { User } from '../types/user';
 
 export interface Author {
@@ -27,6 +28,17 @@ interface BlogPostCardProps {
     textClass?: string;
     onPostUpdated?: (post: BlogPost) => void;
 }
+
+// Helper function to generate post URL with slug
+const getPostUrl = (post: BlogPost) => {
+    const slug = slugify(post.title, {
+        lower: true,
+        strict: true,
+        locale: 'vi',
+        trim: true
+    });
+    return `/blog/posts/${post.id}/${slug}`;
+};
 
 const BlogPostCard: React.FC<BlogPostCardProps> = ({ post }) => {
     const navigate = useNavigate();
@@ -52,18 +64,18 @@ const BlogPostCard: React.FC<BlogPostCardProps> = ({ post }) => {
                     height="200"
                     image={post.image}
                     alt={post.title}
-                    onClick={() => navigate(`/blog/posts/${post.id}`)}
+                    onClick={() => navigate(getPostUrl(post))}
                     style={{ cursor: 'pointer' }}
                 />
             );
         }
 
         return (
-            <Grid2 container justifyContent="center" alignItems="center" 
-                  onClick={() => navigate(`/blog/posts/${post.id}`)}
+            <Grid container justifyContent="center" alignItems="center"
+                  onClick={() => navigate(getPostUrl(post))}
                   style={{ cursor: 'pointer', height: 200, backgroundColor: getBackgroundColor() }}>
                 <ImageIcon fontSize="large" />
-            </Grid2>
+            </Grid>
         );
     };
 
@@ -71,7 +83,11 @@ const BlogPostCard: React.FC<BlogPostCardProps> = ({ post }) => {
         if (!post) {
             return <Skeleton variant="circular" width={40} height={40} />;
         }
-        return <Avatar src={post.author.image} alt={post.author.username} />;
+        return (
+            <Link to={`/users/${post.author.username}`} style={{ textDecoration: 'none' }}>
+                <Avatar src={post.author.image} alt={post.author.username} sx={{ cursor: 'pointer' }} />
+            </Link>
+        );
     };
 
     const renderContent = () => {
@@ -86,34 +102,30 @@ const BlogPostCard: React.FC<BlogPostCardProps> = ({ post }) => {
 
         return (
             <>
-                <Button 
-                    onClick={() => navigate(`/blog/posts/${post.id}`)} 
-                    className="text-decoration-none"
-                    sx={{ 
-                        textAlign: 'left', 
-                        display: 'block',
-                        p: 0,
-                        '&:hover': { backgroundColor: 'transparent' }
+                <Link 
+                    to={getPostUrl(post)}
+                    style={{ 
+                        textDecoration: 'none',
+                        color: 'inherit',
+                        display: 'block'
                     }}
                 >
                     <Typography variant="h5" component="div">
                         {post.title}
                     </Typography>
-                </Button>
-                <Button 
-                    onClick={() => navigate(`/users/${post.author.username}`)}
-                    className="text-decoration-none"
-                    sx={{ 
-                        justifyContent: 'flex-start', 
-                        p: 0,
-                        minHeight: 0,
-                        '&:hover': { backgroundColor: 'transparent' }
+                </Link>
+                <Link 
+                    to={`/users/${post.author.username}`}
+                    style={{ 
+                        textDecoration: 'none',
+                        color: 'inherit',
+                        display: 'block'
                     }}
                 >
                     <Typography variant="subtitle1" sx={{ lineHeight: 1 }}>
                         {post.author.username}
                     </Typography>
-                </Button>
+                </Link>
             </>
         );
     };
@@ -126,7 +138,7 @@ const BlogPostCard: React.FC<BlogPostCardProps> = ({ post }) => {
         return (
             <Button 
                 variant="contained" 
-                onClick={() => navigate(`/blog/posts/${post.id}`)}
+                onClick={() => navigate(getPostUrl(post))}
                 sx={{ minWidth: '80px' }}
             >
                 Go!
@@ -142,17 +154,17 @@ const BlogPostCard: React.FC<BlogPostCardProps> = ({ post }) => {
         >
             {renderMedia()}
             <CardContent sx={{ py: 2 }}>
-                <Grid2 container spacing={2} alignItems="center">
-                    <Grid2>
+                <Grid container spacing={2} alignItems="center">
+                    <Grid>
                         {renderAvatar()}
-                    </Grid2>
-                    <Grid2 flex={1} sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                    </Grid>
+                    <Grid flex={1} sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                         {renderContent()}
-                    </Grid2>
-                    <Grid2 sx={{ display: 'flex', alignItems: 'center' }}>
+                    </Grid>
+                    <Grid sx={{ display: 'flex', alignItems: 'center' }}>
                         {renderAction()}
-                    </Grid2>
-                </Grid2>
+                    </Grid>
+                </Grid>
             </CardContent>
         </Card>
     );

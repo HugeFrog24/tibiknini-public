@@ -15,13 +15,16 @@ from .views import (
     UserBioRetrieveUpdateView,
     UserFollowersListView,
     UserFollowingListView,
+    UserProfileUpdateView,
     UserRegistrationView,
+    ProfileDetailByIdView,
 )
 
 app_name = "users"
 
 urlpatterns = [
     path("me/", CurrentUserView.as_view(), name="current_user"),
+    path("me/update/", UserProfileUpdateView.as_view(), name="user-profile-update"),
     path("me/delete/", ProfileDeleteView.as_view(), name="profile-delete"),
     path("me/change-password/", ChangePasswordView.as_view(), name="change-password"),
     path(
@@ -45,6 +48,7 @@ urlpatterns = [
         name="profile-image-delete",
     ),
     path("register/", UserRegistrationView.as_view(), name="register"),
+    path("id/<int:user_id>/", ProfileDetailByIdView.as_view(), name="profile_detail_by_id"),
     path("<str:username>/check/", CheckUsernameView.as_view(), name="check-username"),
     path("<str:username>/bio/", UserBioRetrieveUpdateView.as_view(), name="bio-detail"),
     path("<str:username>/", ProfileDetailView.as_view(), name="profile_detail"),

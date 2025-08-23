@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useFetcher, Link } from "@remix-run/react";
+import { useFetcher, Link, useActionData } from 'react-router';
 import {
   Box,
   TextField,
@@ -29,13 +29,15 @@ interface Author {
   id: number;
   username: string;
   profile_picture?: string;
+  image?: string; // Backend uses 'image' field
 }
 
 interface Comment {
   id: number;
   content: string;
   author: Author;
-  created_at: string;
+  created_at?: string;
+  pub_date?: string; // Backend uses 'pub_date' field
 }
 
 interface ReportReason {
@@ -51,6 +53,7 @@ interface BlogPostCommentsProps {
 
 export default function BlogPostComments({ postId, comments = [], reportReasons = [] }: BlogPostCommentsProps) {
   const fetcher = useFetcher();
+  const actionData = useActionData() as { success?: boolean; error?: string; comment?: any; deleted?: string } | undefined;
   const { user, isAuthenticated } = React.useContext<UserContextType>(UserContext);
   
   const [editingCommentId, setEditingCommentId] = React.useState<number | null>(null);
@@ -66,14 +69,36 @@ export default function BlogPostComments({ postId, comments = [], reportReasons 
   const handleSubmitComment = () => {
     if (!newComment.trim()) return;
 
+    console.log('🔍 DEBUG: Starting comment submission');
+    console.log('🔍 DEBUG: Post ID:', postId);
+    console.log('🔍 DEBUG: Comment content:', newComment.trim());
+    console.log('🔍 DEBUG: Current URL:', window.location.href);
+    console.log('🔍 DEBUG: Will submit to current route action function');
+
     const formData = new FormData();
     formData.append('_action', 'create');
     formData.append('content', newComment.trim());
-    formData.append('postId', postId.toString());
 
+    console.log('🔍 DEBUG: FormData contents:');
+    for (let [key, value] of formData.entries()) {
+      console.log(`🔍 DEBUG: ${key}: ${value}`);
+    }
+
+    console.log('🔍 DEBUG: Submitting via fetcher.submit() to route action');
     fetcher.submit(formData, { method: 'post' });
     setNewComment("");
   };
+
+  // Handle action responses
+  React.useEffect(() => {
+    if (actionData?.error) {
+      console.error('🔍 DEBUG: Action error:', actionData.error);
+      // You can add toast notification here
+    } else if (actionData?.success) {
+      console.log('🔍 DEBUG: Action success:', actionData);
+      // You can add success toast notification here
+    }
+  }, [actionData]);
 
   const handleEditComment = (comment: Comment) => {
     setEditingCommentId(comment.id);
@@ -119,7 +144,7 @@ export default function BlogPostComments({ postId, comments = [], reportReasons 
     if (!selectedReason || !reportingCommentId) return;
 
     const formData = new FormData();
-    formData.append('_action', 'report');
+    formData.append('_action', 'reportComment');
     formData.append('commentId', reportingCommentId.toString());
     formData.append('reason', selectedReason);
     formData.append('description', reportDescription.trim());
@@ -166,7 +191,7 @@ export default function BlogPostComments({ postId, comments = [], reportReasons 
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                 <Avatar
-                  src={comment.author?.profile_picture}
+                  src={comment.author?.profile_picture || comment.author?.image}
                   alt={comment.author?.username}
                   sx={{ width: 32, height: 32, mr: 1 }}
                 />
@@ -175,7 +200,9 @@ export default function BlogPostComments({ postId, comments = [], reportReasons 
                     {comment.author?.username}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {new Date(comment.created_at).toLocaleDateString()}
+                    {new Date(comment.created_at || comment.pub_date || '').toLocaleDateString("en-US", {
+                      timeZone: "UTC"
+                    })}
                   </Typography>
                 </Box>
               </Box>
@@ -213,26 +240,35 @@ export default function BlogPostComments({ postId, comments = [], reportReasons 
                       <>
                         <IconButton
                           size="small"
+                          color="primary"
                           onClick={() => handleEditComment(comment)}
                         >
                           <EditIcon fontSize="small" />
                         </IconButton>
                         <IconButton
                           size="small"
+                          color="error"
                           onClick={() => handleDeleteComment(comment.id)}
                         >
                           <DeleteIcon fontSize="small" />
                         </IconButton>
                       </>
                     )}
-                    {isAuthenticated && user?.id !== comment.author?.id && (
-                      <Tooltip title="Report comment">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleOpenReportDialog(comment.id)}
-                        >
-                          <FlagIcon fontSize="small" />
-                        </IconButton>
+                    {isAuthenticated && (
+                      <Tooltip title={user?.id === comment.author?.id ? "You can't report your own comment" : "Report comment"}>
+                        <span>
+                          <IconButton
+                            size="small"
+                            disabled={user?.id === comment.author?.id}
+                            onClick={user?.id === comment.author?.id ? undefined : () => handleOpenReportDialog(comment.id)}
+                            sx={user?.id === comment.author?.id ? {
+                              color: 'action.disabled',
+                              cursor: 'not-allowed'
+                            } : {}}
+                          >
+                            <FlagIcon fontSize="small" />
+                          </IconButton>
+                        </span>
                       </Tooltip>
                     )}
                   </Box>

@@ -1,7 +1,7 @@
 import * as React from "react";
-import { json, type LoaderFunctionArgs, type MetaFunction } from "@remix-run/node";
+import { type LoaderFunctionArgs, type MetaFunction } from "react-router";
 import { Box } from "@mui/material";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData } from "react-router";
 import BlogPostsList, { type BlogPostsResponse } from "../components/BlogPostsList";
 import { fetchPublicBlogPosts } from "../utils/server-fetch";
 import type { LoaderData } from "./_app";
@@ -23,7 +23,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const page = url.searchParams.get("page") || "1";
   const posts = await fetchPublicBlogPosts(parseInt(page));
-  return json(posts);
+  return posts;
 }
 
 export default function BlogIndex() {

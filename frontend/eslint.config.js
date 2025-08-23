@@ -32,7 +32,28 @@ export default [
         URL: 'readonly',
         FormData: 'readonly',
         setTimeout: 'readonly',
-        WebSocket: 'readonly'
+        WebSocket: 'readonly',
+        // DOM Element types
+        HTMLElement: 'readonly',
+        HTMLInputElement: 'readonly',
+        HTMLTextAreaElement: 'readonly',
+        HTMLFormElement: 'readonly',
+        Window: 'readonly',
+        File: 'readonly',
+        FileReader: 'readonly',
+        Image: 'readonly',
+        // Fetch API types
+        RequestInit: 'readonly',
+        // Jest testing globals
+        test: 'readonly',
+        expect: 'readonly',
+        describe: 'readonly',
+        it: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        jest: 'readonly'
       }
     },
     plugins: {

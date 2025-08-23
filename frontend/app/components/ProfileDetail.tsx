@@ -1,18 +1,18 @@
 import * as React from "react";
 import type { ReactNode, SyntheticEvent } from "react";
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams, useLocation, Link } from "@remix-run/react";
+import { useNavigate, useParams, useLocation, Link, useFetcher, useActionData } from "react-router";
 import {
     Edit as EditIcon,
     Save as SaveIcon,
-    Close as CloseIcon
+    Close as CloseIcon,
+    Flag as FlagIcon
 } from '@mui/icons-material';
 import Skeleton from "react-loading-skeleton";
-import "react-loading-skeleton/dist/skeleton.css";
-import { 
-    Tabs, 
-    Tab, 
-    Box, 
+import {
+    Tabs,
+    Tab,
+    Box,
     Avatar,
     Button,
     Container,
@@ -22,10 +22,19 @@ import {
     TextField,
     Typography,
     SxProps,
-    Theme
+    Theme,
+    IconButton,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    Select,
+    MenuItem,
+    FormControl,
+    InputLabel,
+    Tooltip
 } from '@mui/material';
 
-import {REDIRECT_REASONS} from "../old-app/components/constants/Constants";
+import { MESSAGES } from "../constants/Constants";
 import BlogPostsTab from "./BlogPostsTab";
 import ProfileImage from "./ProfileImage";
 import api from '../utils/api';
@@ -37,9 +46,15 @@ interface TabPanelProps {
     index: number;
 }
 
+interface ReportReason {
+    id: number;
+    name: string;
+}
+
 interface ProfileDetailProps {
     initialUser: User;
     authenticatedUser: User | null;
+    reportReasons?: ReportReason[];
 }
 
 interface BioResponse {
@@ -71,11 +86,13 @@ const a11yProps = (index: number) => {
     };
 };
 
-const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser, authenticatedUser }) => {
+const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser, authenticatedUser, reportReasons = [] }) => {
     const { username } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
-    const [loading, setLoading] = useState<boolean>(false);
+    const fetcher = useFetcher();
+    const actionData = useActionData() as { success?: boolean; error?: string; report?: any } | undefined;
+    const [loading] = useState<boolean>(false);
 
     const [activeTab, setActiveTab] = useState<number>(0);
     const [profile, setProfile] = useState<User>(initialUser);
@@ -89,6 +106,11 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser, authenticate
 
     const [isEditingBio, setIsEditingBio] = useState<boolean>(false);
     const [bioInput, setBioInput] = useState<string>('');
+    
+    // Report dialog state
+    const [reportDialogOpen, setReportDialogOpen] = useState(false);
+    const [selectedReason, setSelectedReason] = useState('');
+    const [reportDescription, setReportDescription] = useState('');
 
     // Reset state when username changes
     useEffect(() => {
@@ -118,7 +140,7 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser, authenticate
         try {
             const followResponse = await api.get(`/users/${authenticatedUser.username}/follows/${username}/`);
             setIsFollowing(followResponse.status === 200);
-        } catch (error) {
+        } catch {
             setIsFollowing(false);
         }
     }, [authenticatedUser, username]);
@@ -171,6 +193,39 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser, authenticate
         setIsEditingBio(false);
     };
 
+    const handleOpenReportDialog = () => {
+        setReportDialogOpen(true);
+    };
+
+    const handleCloseReportDialog = () => {
+        setReportDialogOpen(false);
+        setSelectedReason('');
+        setReportDescription('');
+    };
+
+    const handleSubmitReport = () => {
+        if (!selectedReason) return;
+
+        const formData = new FormData();
+        formData.append('_action', 'reportUser');
+        formData.append('reason', selectedReason);
+        formData.append('description', reportDescription.trim());
+
+        fetcher.submit(formData, { method: 'post' });
+        handleCloseReportDialog();
+    };
+
+    // Handle action responses
+    useEffect(() => {
+        if (actionData?.error) {
+            console.error('🔍 DEBUG: Action error:', actionData.error);
+            // You can add toast notification here
+        } else if (actionData?.success && actionData?.report) {
+            console.log('🔍 DEBUG: User reported successfully:', actionData);
+            // You can add success toast notification here
+        }
+    }, [actionData]);
+
     useEffect(() => {
         fetchAuthenticatedData();
         fetchBio();
@@ -186,7 +241,7 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser, authenticate
 
     const handleFollowToggle = async () => {
         if (!authenticatedUser || !username) {
-            navigate("/login", {state: {reason: REDIRECT_REASONS.FOLLOW_USER}});
+            navigate("/login", {state: {reason: MESSAGES.REDIRECT.FOLLOW_USER}});
             return;
         }
         try {
@@ -215,6 +270,7 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser, authenticate
             month: "short",
             day: "numeric",
             year: "numeric",
+            timeZone: "UTC"
         });
     };
 
@@ -231,7 +287,7 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser, authenticate
             <Card sx={{ mb: 4, mt: 2 }}>
                 <CardContent>
                     <Grid container spacing={3}>
-                        <Grid item xs={12} md={4} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <Grid size={{ xs: 12, md: 4 }} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                             {loading ? (
                                 <Skeleton circle width={200} height={200} />
                             ) : (
@@ -245,7 +301,7 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser, authenticate
                                 />
                             )}
                         </Grid>
-                        <Grid item xs={12} md={8}>
+                        <Grid size={{ xs: 12, md: 8 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                                 <Typography variant="h4" component="h1" sx={{ mr: 2 }}>
                                     {loading ? <Skeleton width={200} /> : profile.username}
@@ -255,10 +311,27 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser, authenticate
                                         variant="contained"
                                         color={isFollowing ? "secondary" : "primary"}
                                         onClick={handleFollowToggle}
-                                        sx={{ minWidth: 100 }}
+                                        sx={{ minWidth: 100, mr: 1 }}
                                     >
                                         {isFollowing ? 'Unfollow' : 'Follow'}
                                     </Button>
+                                )}
+                                {!loading && isAuthenticated && (
+                                    <Tooltip title={isOwner ? "You can't report yourself" : "Report user"}>
+                                        <span>
+                                            <IconButton
+                                                onClick={isOwner ? undefined : handleOpenReportDialog}
+                                                disabled={isOwner}
+                                                aria-label="Report user"
+                                                sx={isOwner ? {
+                                                    color: 'action.disabled',
+                                                    cursor: 'not-allowed'
+                                                } : { color: 'warning.main' }}
+                                            >
+                                                <FlagIcon />
+                                            </IconButton>
+                                        </span>
+                                    </Tooltip>
                                 )}
                             </Box>
                             <Box sx={{ mb: 2 }}>
@@ -398,6 +471,48 @@ const ProfileDetail: React.FC<ProfileDetailProps> = ({ initialUser, authenticate
                     )}
                 </TabPanel>
             </Box>
+
+            {/* Report Dialog */}
+            <Dialog open={reportDialogOpen} onClose={handleCloseReportDialog}>
+                <DialogTitle>Report User</DialogTitle>
+                <DialogContent>
+                    <FormControl fullWidth sx={{ mt: 2 }}>
+                        <InputLabel>Reason</InputLabel>
+                        <Select
+                            value={selectedReason}
+                            onChange={(e) => setSelectedReason(e.target.value)}
+                            label="Reason"
+                        >
+                            {reportReasons.map((reason) => (
+                                <MenuItem key={reason.id} value={reason.id}>
+                                    {reason.name}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                    <TextField
+                        fullWidth
+                        multiline
+                        rows={3}
+                        label="Additional Details (Optional)"
+                        value={reportDescription}
+                        onChange={(e) => setReportDescription(e.target.value)}
+                        sx={{ mt: 2 }}
+                    />
+                    <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                        <Button onClick={handleCloseReportDialog} sx={{ mr: 1 }}>
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="contained"
+                            onClick={handleSubmitReport}
+                            disabled={!selectedReason}
+                        >
+                            Submit Report
+                        </Button>
+                    </Box>
+                </DialogContent>
+            </Dialog>
         </Container>
     );
 };

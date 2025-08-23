@@ -15,6 +15,11 @@ server {
         try_files $uri /index.html;
     }
 
+    # Redirect /admin to /admin/ (with trailing slash)
+    location = /admin {
+        return 301 $scheme://$host/admin/;
+    }
+
     location /admin/ {
         proxy_pass http://django:8000;
         proxy_set_header Host $host;

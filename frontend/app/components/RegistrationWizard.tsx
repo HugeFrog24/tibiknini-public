@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { useNavigate } from '@remix-run/react';
+import { useNavigate } from 'react-router';
 import ReCAPTCHA from "react-google-recaptcha";
 import { useFormik } from 'formik';
 import { object, string } from 'yup';
@@ -43,15 +43,11 @@ interface RegistrationStep {
   validationSchema: any;
 }
 
-declare global {
-  interface Window {
-    ENV: {
-      RECAPTCHA_SITE_KEY: string;
-    }
-  }
+interface RegistrationWizardProps {
+  recaptchaSiteKey: string;
 }
 
-export default function RegistrationWizard() {
+export default function RegistrationWizard({ recaptchaSiteKey }: RegistrationWizardProps) {
   const [isBrowser, setIsBrowser] = useState(false);
 
   useEffect(() => {
@@ -337,7 +333,7 @@ export default function RegistrationWizard() {
               {isBrowser && (
                 <ReCAPTCHA
                   ref={recaptchaRef}
-                  sitekey={typeof window !== 'undefined' ? window.ENV?.RECAPTCHA_SITE_KEY ?? '' : ''}
+                  sitekey={recaptchaSiteKey}
                   size="invisible"
                   onChange={(recaptchaToken) => recaptchaToken && finalizeRegistration(recaptchaToken)}
                 />

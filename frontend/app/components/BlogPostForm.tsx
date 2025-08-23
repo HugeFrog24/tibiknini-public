@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { useNavigate, useParams } from "@remix-run/react";
+import { useNavigate, useParams } from 'react-router';
 import { toast } from "react-toastify";
+import slugify from "slugify";
 import {
     Box,
     Button,
@@ -65,10 +66,22 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ previousPath, initialPost }
         try {
             if (!postId) {
                 const response = await createBlogPost(postData);
-                navigate(`/blog/posts/${response.id}`);
+                const slug = slugify(response.title, {
+                    lower: true,
+                    strict: true,
+                    locale: 'vi',
+                    trim: true
+                });
+                navigate(`/blog/posts/${response.id}/${slug}`);
             } else {
                 await updateBlogPost(Number(postId), postData);
-                navigate(`/blog/posts/${postId}`);
+                const slug = slugify(title, {
+                    lower: true,
+                    strict: true,
+                    locale: 'vi',
+                    trim: true
+                });
+                navigate(`/blog/posts/${postId}/${slug}`);
             }
         } catch (error) {
             console.error("Error saving post:", error);
@@ -81,8 +94,14 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ previousPath, initialPost }
     const handleCancel = () => {
         if (previousPath) {
             navigate(previousPath);
-        } else if (postId) {
-            navigate(`/blog/posts/${postId}`);
+        } else if (postId && post?.title) {
+            const slug = slugify(post.title, {
+                lower: true,
+                strict: true,
+                locale: 'vi',
+                trim: true
+            });
+            navigate(`/blog/posts/${postId}/${slug}`);
         } else {
             navigate('/blog');
         }

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Box, Typography } from '@mui/material';
-import { useRouteError, isRouteErrorResponse } from '@remix-run/react';
+import { useRouteError, isRouteErrorResponse } from 'react-router';
 import { errorData } from '../constants/errorMessages';
 
 interface ErrorComponentProps {

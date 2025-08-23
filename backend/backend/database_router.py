@@ -13,6 +13,17 @@ class DynamicDatabaseRouter:
         settings.DATABASES["default"] = self.get_database_config()
 
     def get_database_config(self):
+        # Get the global TIME_ZONE setting
+        time_zone = getattr(settings, 'TIME_ZONE', 'UTC')
+        
+        # Print debug information
+        print(f"Database configuration:")
+        print(f"POSTGRES_DB: {os.getenv('POSTGRES_DB')}")
+        print(f"POSTGRES_USER: {os.getenv('POSTGRES_USER')}")
+        print(f"POSTGRES_HOST: {os.getenv('POSTGRES_HOST')}")
+        print(f"POSTGRES_PORT: {os.getenv('POSTGRES_PORT')}")
+        print(f"TIME_ZONE: {time_zone}")
+        
         return {
             "ENGINE": "django.db.backends.postgresql",
             "NAME": os.getenv("POSTGRES_DB"),
@@ -21,7 +32,7 @@ class DynamicDatabaseRouter:
             "HOST": os.getenv("POSTGRES_HOST"),
             "PORT": os.getenv("POSTGRES_PORT"),
             "ATOMIC_REQUESTS": True,
-            "TIME_ZONE": "UTC",
+            "TIME_ZONE": time_zone,
             "CONN_HEALTH_CHECKS": True,
             "CONN_MAX_AGE": None,
             "OPTIONS": {},

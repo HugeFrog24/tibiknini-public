@@ -1,5 +1,4 @@
-import { json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData } from 'react-router';
 import { Container, Typography, Paper, Box } from "@mui/material";
 import ReactMarkdown from 'react-markdown';
 import React from 'react';
@@ -10,7 +9,7 @@ import { Link as MuiLink } from '@mui/material';
 
 export async function loader() {
   const data = await fetchTermsOfService();
-  return json(data);
+  return data;
 }
 
 export default function TermsOfService() {
@@ -22,7 +21,9 @@ export default function TermsOfService() {
           {data.title}
         </Typography>
         <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-          Last updated: {new Date(data.last_updated).toLocaleDateString()}
+          Last updated: {new Date(data.last_updated).toLocaleDateString("en-US", {
+            timeZone: "UTC"
+          })}
         </Typography>
         <Box sx={{ mt: 4 }}>
           <ReactMarkdown

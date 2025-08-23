@@ -1,6 +1,10 @@
 services:
   nginx:
-    image: ghcr.io/${OWNER_LC:-hugefrog24}/nginx:latest
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+      args:
+        ENVIRONMENT: prod
     profiles: ["prod"]
     ports:
       - "80:80"
@@ -32,7 +36,10 @@ services:
       - app_network
 
   django:
-    image: ghcr.io/${OWNER_LC:-hugefrog24}/tibiknini:latest
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: production
     profiles: ["prod"]
     volumes:
       - static_volume:/usr/src/app/staticfiles
@@ -44,11 +51,17 @@ services:
       DEBUG: "False"
       DOMAIN_NAME: boger.dev
       MEDIA_PATH: /var/www/media
+      POSTGRES_DB: tibiknini
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
     secrets:
       - django_secret_key
       - recaptcha_secret_key
     depends_on:
       - redis
+      - postgres
     restart: always
 
   django-dev:
@@ -65,6 +78,11 @@ services:
       CELERY_BROKER_URL: "redis://redis:6379/0"
       CELERY_RESULT_BACKEND: "redis://redis:6379/0"
       REDIS_HOST: "redis"
+      POSTGRES_DB: tibiknini
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
     volumes:
       - ./backend:/usr/src/app
     command: daphne -b 0.0.0.0 -p 8000 backend.asgi:application
@@ -72,18 +90,27 @@ services:
       - app_network
     depends_on:
       - redis
+      - postgres
     secrets:
       - django_secret_key
       - recaptcha_secret_key
 
   celery_worker:
-    image: ghcr.io/${OWNER_LC:-hugefrog24}/tibiknini:latest
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: production
     profiles: ["prod"]
     volumes:
       - media_volume:/var/www/media
     environment:
       CELERY_BROKER_URL: "redis://redis:6379/0"
       CELERY_RESULT_BACKEND: "redis://redis:6379/0"
+      POSTGRES_DB: tibiknini
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
     command: celery -A backend worker -l info --uid=1000 --gid=1000
     secrets:
       - django_secret_key
@@ -93,6 +120,7 @@ services:
       - email_host_password
     depends_on:
       - redis
+      - postgres
       - django
     restart: always
 
@@ -109,12 +137,18 @@ services:
       DJANGO_SETTINGS_MODULE: "backend.settings"
       CELERY_BROKER_URL: "redis://redis:6379/0"
       CELERY_RESULT_BACKEND: "redis://redis:6379/0"
+      POSTGRES_DB: tibiknini
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
     command: celery -A backend worker -l info
     user: celery
     networks:
       - app_network
     depends_on:
       - redis
+      - postgres
       - django-dev
     secrets:
       - django_secret_key
@@ -124,13 +158,21 @@ services:
       - email_host_password
 
   celery_beat:
-    image: ghcr.io/${OWNER_LC:-hugefrog24}/tibiknini:latest
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: production
     profiles: ["prod"]
     volumes:
       - media_volume:/var/www/media
     environment:
       CELERY_BROKER_URL: "redis://redis:6379/0"
       CELERY_RESULT_BACKEND: "redis://redis:6379/0"
+      POSTGRES_DB: tibiknini
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
     command: celery -A backend beat -l info
     secrets:
       - django_secret_key
@@ -140,6 +182,7 @@ services:
       - email_host_password
     depends_on:
       - redis
+      - postgres
       - django
     restart: always
 
@@ -156,12 +199,18 @@ services:
       DJANGO_SETTINGS_MODULE: "backend.settings"
       CELERY_BROKER_URL: "redis://redis:6379/0"
       CELERY_RESULT_BACKEND: "redis://redis:6379/0"
+      POSTGRES_DB: tibiknini
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
     command: celery -A backend beat -l info
     user: celery
     networks:
       - app_network
     depends_on:
       - redis
+      - postgres
       - django-dev
     secrets:
       - django_secret_key
@@ -192,15 +241,14 @@ services:
       dockerfile: Dockerfile.dev
     profiles: ["dev"]
     ports:
-      - "3000:3000"
-    volumes:
-      - ./frontend:/app:cached
-      - /app/node_modules
+      - "5173:5173"
     environment:
       - NODE_ENV=development
       - DOMAIN_NAME=nginx-dev
     networks:
       - app_network
+    secrets:
+      - recaptcha_site_key
 
   redis:
     image: redis:7-alpine
@@ -212,10 +260,24 @@ services:
     networks:
       - app_network
 
+  postgres:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=tibiknini
+    ports:
+      - "5432:5432"
+    networks:
+      - app_network
+
 volumes:
   static_volume:
   media_volume:
   redis_data:
+  postgres_data:
 
 networks:
   app_network:
@@ -226,6 +288,8 @@ secrets:
     file: ./secrets/django_secret_key.txt
   recaptcha_secret_key:
     file: ./secrets/recaptcha_secret_key.txt
+  recaptcha_site_key:
+    file: ./frontend/.env
   email_host:
     file: ./secrets/email_host.txt
   email_port:

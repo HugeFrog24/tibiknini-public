@@ -1,5 +1,5 @@
 import React, {useContext} from "react";
-import { useNavigate, useSearchParams } from "@remix-run/react";
+import { useNavigate, useSearchParams } from 'react-router';
 import { Pagination as MuiPagination } from '@mui/material';
 import { Typography, Button, useTheme, Divider } from '@mui/material'; 
 import { Add as AddIcon } from '@mui/icons-material';
@@ -7,6 +7,7 @@ import { Container, Grid, Box } from '@mui/material';
 
 import BlogPostCard, { BlogPost } from "../components/BlogPostCard";
 import UserContext from "../contexts/UserContext";
+import type { User } from '../types/user';
 
 export interface BlogPostsResponse {
     results: BlogPost[];
@@ -33,7 +34,7 @@ const BlogPostsList: React.FC<BlogPostsListProps> = ({postId, initialData}) => {
         navigate("/blog/posts/new");
     };
 
-    const handlePostUpdated = (updatedPost: BlogPost) => {
+    const handlePostUpdated = () => {
         // Refresh the page to get updated data from the server
         window.location.reload();
     };
@@ -61,11 +62,11 @@ const BlogPostsList: React.FC<BlogPostsListProps> = ({postId, initialData}) => {
         <Container>
             <Box mb={3}>
                 <Grid container alignItems="center" justifyContent="space-between">
-                    <Grid item>
+                    <Grid>
                         <Typography variant="h4" component="h1">Blog</Typography>
                     </Grid>
                     {isAuthenticated && !postId && (
-                        <Grid item>
+                        <Grid>
                             <Button
                                 variant="contained"
                                 color="primary"

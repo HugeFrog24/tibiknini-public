@@ -107,8 +107,20 @@ class BlogPostsByUserView(generics.ListAPIView):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all().order_by("-pub_date")
     serializer_class = CommentSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly, (IsNotHidden | IsAuthorOrAdmin)]
     lookup_field = "pk"
+
+    def get_permissions(self):
+        """
+        Instantiates and returns the list of permissions that this view requires.
+        """
+        if self.action == 'create':
+            # For creating comments, only require authentication
+            permission_classes = [IsAuthenticated]
+        else:
+            # For other actions (retrieve, update, delete), check object permissions
+            permission_classes = [IsAuthenticatedOrReadOnly, (IsNotHidden | IsAuthorOrAdmin)]
+        
+        return [permission() for permission in permission_classes]
 
     def perform_create(self, serializer):
         post_id = self.kwargs.get("post_id")

@@ -8,8 +8,8 @@ import {
     CircularProgress,
     Stack
 } from '@mui/material';
-import { useNavigate, useSearchParams } from '@remix-run/react';
-import { showToast } from '../utils/toastUtils';
+import { useNavigate, useSearchParams } from 'react-router';
+import { showErrorToast, showToastMessage, ACTIONS } from '../constants/Constants';
 import api from '../utils/api';
 import { 
     PasswordValidation,
@@ -64,10 +64,10 @@ export default function ResetPassword() {
 
             await api.post('/users/password-reset/confirm/', data);
             
-            showToast('Password has been reset successfully.', 'success');
-            navigate('/login', { state: { reason: 'password_reset_success' } });
-        } catch (error: any) {
-            showToast(error.response?.data?.error || 'Failed to reset password.', 'error');
+            showToastMessage('AUTH', 'PASSWORD_RESET_SUCCESS');
+            navigate('/login', { state: { reason: ACTIONS.REDIRECT.PASSWORD_RESET_SUCCESS } });
+        } catch (error) {
+            showErrorToast(error, 'Failed to reset password.');
         } finally {
             setIsLoading(false);
         }

@@ -1,18 +1,17 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
+import { redirect } from 'react-router';
 import React, { useState, useEffect } from "react";
 import { Container, TextField, Button, CircularProgress, Typography, Box, styled, LinearProgress } from "@mui/material";
 import { Stepper, Step, StepLabel, StepConnector, stepConnectorClasses, StepIconProps } from '@mui/material';
-import { useNavigate } from '@remix-run/react';
+import { useNavigate } from 'react-router';
 import api from '../utils/api';
 import { object, string, number, boolean, ref } from 'yup';
 import { useFormik } from 'formik';
-import { showToast } from '../utils/toastUtils';
 import Check from '@mui/icons-material/Check';
 import SettingsIcon from '@mui/icons-material/Settings';
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import TitleIcon from '@mui/icons-material/Title';
 import EmailIcon from '@mui/icons-material/Email';
+import { showToastMessage, showToastMessageWithReplace, showErrorToast } from '../constants/Constants';
 
 // Types
 interface SetupStatus {
@@ -31,7 +30,7 @@ interface Field {
     required?: boolean;
 }
 
-interface Step {
+interface SetupStep {
     id: string;
     title: string;
     description: string;
@@ -126,7 +125,7 @@ function ColorlibStepIcon(props: StepIconProps) {
 }
 
 // Loader function for server-side checks
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader() {
     try {
         const response = await fetch(`${process.env.API_URL}/api/setup/status/`);
         const data = await response.json();
@@ -135,9 +134,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
             return redirect('/');
         }
         
-        return json({ status: data.status });
-    } catch (error) {
-        return json({ status: 'error' });
+        return { status: data.status };
+    } catch {
+        return { status: 'error' };
     }
 }
 
@@ -149,7 +148,7 @@ export default function SetupWizard() {
     const [sendingTestEmail, setSendingTestEmail] = useState<boolean>(false);
     const navigate = useNavigate();
 
-    const steps: Step[] = [
+    const steps: SetupStep[] = [
         {
             id: "db_config",
             title: "Database Configuration",
@@ -259,7 +258,7 @@ export default function SetupWizard() {
                     setSetupStatus(statusData);
                     setCurrentStep(findNextIncompleteStep(statusData));
                 } else {
-                    showToast('Failed to fetch setup status.', 'error');
+                    showToastMessage('SETUP', 'STATUS_ERROR');
                 }
             } finally {
                 setIsLoading(false);
@@ -283,7 +282,7 @@ export default function SetupWizard() {
         if (currentStep !== nextIncompleteStep) {
             setCurrentStep(nextIncompleteStep);
             const stepNames = ['database configuration', 'admin user creation', 'site information', 'email configuration'];
-            showToast(`Redirected to ${stepNames[nextIncompleteStep]} - this step needs to be completed`, 'info');
+            showToastMessageWithReplace('SETUP', 'STEP_REDIRECT', { step: stepNames[nextIncompleteStep] });
         }
     }, [currentStep, setupStatus, statusFetched, navigate]);
 
@@ -334,7 +333,7 @@ export default function SetupWizard() {
                             db_user: values.db_user,
                             db_password: values.db_password
                         });
-                        showToast(response.data.detail, 'success');
+                        showToastMessage('SETUP', 'DATABASE_SUCCESS');
                         setSetupStatus(response.data);
                     } else if (currentStep === 1) {
                         const response = await api.post('/create-superuser/', {
@@ -342,13 +341,13 @@ export default function SetupWizard() {
                             admin_email: values.admin_email,
                             admin_password: values.admin_password
                         });
-                        showToast(response.data.detail, response.status === 201 ? 'success' : 'info');
+                        showToastMessage('SETUP', 'ADMIN_USER_SUCCESS');
                         setSetupStatus(response.data);
                     } else if (currentStep === 2) {
                         const response = await api.post('/setup/site-info/', {
                             site_title: values.site_title
                         });
-                        showToast(response.data.detail, 'success');
+                        showToastMessage('SETUP', 'SITE_INFO_SUCCESS');
                         setSetupStatus(response.data);
                     } else if (currentStep === 3) {
                         const response = await api.post('/setup/email/', {
@@ -359,13 +358,13 @@ export default function SetupWizard() {
                             from_email: values.smtp_from_email,
                             use_tls: values.smtp_use_tls
                         });
-                        showToast(response.data.detail, 'success');
+                        showToastMessage('SETUP', 'EMAIL_CONFIG_SUCCESS');
                         setSetupStatus(response.data);
                         navigate("/login", { state: { reason: 'SETUP_COMPLETE' } });
                     }
                 } catch (error) {
                     console.error("Error during setup:", error);
-                    showToast('An error occurred during setup.', 'error');
+                    showToastMessage('SETUP', 'GENERAL_ERROR');
                 }
             } else {
                 let touchedFields = currentFields.reduce((acc: { [key: string]: boolean }, field) => {
@@ -380,19 +379,19 @@ export default function SetupWizard() {
 
     const handleTestEmail = async () => {
         if (!formik.values.smtp_from_email) {
-            showToast('Please enter your email address first', 'warning');
+            showToastMessage('SETUP', 'EMAIL_REQUIRED');
             return;
         }
         
         setSendingTestEmail(true);
         try {
-            const response = await api.post('/setup/test-email/', {
+            await api.post('/setup/test-email/', {
                 email: formik.values.smtp_from_email
             });
-            showToast(response.data.detail, 'success');
+            showToastMessage('SETUP', 'TEST_EMAIL_SUCCESS');
         } catch (error: any) {
             console.error("Error sending test email:", error);
-            showToast(error.response?.data?.detail || 'Failed to send test email', 'error');
+            showErrorToast(error, 'Failed to send test email');
         }
         setSendingTestEmail(false);
     };
@@ -409,7 +408,7 @@ export default function SetupWizard() {
         <Container>
             <Box sx={{ width: '100%', mt: 4 }}>
                 <Stepper alternativeLabel activeStep={currentStep} connector={<ColorlibConnector />}>
-                    {steps.map((step, index) => (
+                    {steps.map((step) => (
                         <Step key={step.id} completed={step.isComplete(setupStatus)}>
                             <StepLabel StepIconComponent={ColorlibStepIcon}>{step.title}</StepLabel>
                         </Step>

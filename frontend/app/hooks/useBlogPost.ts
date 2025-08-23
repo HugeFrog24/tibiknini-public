@@ -1,3 +1,5 @@
+import api from '../utils/api';
+
 interface Tag {
     name: string;
     color: string;
@@ -31,39 +33,18 @@ interface BlogPostInput {
 
 export const useBlogPost = () => {
     const fetchBlogPost = async (id: string | number): Promise<BlogPost> => {
-        const response = await fetch(`/api/blog/posts/${id}/`);
-        if (!response.ok) {
-            throw new Error('Failed to fetch blog post');
-        }
-        return response.json();
+        const response = await api.get(`/blog/posts/id/${id}/`);
+        return response.data;
     };
 
     const createBlogPost = async (post: BlogPostInput): Promise<BlogPost> => {
-        const response = await fetch('/api/blog/posts/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(post),
-        });
-        if (!response.ok) {
-            throw new Error('Failed to create blog post');
-        }
-        return response.json();
+        const response = await api.post('/blog/posts/', post);
+        return response.data;
     };
 
     const updateBlogPost = async (id: number, post: BlogPostInput): Promise<BlogPost> => {
-        const response = await fetch(`/api/blog/posts/${id}/`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(post),
-        });
-        if (!response.ok) {
-            throw new Error('Failed to update blog post');
-        }
-        return response.json();
+        const response = await api.put(`/blog/posts/id/${id}/`, post);
+        return response.data;
     };
 
     return {

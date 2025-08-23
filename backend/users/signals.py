@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
+from django.utils import timezone
 
 from core.models import SiteInfo
 from core.tasks import send_scheduled_email
@@ -71,9 +72,15 @@ def send_password_change_notification(sender, instance, created, **kwargs):
             site_info = SiteInfo.objects.first()
             site_title = site_info.site_title if site_info else "Our Platform"
 
+            # Get current timestamp
+            change_time = timezone.now()
+
             context = {
                 "username": instance.username,
                 "site_title": site_title,
+                "change_date": change_time.strftime("%B %d, %Y"),
+                "change_time": change_time.strftime("%I:%M %p %Z"),
+                "change_datetime": change_time.strftime("%B %d, %Y at %I:%M %p %Z"),
             }
 
             # Schedule the password change notification email

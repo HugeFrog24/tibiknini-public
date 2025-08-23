@@ -1,6 +1,6 @@
 import React, { useContext, useState } from "react";
 import type { ReactNode, ReactElement } from "react";
-import { useLocation, useNavigate, Link } from "@remix-run/react";
+import { useLocation, useNavigate, Link } from "react-router";
 import {
   AppBar,
   Box,
@@ -158,7 +158,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ toggleDarkMode, siteTitle
               <ListItemText>Profile</ListItemText>
             </MenuItem>
             {user.is_staff && (
-              <MenuItem onClick={() => { handleClose(); navigate("/admin"); }}>
+              <MenuItem onClick={() => { handleClose(); navigate("/admin/"); }}>
                 <ListItemIcon>
                   <SettingsIcon fontSize="small" />
                 </ListItemIcon>

@@ -53,6 +53,14 @@ class SMTPSettings(models.Model):
         verbose_name = "SMTP Settings"
         verbose_name_plural = "SMTP Settings"
 
+    @property
+    def is_configured(self):
+        """
+        Calculate if SMTP is configured on-the-fly instead of storing in database.
+        Returns True if all required fields are filled.
+        """
+        return bool(self.host and self.port and self.username and self.password and self.from_email)
+
     def save(self, *args, **kwargs):
         if not self.pk and SMTPSettings.objects.exists():
             raise ValidationError("Only one SMTP settings instance can exist.")

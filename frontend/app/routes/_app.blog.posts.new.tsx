@@ -1,18 +1,24 @@
 import React, { useContext, useEffect } from 'react';
-import { useNavigate } from "@remix-run/react";
+import { useNavigate } from "react-router";
 import UserContext from "../contexts/UserContext";
 import BlogPostForm from "../components/BlogPostForm";
-import { REDIRECT_REASONS } from "../constants/Constants";
+import { ACTIONS } from "../constants/Constants";
 
 export default function NewBlogPost() {
-  const { isAuthenticated } = useContext(UserContext);
+  const { isAuthenticated, isLoading } = useContext(UserContext);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate("/login", { state: { reason: REDIRECT_REASONS.NEW_POST } });
+    // Only redirect if loading is complete and user is not authenticated
+    if (!isLoading && !isAuthenticated) {
+      navigate("/login", { state: { reason: ACTIONS.REDIRECT.NEW_POST } });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isLoading, navigate]);
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   // Only render the form if authenticated
   if (!isAuthenticated) return null;

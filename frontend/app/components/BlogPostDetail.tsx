@@ -1,10 +1,11 @@
 import * as React from "react";
-import { useNavigate, useLoaderData } from "@remix-run/react";
+import { useNavigate, Link, useFetcher, useActionData } from "react-router";
 import {
     Favorite as FavoriteIcon,
     Edit as EditIcon,
     Share as ShareIcon,
-    Delete as DeleteIcon
+    Delete as DeleteIcon,
+    Flag as FlagIcon
 } from '@mui/icons-material';
 import ReactMarkdown from "react-markdown";
 import {
@@ -14,14 +15,23 @@ import {
     Chip,
     IconButton,
     Container,
-    Paper
+    Paper,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    Select,
+    MenuItem,
+    FormControl,
+    InputLabel,
+    TextField,
+    Button,
+    Tooltip
 } from '@mui/material';
 
 import UserContext, { type UserContextType } from "../contexts/UserContext";
 import BlogPostComments from "./BlogPostComments";
 import api from "../utils/api";
-import { showToast } from "../utils/toastUtils";
-import { TOAST_MESSAGES } from "../constants/toastMessages";
+import { showToastMessage, ACTIONS } from "../constants/Constants";
 
 interface Author {
     id: number;
@@ -41,21 +51,29 @@ export interface BlogPost {
     description?: string;
 }
 
+interface ReportReason {
+    id: number;
+    name: string;
+}
+
 interface BlogPostDetailProps {
     post: BlogPost;
+    comments?: any[];
+    reportReasons?: ReportReason[];
 }
 
-interface LikeResponse {
-    likes_count: number;
-    is_liked: boolean;
-}
-
-export default function BlogPostDetail({ post }: BlogPostDetailProps) {
+export default function BlogPostDetail({ post, comments = [], reportReasons = [] }: BlogPostDetailProps) {
     const navigate = useNavigate();
+    const fetcher = useFetcher();
+    const actionData = useActionData() as { success?: boolean; error?: string; report?: any } | undefined;
     const { user, isAuthenticated } = React.useContext<UserContextType>(UserContext);
     const [likesCount, setLikesCount] = React.useState(post.likes_count);
     const [isLiked, setIsLiked] = React.useState(post.is_liked);
-    const { comments = [], reportReasons = [] } = useLoaderData<{ comments: any[]; reportReasons: any[]; }>();
+    
+    // Report dialog state
+    const [reportDialogOpen, setReportDialogOpen] = React.useState(false);
+    const [selectedReason, setSelectedReason] = React.useState('');
+    const [reportDescription, setReportDescription] = React.useState('');
 
     const handleShare = async () => {
         const url = window.location.href;
@@ -68,12 +86,12 @@ export default function BlogPostDetail({ post }: BlogPostDetailProps) {
                 });
             } else {
                 await navigator.clipboard.writeText(url);
-                showToast('Link copied to clipboard!', 'success');
+                showToastMessage('SHARE', 'COPY_SUCCESS');
             }
         } catch (error) {
             if (error instanceof Error && error.name !== 'AbortError') {
                 await navigator.clipboard.writeText(url);
-                showToast('Link copied to clipboard!', 'success');
+                showToastMessage('SHARE', 'COPY_SUCCESS');
             }
         }
     };
@@ -86,35 +104,67 @@ export default function BlogPostDetail({ post }: BlogPostDetailProps) {
         try {
             await api.delete(`/blog/posts/id/${post.id}/`);
             navigate('/blog', { 
-                state: { redirectReason: 'POST_DELETED' }
+                state: { redirectReason: ACTIONS.REDIRECT.POST_DELETED }
             });
         } catch (error) {
+            showToastMessage('POST', 'DELETE_ERROR');
             console.error('Error deleting post:', error);
-            showToast('Failed to delete post', 'error');
         }
     };
 
     const handleLike = async () => {
         if (!isAuthenticated) {
-            showToast(TOAST_MESSAGES.AUTH.LOGIN_REQUIRED, 'error');
+            showToastMessage('AUTH', 'LOGIN_REQUIRED');
             return;
         }
 
         try {
-            let response;
             if (isLiked) {
-                response = await api.delete<LikeResponse>(`/blog/posts/id/${post.id}/like/`);
+                await api.delete(`/blog/posts/id/${post.id}/like/`);
+                setLikesCount(prevCount => prevCount - 1);
             } else {
-                response = await api.post<LikeResponse>(`/blog/posts/id/${post.id}/like/`);
+                await api.post(`/blog/posts/id/${post.id}/like/`);
+                setLikesCount(prevCount => prevCount + 1);
             }
-            const { likes_count, is_liked } = response.data;
-            setLikesCount(likes_count);
-            setIsLiked(is_liked);
+            setIsLiked(!isLiked);
         } catch (error) {
+            showToastMessage('POST', isLiked ? 'UNLIKE_ERROR' : 'LIKE_ERROR');
             console.error('Error toggling like:', error);
-            showToast(isLiked ? 'Failed to unlike post' : 'Failed to like post', 'error');
         }
     };
+
+    const handleOpenReportDialog = () => {
+        setReportDialogOpen(true);
+    };
+
+    const handleCloseReportDialog = () => {
+        setReportDialogOpen(false);
+        setSelectedReason('');
+        setReportDescription('');
+    };
+
+    const handleSubmitReport = () => {
+        if (!selectedReason) return;
+
+        const formData = new FormData();
+        formData.append('_action', 'reportPost');
+        formData.append('reason', selectedReason);
+        formData.append('description', reportDescription.trim());
+
+        fetcher.submit(formData, { method: 'post' });
+        handleCloseReportDialog();
+    };
+
+    // Handle action responses
+    React.useEffect(() => {
+        if (actionData?.error) {
+            console.error('🔍 DEBUG: Action error:', actionData.error);
+            // You can add toast notification here
+        } else if (actionData?.success && actionData?.report) {
+            console.log('🔍 DEBUG: Post reported successfully:', actionData);
+            // You can add success toast notification here
+        }
+    }, [actionData]);
 
     return (
         <Container maxWidth="md">
@@ -138,23 +188,49 @@ export default function BlogPostDetail({ post }: BlogPostDetailProps) {
                     mb: 3,
                     gap: 2
                 }}>
-                    <Avatar 
-                        src={post.author?.profile_picture} 
-                        alt={post.author?.username}
-                        sx={{ width: 48, height: 48 }}
-                    />
-                    <Box>
-                        <Typography variant="subtitle1" fontWeight="medium">
-                            {post.author?.username}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                            {new Date(post.pub_date).toLocaleDateString(undefined, {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                            })}
-                        </Typography>
-                    </Box>
+                    <Link 
+                        to={`/users/${post.author?.username}`}
+                        style={{ 
+                            textDecoration: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '16px'
+                        }}
+                    >
+                        <Avatar 
+                            src={post.author?.profile_picture} 
+                            alt={post.author?.username}
+                            sx={{ 
+                                width: 48, 
+                                height: 48,
+                                '&:hover': {
+                                    opacity: 0.8
+                                }
+                            }}
+                        />
+                        <Box>
+                            <Typography 
+                                variant="subtitle1" 
+                                fontWeight="medium"
+                                sx={{ 
+                                    color: 'text.primary',
+                                    '&:hover': {
+                                        color: 'primary.main'
+                                    }
+                                }}
+                            >
+                                {post.author?.username}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                                {new Date(post.pub_date).toLocaleDateString("en-US", {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                    timeZone: "UTC"
+                                })}
+                            </Typography>
+                        </Box>
+                    </Link>
                 </Box>
 
                 {post.tags && post.tags.length > 0 && (
@@ -217,18 +293,37 @@ export default function BlogPostDetail({ post }: BlogPostDetailProps) {
                         >
                             <ShareIcon />
                         </IconButton>
+                        
+                        {/* Report button - always show when authenticated */}
+                        {isAuthenticated && (
+                            <Tooltip title={user?.id === post.author?.id ? "You can't report your own post" : "Report post"}>
+                                <span>
+                                    <IconButton
+                                        onClick={user?.id === post.author?.id ? undefined : handleOpenReportDialog}
+                                        disabled={user?.id === post.author?.id}
+                                        aria-label="Report post"
+                                        sx={user?.id === post.author?.id ? {
+                                            color: 'action.disabled',
+                                            cursor: 'not-allowed'
+                                        } : { color: 'warning.main' }}
+                                    >
+                                        <FlagIcon />
+                                    </IconButton>
+                                </span>
+                            </Tooltip>
+                        )}
                     </Box>
 
                     {isAuthenticated && user?.id === post.author?.id && (
                         <Box sx={{ display: 'flex', gap: 1 }}>
-                            <IconButton 
+                            <IconButton
                                 onClick={handleEdit}
                                 color="primary"
                                 aria-label="Edit post"
                             >
                                 <EditIcon />
                             </IconButton>
-                            <IconButton 
+                            <IconButton
                                 onClick={handleDelete}
                                 color="error"
                                 aria-label="Delete post"
@@ -240,11 +335,53 @@ export default function BlogPostDetail({ post }: BlogPostDetailProps) {
                 </Box>
             </Paper>
 
-            <BlogPostComments 
-                postId={post.id} 
-                comments={comments} 
-                reportReasons={reportReasons} 
+            <BlogPostComments
+                postId={post.id}
+                comments={comments}
+                reportReasons={reportReasons}
             />
+
+            {/* Report Dialog */}
+            <Dialog open={reportDialogOpen} onClose={handleCloseReportDialog}>
+                <DialogTitle>Report Post</DialogTitle>
+                <DialogContent>
+                    <FormControl fullWidth sx={{ mt: 2 }}>
+                        <InputLabel>Reason</InputLabel>
+                        <Select
+                            value={selectedReason}
+                            onChange={(e) => setSelectedReason(e.target.value)}
+                            label="Reason"
+                        >
+                            {reportReasons.map((reason) => (
+                                <MenuItem key={reason.id} value={reason.id}>
+                                    {reason.name}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                    <TextField
+                        fullWidth
+                        multiline
+                        rows={3}
+                        label="Additional Details (Optional)"
+                        value={reportDescription}
+                        onChange={(e) => setReportDescription(e.target.value)}
+                        sx={{ mt: 2 }}
+                    />
+                    <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                        <Button onClick={handleCloseReportDialog} sx={{ mr: 1 }}>
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="contained"
+                            onClick={handleSubmitReport}
+                            disabled={!selectedReason}
+                        >
+                            Submit Report
+                        </Button>
+                    </Box>
+                </DialogContent>
+            </Dialog>
         </Container>
     );
 }

@@ -4,8 +4,7 @@ import { Button, Menu, MenuItem, IconButton, Box } from '@mui/material';
 import { PhotoCamera, Delete, Upload } from '@mui/icons-material';
 import { Avatar } from '@mui/material';
 import api from '../utils/api';
-import { showToast } from '../utils/toastUtils';
-import { TOAST_MESSAGES } from '../constants/toastMessages';
+import { showToastMessage, showErrorToast } from '../constants/Constants';
 
 interface ProfileImageProps {
     imageSrc?: string | null;
@@ -78,7 +77,7 @@ export default function ProfileImage({
         if (!file) return;
 
         if (file.size > 2 * 1024 * 1024) {  // 2 MB
-            showToast(TOAST_MESSAGES.PROFILE_IMAGE.SIZE_ERROR, 'error');
+            showToastMessage('PROFILE_IMAGE', 'SIZE_ERROR');
             e.target.value = '';
             return;
         }
@@ -86,7 +85,7 @@ export default function ProfileImage({
         // Validate file type using both MIME type and actual image validation
         const isValidMimeType = /^image\/(jpeg|png|gif|webp)$/.test(file.type);
         if (!isValidMimeType) {
-            showToast(TOAST_MESSAGES.PROFILE_IMAGE.TYPE_ERROR, 'error');
+            showToastMessage('PROFILE_IMAGE', 'TYPE_ERROR');
             e.target.value = '';
             return;
         }
@@ -94,7 +93,7 @@ export default function ProfileImage({
         // Validate that it's a real image by trying to load it
         const isValidImage = await validateImage(file);
         if (!isValidImage) {
-            showToast(TOAST_MESSAGES.PROFILE_IMAGE.TYPE_ERROR, 'error');
+            showToastMessage('PROFILE_IMAGE', 'TYPE_ERROR');
             e.target.value = '';
             return;
         }
@@ -104,7 +103,7 @@ export default function ProfileImage({
             const formData = new FormData();
             formData.append('image', file);
 
-            const response = await api.post('/users/me/profile-image/', formData, {
+            const response = await api.put('/users/me/image/update/', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -112,11 +111,12 @@ export default function ProfileImage({
 
             if (response.data?.image) {
                 onImageChange?.(response.data.image);
-                showToast(TOAST_MESSAGES.PROFILE_IMAGE.UPDATE_SUCCESS, 'success');
+                showToastMessage('PROFILE_IMAGE', 'UPDATE_SUCCESS');
             }
         } catch (error) {
-            showToast(TOAST_MESSAGES.PROFILE_IMAGE.UPDATE_ERROR, 'error');
+            showErrorToast(error, 'Failed to upload profile image');
             console.error('Error uploading profile image:', error);
+            onImageChange?.(null);
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) {
@@ -128,11 +128,11 @@ export default function ProfileImage({
     const handleDeleteImage = async () => {
         try {
             setIsUploading(true);
-            await api.delete('/users/me/profile-image/');
+            await api.delete('/users/me/image/delete/');
             onImageChange?.(null);
-            showToast(TOAST_MESSAGES.PROFILE_IMAGE.REMOVE_SUCCESS, 'success');
+            showToastMessage('PROFILE_IMAGE', 'REMOVE_SUCCESS');
         } catch (error) {
-            showToast(TOAST_MESSAGES.PROFILE_IMAGE.REMOVE_ERROR, 'error');
+            showErrorToast(error, 'Failed to remove profile image');
             console.error('Error deleting profile image:', error);
         } finally {
             setIsUploading(false);

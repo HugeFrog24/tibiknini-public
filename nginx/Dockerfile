@@ -1,5 +1,5 @@
 # Frontend builder
-FROM node:18-alpine AS frontend-builder
+FROM node:24-alpine AS frontend-builder
 WORKDIR /app
 COPY frontend/package*.json frontend/.npmrc ./
 RUN npm ci --prefer-offline --no-audit --no-fund

@@ -1,15 +1,11 @@
 import * as React from "react";
-import { LoaderFunctionArgs, json, MetaFunction, redirect } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { LoaderFunctionArgs, MetaFunction, redirect, ActionFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { Box } from "@mui/material";
 import ProfileDetail from "../components/ProfileDetail";
-import { fetchPublicProfile, fetchAuthenticatedUser } from "../utils/server-fetch";
+import { fetchPublicProfile, fetchAuthenticatedUser, fetchReportReasons, reportUser } from "../utils/server-fetch";
 import type { User } from "../types/user";
 
-interface LoaderData {
-  user: User;
-  authenticatedUser: User | null;
-}
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
   const { username } = params;
@@ -23,7 +19,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     let authenticatedUser: User | null = null;
     try {
       authenticatedUser = await fetchAuthenticatedUser(request);
-    } catch (error) {
+    } catch {
       // Ignore auth errors - user might not be logged in
     }
 
@@ -35,17 +31,73 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       return redirect(`/users/${authenticatedUser.username}`);
     }
     
-    // Fetch public profile data
-    const userData = await fetchPublicProfile(username);
+    // Fetch public profile data and report reasons in parallel
+    const [userData, reportReasonsData] = await Promise.all([
+      fetchPublicProfile(username),
+      fetchReportReasons().catch(error => {
+        console.error('Error fetching report reasons:', error);
+        return { results: [] }; // Return empty results on error
+      })
+    ]);
 
-    return json<LoaderData>({ 
+    return {
       user: userData,
-      authenticatedUser
-    });
+      authenticatedUser,
+      reportReasons: reportReasonsData.results || []
+    };
   } catch (error: any) {
     if (error instanceof Response) throw error;
     console.error("Error loading user profile:", error);
     throw new Response("Error loading user profile", { status: 500 });
+  }
+}
+
+export async function action({ request, params }: ActionFunctionArgs) {
+  const { username } = params;
+  
+  if (!username) {
+    throw new Response("Username is required", { status: 400 });
+  }
+
+  try {
+    const formData = await request.formData();
+    const actionType = formData.get('_action') as string;
+    
+    console.log('🔍 DEBUG: User action function called with:', actionType);
+    console.log('🔍 DEBUG: Username:', username);
+    
+    switch (actionType) {
+      case 'reportUser': {
+        const reason = formData.get('reason') as string;
+        const description = formData.get('description') as string;
+        
+        if (!reason) {
+          return { error: 'Reason is required' };
+        }
+
+        // Get the user data to find the user ID
+        const userData = await fetchPublicProfile(username);
+        
+        console.log('🔍 DEBUG: Reporting user:', userData.id, 'Reason:', reason);
+        
+        const report = await reportUser(userData.id.toString(), reason, description || '', request);
+        
+        console.log('🔍 DEBUG: User reported successfully:', report);
+        return { success: true, report };
+      }
+      
+      default:
+        console.log('🔍 DEBUG: Unknown action type:', actionType);
+        return { error: 'Unknown action type' };
+    }
+  } catch (error) {
+    console.error('🔍 DEBUG: Action error:', error);
+    
+    if (error instanceof Response) {
+      throw error;
+    }
+    
+    return { error: 'An error occurred while processing your request' };
   }
 }
 
@@ -79,11 +131,11 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 };
 
 export default function UserProfile() {
-  const { user, authenticatedUser } = useLoaderData<typeof loader>();
+  const { user, authenticatedUser, reportReasons } = useLoaderData<typeof loader>();
   
   return (
     <Box sx={{ p: 2 }}>
-      <ProfileDetail initialUser={user} authenticatedUser={authenticatedUser} />
+      <ProfileDetail initialUser={user} authenticatedUser={authenticatedUser} reportReasons={reportReasons} />
     </Box>
   );
 }

@@ -1,6 +1,6 @@
 import * as React from "react";
-import { json, LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { fetchPublicComments } from "../utils/server-fetch";
 
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -12,7 +12,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
   try {
     const comments = await fetchPublicComments(postId);
-    return json({ comments });
+    return { comments };
   } catch (error) {
     if (error instanceof Response) throw error;
     console.error("Error loading comments:", error);
@@ -34,7 +34,7 @@ export default function PostComments() {
             "@context": "https://schema.org",
             "@type": "Comment",
             commentCount: comments.length,
-            comments: comments.map(comment => ({
+            comments: comments.map((comment: any) => ({
               "@type": "Comment",
               text: comment.content,
               author: {

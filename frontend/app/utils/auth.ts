@@ -1,4 +1,4 @@
-import type { NavigateFunction } from "@remix-run/react";
+import type { NavigateFunction } from "react-router";
 
 export const handleLogout = async (
   navigate: NavigateFunction,

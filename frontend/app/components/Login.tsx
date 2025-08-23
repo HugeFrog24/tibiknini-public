@@ -1,16 +1,17 @@
 import * as React from 'react';
 import type { FC, ChangeEvent } from "react";
 import { Container, Grid } from '@mui/material';
-import { useNavigate, Form, useSubmit } from '@remix-run/react';
+import { useNavigate } from 'react-router';
 import { TextField, Typography, Button, CircularProgress } from '@mui/material';
 import ReCAPTCHA from 'react-google-recaptcha';
+import type { ReCAPTCHA as ReCAPTCHAType } from 'react-google-recaptcha';
 
 interface LoginProps {
-    onLogin: () => void;
+    onLogin: (username: string, password: string, recaptcha: string) => Promise<{ success: boolean }>;
     recaptchaSiteKey: string;
 }
 
-export const Login: FC<LoginProps> = ({ recaptchaSiteKey }) => {
+export const Login: FC<LoginProps> = ({ recaptchaSiteKey, onLogin }) => {
     const [username, setUsername] = React.useState<string>("");
     const [password, setPassword] = React.useState<string>("");
     const [usernameInvalid, setUsernameInvalid] = React.useState<boolean>(false);
@@ -18,9 +19,8 @@ export const Login: FC<LoginProps> = ({ recaptchaSiteKey }) => {
     const [isLoading, setIsLoading] = React.useState<boolean>(false);
     
     const navigate = useNavigate();
-    const submit = useSubmit();
-    const recaptchaRef = React.useRef<typeof ReCAPTCHA>(null);
-    const formRef = React.useRef<HTMLFormElement>(null);
+    const recaptchaRef = React.useRef<ReCAPTCHAType>(null);
+    const [error, setError] = React.useState<string>("");
 
     const validateForm = (): boolean => {
         const isUsernameInvalid = !username;
@@ -32,7 +32,7 @@ export const Login: FC<LoginProps> = ({ recaptchaSiteKey }) => {
         return !isUsernameInvalid && !isPasswordInvalid;
     };
 
-    const handleSubmitClick = async (e: React.MouseEvent) => {
+    const handleSubmit = async (e: React.FormEvent | React.MouseEvent) => {
         e.preventDefault();
         
         if (!validateForm()) {
@@ -51,24 +51,20 @@ export const Login: FC<LoginProps> = ({ recaptchaSiteKey }) => {
                 return;
             }
 
-            if (formRef.current) {
-                const formData = new FormData(formRef.current);
-                formData.set('username', username);
-                formData.set('password', password);
-                formData.set('recaptcha', token); // Changed to match backend expectation
-
-                console.log('Submitting form with data:', {
-                    username,
-                    recaptcha: 'present'
-                });
-                
-                submit(formData, {
-                    method: 'post',
-                    action: '/login',
-                });
+            console.log('Calling onLogin with data:', {
+                username,
+                recaptcha: 'present'
+            });
+            
+            // Call the client-side login handler
+            const result = await onLogin(username, password, token);
+            if (result.success) {
+                setIsLoading(false);
             }
+            
         } catch (error) {
-            console.error('Error during form submission:', error);
+            console.error('Error during login:', error);
+            setError(error instanceof Error ? error.message : 'Login failed');
             setIsLoading(false);
         }
     };
@@ -86,9 +82,14 @@ export const Login: FC<LoginProps> = ({ recaptchaSiteKey }) => {
     return (
         <Container>
             <Grid container justifyContent="center">
-                <Grid item xs={12} md={8} lg={3}>
+                <Grid size={{ xs: 12, md: 8, lg: 3 }}>
                     <Typography variant="h4" component="h2" sx={{ mb: 3 }}>Login</Typography>
-                    <Form ref={formRef} method="post">
+                    {error && (
+                        <Typography color="error" sx={{ mb: 2 }}>
+                            {error}
+                        </Typography>
+                    )}
+                    <form onSubmit={handleSubmit}>
                         <input type="hidden" name="recaptcha" value="" />
                         <TextField
                             id="username"
@@ -124,7 +125,8 @@ export const Login: FC<LoginProps> = ({ recaptchaSiteKey }) => {
                             size="invisible"
                         />
                         <Button
-                            onClick={handleSubmitClick}
+                            type="submit"
+                            onClick={handleSubmit}
                             variant="contained"
                             color="primary"
                             fullWidth
@@ -150,7 +152,7 @@ export const Login: FC<LoginProps> = ({ recaptchaSiteKey }) => {
                         >
                             Forgot Password?
                         </Button>
-                    </Form>
+                    </form>
                 </Grid>
             </Grid>
         </Container>

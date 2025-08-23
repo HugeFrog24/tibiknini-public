@@ -1,9 +1,21 @@
 import React, { useContext, useEffect } from "react";
-import type { MetaFunction } from "@remix-run/node";
-import { useNavigate } from "@remix-run/react";
+import type { MetaFunction } from "react-router";
+import { useNavigate, useLoaderData } from "react-router";
 import RegistrationWizard from "../components/RegistrationWizard";
 import type { LoaderData } from "./_app";
 import UserContext from "../contexts/UserContext";
+
+export async function loader() {
+  const siteKey = process.env.VITE_RECAPTCHA_SITE_KEY;
+  
+  if (!siteKey) {
+    throw new Error('Missing VITE_RECAPTCHA_SITE_KEY environment variable');
+  }
+  
+  return {
+    VITE_RECAPTCHA_SITE_KEY: siteKey,
+  };
+}
 
 export const meta: MetaFunction<never, { 'routes/_app': LoaderData }> = ({ matches }) => {
   // Get the parent route's loader data
@@ -22,6 +34,7 @@ export const meta: MetaFunction<never, { 'routes/_app': LoaderData }> = ({ match
 export default function Register() {
   const { isAuthenticated } = useContext(UserContext);
   const navigate = useNavigate();
+  const data = useLoaderData<typeof loader>();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -30,5 +43,5 @@ export default function Register() {
   }, [isAuthenticated, navigate]);
 
   // Only render the registration wizard if user is not authenticated
-  return !isAuthenticated ? <RegistrationWizard /> : null;
+  return !isAuthenticated ? <RegistrationWizard recaptchaSiteKey={data.VITE_RECAPTCHA_SITE_KEY} /> : null;
 }

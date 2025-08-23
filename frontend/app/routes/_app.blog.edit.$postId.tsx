@@ -1,11 +1,11 @@
 import React, { useContext, useEffect } from 'react';
-import { json, LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { useLoaderData, useNavigate } from "@remix-run/react";
+import { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import BlogPostForm from "../components/BlogPostForm";
 import { fetchPublicBlogPost } from "../utils/server-fetch";
 import type { LoaderData } from "../routes/_app";
 import UserContext from "../contexts/UserContext";
-import { REDIRECT_REASONS } from "../constants/Constants";
+import { ACTIONS } from "../constants/Constants";
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const { postId } = params;
@@ -16,7 +16,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
   try {
     const post = await fetchPublicBlogPost(postId);
-    return json({ post });
+    return { post };
   } catch (error) {
     if (error instanceof Response) throw error;
     console.error("Error loading blog post:", error);
@@ -49,20 +49,26 @@ export const meta: MetaFunction<typeof loader, { 'routes/_app': LoaderData }> = 
 
 export default function EditBlogPost() {
   const { post } = useLoaderData<typeof loader>();
-  const { user, isAuthenticated } = useContext(UserContext);
+  const { user, isAuthenticated, isLoading } = useContext(UserContext);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate("/login", { state: { reason: REDIRECT_REASONS.EDIT_POST } });
+    // Only redirect if loading is complete and user is not authenticated
+    if (!isLoading && !isAuthenticated) {
+      navigate("/login", { state: { reason: ACTIONS.REDIRECT.EDIT_POST } });
       return;
     }
 
-    // Check if user has permission to edit this post
-    if (!(user?.is_staff || user?.id === post.author.id)) {
+    // Check if user has permission to edit this post (only after loading is complete)
+    if (!isLoading && isAuthenticated && user && !(user.is_staff || user.id === post.author.id)) {
       navigate("/blog/posts/" + post.id);
     }
-  }, [isAuthenticated, user, post, navigate]);
+  }, [isAuthenticated, isLoading, user, post, navigate]);
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   // Only render the form if authenticated and authorized
   if (!isAuthenticated || !(user?.is_staff || user?.id === post.author.id)) {

@@ -1,7 +1,6 @@
 import * as React from "react";
 import {
   Links,
-  LiveReload,
   Meta,
   Outlet,
   Scripts,
@@ -10,33 +9,21 @@ import {
   useRouteError,
   isRouteErrorResponse,
   type MetaFunction,
-} from "@remix-run/react";
-import { json } from "@remix-run/node";
+} from 'react-router';
 import { fetchSiteTitle } from "./utils/server-fetch";
-import { ThemeProvider, CssBaseline } from '@mui/material';
-import { lightTheme } from './old-app/themes/theme';
+import { CssBaseline } from '@mui/material';
 import { errorData } from './constants/errorMessages';
-
-// Import your styles
-import './old-app/App.css';
-import './old-app/styles/custom-bootstrap.css';
 
 export async function loader() {
   try {
     const siteData = await fetchSiteTitle();
-    return json({
-      siteData,
-      ENV: {
-        RECAPTCHA_SITE_KEY: process.env.RECAPTCHA_SITE_KEY
-      }
-    });
-  } catch (error) {
-    return json({
-      siteData: { site_name: "Our Platform" },
-      ENV: {
-        RECAPTCHA_SITE_KEY: process.env.RECAPTCHA_SITE_KEY
-      }
-    });
+    return {
+      siteData
+    };
+  } catch {
+    return {
+      siteData: { site_name: "Our Platform" }
+    };
   }
 }
 
@@ -54,7 +41,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 };
 
 export default function App() {
-  const { siteData, ENV } = useLoaderData<typeof loader>();
+  useLoaderData<typeof loader>();
 
   return (
     <html lang="en">
@@ -65,18 +52,10 @@ export default function App() {
         <Links />
       </head>
       <body>
-        <ThemeProvider theme={lightTheme}>
-          <CssBaseline />
-          <Outlet />
-        </ThemeProvider>
+        <CssBaseline />
+        <Outlet />
         <ScrollRestoration />
         <Scripts />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `window.ENV = ${JSON.stringify(ENV)}`,
-          }}
-        />
-        <LiveReload />
       </body>
     </html>
   );
@@ -95,11 +74,11 @@ export function ErrorBoundary() {
   }
 
   // Validate error code and get error info
-  const validErrorCode = Object.prototype.hasOwnProperty.call(errorData, errorCode) 
-    ? errorCode 
+  const validErrorCode = Object.prototype.hasOwnProperty.call(errorData, errorCode)
+    ? errorCode
     : 'Unknown';
   const errorInfo = errorData[validErrorCode];
-  const randomMessage = errorInfo.messages[Math.floor(Math.random() * errorInfo.messages.length)];
+  const message = errorInfo.message;
   const Icon = errorInfo.emoji;
 
   return (
@@ -113,7 +92,6 @@ export function ErrorBoundary() {
         <Links />
       </head>
       <body>
-        <ThemeProvider theme={lightTheme}>
           <CssBaseline />
           <div style={{ 
             textAlign: 'center', 
@@ -128,12 +106,10 @@ export function ErrorBoundary() {
               <Icon sx={{ fontSize: 40 }} /> 
               Error {errorCode}
             </h1>
-            <p>{randomMessage}</p>
+            <p>{message}</p>
           </div>
-        </ThemeProvider>
         <ScrollRestoration />
         <Scripts />
-        <LiveReload />
       </body>
     </html>
   );

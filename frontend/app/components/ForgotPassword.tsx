@@ -1,8 +1,7 @@
 import * as React from 'react';
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { Form, useActionData, useNavigation } from "@remix-run/react";
+import type { ActionFunctionArgs } from 'react-router';
+import { Form, useActionData, useNavigation } from 'react-router';
 import { Container, Grid, Box, TextField, Typography, Button, CircularProgress } from '@mui/material';
-import { showToast } from '../utils/toastUtils';
 import api from '../utils/api';
 
 interface ActionData {
@@ -41,7 +40,7 @@ export default function ForgotPassword() {
     return (
       <Container>
         <Grid container justifyContent="center">
-          <Grid item xs={12} md={8} lg={4}>
+          <Grid size={{ xs: 12, md: 8, lg: 4 }}>
             <Box>
               <Typography variant="h5" component="h2" sx={{ mb: 4 }}>
                 Check Your Email
@@ -68,7 +67,7 @@ export default function ForgotPassword() {
   return (
     <Container>
       <Grid container justifyContent="center">
-        <Grid item xs={12} md={8} lg={4}>
+        <Grid size={{ xs: 12, md: 8, lg: 4 }}>
           <Box component={Form} method="post" noValidate>
             <Typography variant="h4" component="h2" sx={{ mb: 4 }}>
               Forgot Password

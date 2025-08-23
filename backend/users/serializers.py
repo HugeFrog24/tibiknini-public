@@ -68,6 +68,24 @@ class ProfileSerializer(serializers.ModelSerializer):
         return None
 
 
+class UserProfileUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for updating user profile information (first_name, last_name)"""
+    
+    class Meta:
+        model = User
+        fields = ["first_name", "last_name"]
+        
+    def validate_first_name(self, value):
+        if value and len(value.strip()) > 150:
+            raise serializers.ValidationError("First name cannot exceed 150 characters.")
+        return value.strip() if value else ""
+        
+    def validate_last_name(self, value):
+        if value and len(value.strip()) > 150:
+            raise serializers.ValidationError("Last name cannot exceed 150 characters.")
+        return value.strip() if value else ""
+
+
 class ProfileBioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
