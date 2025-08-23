@@ -15,11 +15,16 @@ class ContentReportSerializer(serializers.ModelSerializer):
         queryset=ContentType.objects.all()
     )
     object_id = serializers.IntegerField()
-    reason = serializers.PrimaryKeyRelatedField(
-        queryset=ReportReason.objects.filter(is_active=True)
+    reason = ReportReasonSerializer(read_only=True)
+    reason_id = serializers.PrimaryKeyRelatedField(
+        queryset=ReportReason.objects.filter(is_active=True),
+        source='reason',
+        write_only=True
     )
     reported_content_str = serializers.SerializerMethodField()
     content_type_str = serializers.SerializerMethodField()
+    reporter = serializers.SerializerMethodField()
+    reviewed_by = serializers.SerializerMethodField()
 
     class Meta:
         model = ContentReport
@@ -29,11 +34,28 @@ class ContentReportSerializer(serializers.ModelSerializer):
             "content_type_str",
             "object_id",
             "reason",
+            "reason_id",
             "description",
             "reported_at",
             "reported_content_str",
+            "reporter",
+            "reviewed_at",
+            "reviewed_by",
+            "verdict",
+            "verdict_note",
+            "action_taken",
         ]
-        read_only_fields = ["reported_at", "reported_content_str", "content_type_str"]
+        read_only_fields = [
+            "reported_at",
+            "reported_content_str",
+            "content_type_str",
+            "reporter",
+            "reviewed_at",
+            "reviewed_by",
+            "verdict",
+            "verdict_note",
+            "action_taken",
+        ]
 
     def get_reported_content_str(self, obj):
         try:
@@ -44,6 +66,22 @@ class ContentReportSerializer(serializers.ModelSerializer):
 
     def get_content_type_str(self, obj):
         return obj.content_type.model.title()
+
+    def get_reporter(self, obj):
+        if obj.reporter:
+            return {
+                "id": obj.reporter.id,
+                "username": obj.reporter.username
+            }
+        return None
+
+    def get_reviewed_by(self, obj):
+        if obj.reviewed_by:
+            return {
+                "id": obj.reviewed_by.id,
+                "username": obj.reviewed_by.username
+            }
+        return None
 
     def create(self, validated_data):
         validated_data["reporter"] = self.context["request"].user

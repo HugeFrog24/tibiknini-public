@@ -72,12 +72,32 @@ class ContentReportViewSet(viewsets.ModelViewSet):
             )
 
         try:
+            # If verdict is upheld, we need to take moderation action first
+            if verdict.startswith("upheld") and not report.action_taken:
+                action_map = {
+                    "upheld_hidden": "hide",
+                    "upheld_warning": "warning",
+                    "upheld_banned": "ban"
+                }
+                
+                action_type = action_map.get(verdict)
+                if action_type:
+                    try:
+                        report.take_action(request.user, action_type)
+                    except Exception as action_error:
+                        logger.error(f"Error taking moderation action: {str(action_error)}", exc_info=True)
+                        return Response(
+                            {"detail": f"Failed to take moderation action: {str(action_error)}"},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+            
+            # Now review the report
             report.review(reviewer=request.user, verdict=verdict, note=note)
             return Response({"detail": "Report reviewed successfully."})
         except Exception as e:
             logger.error(f"Error reviewing report: {str(e)}", exc_info=True)
             return Response(
-                {"detail": "An error occurred while reviewing the report."}, 
+                {"detail": "An error occurred while reviewing the report."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 

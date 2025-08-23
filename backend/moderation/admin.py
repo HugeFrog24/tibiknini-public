@@ -96,6 +96,22 @@ class ContentReportAdmin(admin.ModelAdmin):
     search_fields = ("description", "verdict_note")
     raw_id_fields = ("reporter", "reviewed_by")
     readonly_fields = ("reported_at", "content_link", "action_taken")
+    
+    def get_fields(self, request, obj=None):
+        fields = super().get_fields(request, obj)
+        # For new reports, don't show review-related fields
+        if not obj or obj.verdict == 'pending':
+            # Remove review fields for new/pending reports
+            review_fields = ['reviewed_by', 'reviewed_at', 'verdict_note']
+            fields = [f for f in fields if f not in review_fields]
+        return fields
+    
+    def get_readonly_fields(self, request, obj=None):
+        readonly = list(super().get_readonly_fields(request, obj))
+        # Always make these fields readonly
+        if obj and obj.reviewed_at:
+            readonly.extend(['reviewed_by', 'reviewed_at'])
+        return readonly
     date_hierarchy = "reported_at"
     inlines = [ModerationActionInline]
     actions = ["hide_content", "warn_user", "ban_user"]

@@ -1,0 +1,20 @@
+Hello {{ username }},
+
+You have received a warning on {{ site_title }}.
+
+Warning Details:
+Reason: {{ reason }}
+Issued by: {{ issued_by }}
+Date: {{ issued_date }}
+{% if report_id != 'N/A' %}Report ID: {{ report_id }}{% endif %}
+
+This warning serves as a reminder to follow our community guidelines. Continued violations may result in further action, including content removal or account suspension.
+
+Please take a moment to review our community guidelines to ensure your future contributions align with our standards.
+
+If you have any questions about this warning or need clarification on our guidelines, please don't hesitate to contact our support team.
+
+Thank you for your understanding and cooperation.
+
+Best regards,
+The {{ site_title }} Team

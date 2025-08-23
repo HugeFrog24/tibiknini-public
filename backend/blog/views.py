@@ -129,7 +129,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         post_id = self.kwargs.get("post_id")
-        return Comment.objects.filter(blog_post_id=post_id)
+        return Comment.objects.filter(blog_post_id=post_id, hidden=False)
 
 
 class CommentListView(generics.ListAPIView):
@@ -138,4 +138,4 @@ class CommentListView(generics.ListAPIView):
 
     def get_queryset(self):
         post_id = self.kwargs.get("post_id")
-        return Comment.objects.filter(blog_post_id=post_id).order_by("-pub_date")
+        return Comment.objects.filter(blog_post_id=post_id, hidden=False).order_by("-pub_date")

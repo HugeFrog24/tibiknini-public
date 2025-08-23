@@ -100,6 +100,7 @@ class ContentReport(models.Model):
         Take moderation action on the reported content.
         """
         content_obj = self.content_type.get_object_for_this_type(id=self.object_id)
+        user = None  # Initialize user variable
 
         if action_type == "hide":
             # Deactivate the content
@@ -136,13 +137,31 @@ class ContentReport(models.Model):
         self.action_taken = True
         self.save()
 
+        # Create appropriate state tracking based on action type
+        if action_type == "hide":
+            previous_state = {"hidden": False}
+            new_state = {"hidden": True}
+            notes = f"Content hidden due to report #{self.id}"
+        elif action_type == "warning" and user:
+            previous_state = {"warnings_count": user.warnings.count() - 1}
+            new_state = {"warnings_count": user.warnings.count()}
+            notes = f"Warning issued to user {user.username} due to report #{self.id}"
+        elif action_type == "ban" and user:
+            previous_state = {"is_active": True}
+            new_state = {"is_active": False}
+            notes = f"User {user.username} banned due to report #{self.id}"
+        else:
+            previous_state = {}
+            new_state = {"action": action_type}
+            notes = f"Action {action_type} taken due to report #{self.id}"
+
         ModerationAction.objects.create(
             action_type=f"content_{action_type}d",
             performed_by=moderator,
             report=self,
-            previous_state={"is_active": True},
-            new_state={"is_active": False},
-            notes=f"Content {action_type}d due to report #{self.id}",
+            previous_state=previous_state,
+            new_state=new_state,
+            notes=notes,
         )
 
 

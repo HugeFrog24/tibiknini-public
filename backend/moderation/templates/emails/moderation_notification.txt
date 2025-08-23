@@ -1,0 +1,26 @@
+Hello {{ username }},
+
+We're writing to inform you that action has been taken on your {{ content_type }} on {{ site_title }}.
+
+Content Details:
+{{ content_description }}
+
+Reason for Action:
+{{ reason }}
+
+Action Taken:
+{{ action_description }}
+{% if verdict_note %}
+
+Additional Notes from Moderator:
+{{ verdict_note }}
+{% endif %}
+
+This action was taken on {{ review_date }} by {{ reviewer }}.
+
+If you believe this action was taken in error, please contact our support team for review.
+
+Thank you for helping us maintain a positive community environment.
+
+Best regards,
+The {{ site_title }} Team

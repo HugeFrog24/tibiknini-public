@@ -59,6 +59,30 @@ export async function fetchReportReasons() {
   return fetchFromApi('/moderation/reasons/');
 }
 
+export async function fetchReports(request: Request, page?: number) {
+  const query = page ? `?page=${page}` : '';
+  return fetchFromApi(`/moderation/reports/${query}`, {
+    headers: {
+      Cookie: request.headers.get('Cookie') || '',
+    },
+  });
+}
+
+export async function reviewReport(reportId: string, verdict: string, note: string, request: Request) {
+  return fetchFromApi(`/moderation/reports/${reportId}/review/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Cookie: request.headers.get('Cookie') || '',
+      'X-CSRFToken': extractCSRFToken(request),
+    },
+    body: JSON.stringify({
+      verdict,
+      note: note || '',
+    }),
+  });
+}
+
 // Comment mutation functions for server-side actions
 export async function createComment(postId: string, content: string, request: Request) {
   return fetchFromApi(`/blog/posts/id/${postId}/comments/`, {

@@ -28,6 +28,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
+import ReportIcon from "@mui/icons-material/Report";
 import { handleLogout } from '../utils/auth';
 import UserContext, { UserContextType } from '../contexts/UserContext';
 import type { Theme } from "@mui/material/styles";
@@ -85,6 +86,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ toggleDarkMode, siteTitle
     { path: "/", icon: <HomeIcon />, label: "Home" },
     { path: "/blog", icon: <BookIcon />, label: "Blog" },
     { path: "/contact", icon: <EmailIcon />, label: "Contact" },
+    ...(user?.is_staff ? [{ path: "/reports", icon: <ReportIcon />, label: "Reports" }] : []),
   ];
 
   const renderNavLinks = () => (
@@ -158,12 +160,20 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ toggleDarkMode, siteTitle
               <ListItemText>Profile</ListItemText>
             </MenuItem>
             {user.is_staff && (
-              <MenuItem onClick={() => { handleClose(); navigate("/admin/"); }}>
-                <ListItemIcon>
-                  <SettingsIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Admin console</ListItemText>
-              </MenuItem>
+              <>
+                <MenuItem onClick={() => { handleClose(); navigate("/reports"); }}>
+                  <ListItemIcon>
+                    <ReportIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>Reports</ListItemText>
+                </MenuItem>
+                <MenuItem onClick={() => { handleClose(); navigate("/admin/"); }}>
+                  <ListItemIcon>
+                    <SettingsIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>Admin console</ListItemText>
+                </MenuItem>
+              </>
             )}
             <MenuItem onClick={() => { handleClose(); navigate("/settings"); }}>
               <ListItemIcon>
