@@ -1,0 +1,266 @@
+[
+    {
+        "model": "moderation.badword",
+        "fields": {
+            "word": "\\bf[u*]ck\\s+you\\b",
+            "severity": "high",
+            "is_active": true,
+            "is_regex": true,
+            "description": "Explicit profanity directed at others",
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_modified_at": "2024-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "moderation.badword",
+        "fields": {
+            "word": "go kill yourself",
+            "severity": "critical",
+            "is_active": true,
+            "is_regex": false,
+            "description": "Suicide encouragement",
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_modified_at": "2024-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "moderation.badword",
+        "fields": {
+            "word": "kys",
+            "severity": "critical",
+            "is_active": true,
+            "is_regex": false,
+            "description": "Kill yourself abbreviation",
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_modified_at": "2024-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "moderation.badword",
+        "fields": {
+            "word": "\\bn[i*]gg[aer]+\\b",
+            "severity": "critical",
+            "is_active": true,
+            "is_regex": true,
+            "description": "Racial slur variations",
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_modified_at": "2024-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "moderation.badword",
+        "fields": {
+            "word": "\\bf[a*]gg[oe]t\\b",
+            "severity": "critical",
+            "is_active": true,
+            "is_regex": true,
+            "description": "Homophobic slur variations",
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_modified_at": "2024-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "moderation.badword",
+        "fields": {
+            "word": "retard",
+            "severity": "high",
+            "is_active": true,
+            "is_regex": false,
+            "description": "Ableist slur",
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_modified_at": "2024-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "moderation.badword",
+        "fields": {
+            "word": "i will kill you",
+            "severity": "critical",
+            "is_active": true,
+            "is_regex": false,
+            "description": "Direct death threat",
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_modified_at": "2024-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "moderation.badword",
+        "fields": {
+            "word": "i'll murder you",
+            "severity": "critical",
+            "is_active": true,
+            "is_regex": false,
+            "description": "Murder threat",
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_modified_at": "2024-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "moderation.badword",
+        "fields": {
+            "word": "you should die",
+            "severity": "critical",
+            "is_active": true,
+            "is_regex": false,
+            "description": "Death wish",
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_modified_at": "2024-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "moderation.badword",
+        "fields": {
+            "word": "nazi scum",
+            "severity": "critical",
+            "is_active": true,
+            "is_regex": false,
+            "description": "Extreme hate speech",
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_modified_at": "2024-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "moderation.badword",
+        "fields": {
+            "word": "hitler was right",
+            "severity": "critical",
+            "is_active": true,
+            "is_regex": false,
+            "description": "Holocaust denial/support",
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_modified_at": "2024-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "moderation.badword",
+        "fields": {
+            "word": "gas the jews",
+            "severity": "critical",
+            "is_active": true,
+            "is_regex": false,
+            "description": "Genocidal hate speech",
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_modified_at": "2024-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "moderation.badword",
+        "fields": {
+            "word": "rape you",
+            "severity": "critical",
+            "is_active": true,
+            "is_regex": false,
+            "description": "Sexual violence threat",
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_modified_at": "2024-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "moderation.badword",
+        "fields": {
+            "word": "child porn",
+            "severity": "critical",
+            "is_active": true,
+            "is_regex": false,
+            "description": "Illegal content reference",
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_modified_at": "2024-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "moderation.badword",
+        "fields": {
+            "word": "cp links",
+            "severity": "critical",
+            "is_active": true,
+            "is_regex": false,
+            "description": "Child exploitation material",
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_modified_at": "2024-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "moderation.badword",
+        "fields": {
+            "word": "bomb threat",
+            "severity": "critical",
+            "is_active": true,
+            "is_regex": false,
+            "description": "Terrorism threat",
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_modified_at": "2024-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "moderation.badword",
+        "fields": {
+            "word": "school shooter",
+            "severity": "critical",
+            "is_active": true,
+            "is_regex": false,
+            "description": "Mass violence reference",
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_modified_at": "2024-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "moderation.badword",
+        "fields": {
+            "word": "\\b(kill|murder|shoot)\\s+(all|every)\\s+(jews|muslims|blacks|whites|gays)\\b",
+            "severity": "critical",
+            "is_active": true,
+            "is_regex": true,
+            "description": "Genocidal hate speech pattern",
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_modified_at": "2024-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "moderation.badword",
+        "fields": {
+            "word": "\\b(your|ur)\\s+(address|location)\\s+is\\b",
+            "severity": "critical",
+            "is_active": true,
+            "is_regex": true,
+            "description": "Doxxing attempt pattern",
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_modified_at": "2024-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "moderation.badword",
+        "fields": {
+            "word": "\\b(download|get)\\s+(free|cracked)\\s+(software|games|movies)\\b",
+            "severity": "medium",
+            "is_active": true,
+            "is_regex": true,
+            "description": "Piracy promotion pattern",
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_modified_at": "2024-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "moderation.badword",
+        "fields": {
+            "word": "\\b\\d{3}-\\d{3}-\\d{4}\\b",
+            "severity": "medium",
+            "is_active": true,
+            "is_regex": true,
+            "description": "Phone number pattern (potential doxxing)",
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_modified_at": "2024-01-01T00:00:00Z"
+        }
+    },
+    {
+        "model": "moderation.badword",
+        "fields": {
+            "word": "\\b\\d{1,5}\\s+[A-Za-z]+\\s+(street|st|avenue|ave|road|rd|drive|dr|lane|ln)\\b",
+            "severity": "high",
+            "is_active": true,
+            "is_regex": true,
+            "description": "Street address pattern (doxxing)",
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_modified_at": "2024-01-01T00:00:00Z"
+        }
+    }
+]

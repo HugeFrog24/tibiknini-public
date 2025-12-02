@@ -59,7 +59,7 @@ def send_welcome_email(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def send_password_change_notification(sender, instance, created, **kwargs):
     """
-    Signal to send an email notification when a user changes their password.
+    Signal to send email and in-app notifications when a user changes their password.
     """
     if (
         not created
@@ -74,13 +74,14 @@ def send_password_change_notification(sender, instance, created, **kwargs):
 
             # Get current timestamp
             change_time = timezone.now()
+            change_datetime_str = change_time.strftime("%B %d, %Y at %I:%M %p %Z")
 
             context = {
                 "username": instance.username,
                 "site_title": site_title,
                 "change_date": change_time.strftime("%B %d, %Y"),
                 "change_time": change_time.strftime("%I:%M %p %Z"),
-                "change_datetime": change_time.strftime("%B %d, %Y at %I:%M %p %Z"),
+                "change_datetime": change_datetime_str,
             }
 
             # Schedule the password change notification email
@@ -91,9 +92,16 @@ def send_password_change_notification(sender, instance, created, **kwargs):
                 context=context,
             )
 
+            # Create in-app notification
+            from notifications.tasks import create_password_change_notification
+            create_password_change_notification.delay(
+                user_id=instance.id,
+                change_datetime=change_datetime_str
+            )
+
         except Exception as e:
             logger.error(
-                f"Failed to schedule password change notification email: {str(e)}"
+                f"Failed to schedule password change notifications: {str(e)}"
             )
 
 

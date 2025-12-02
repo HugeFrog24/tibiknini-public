@@ -6,21 +6,25 @@ import Footer from '../components/Footer';
 import { ToastContainer } from 'react-toastify';
 import UserContext, { UserContextType } from '../contexts/UserContext';
 import { User } from '../types/user';
-import { fetchSiteTitle } from '../utils/server-fetch';
+import { fetchSiteTitle, fetchAuthenticatedUser } from '../utils/server-fetch';
 import usePresence from '../hooks/usePresence';
-import api from '../utils/api';
 
 export interface LoaderData {
   siteData: { site_name: string };
   user: User | null;
 }
 
-export const loader = async () => {
+export const loader = async ({ request }: { request: Request }) => {
   try {
-    const siteData = await fetchSiteTitle();
-    // Don't try to fetch user on server-side due to cookie forwarding issues
-    // User will be fetched client-side after hydration
-    return { siteData, user: null };
+    const [siteData, userData] = await Promise.allSettled([
+      fetchSiteTitle(),
+      fetchAuthenticatedUser(request)
+    ]);
+
+    return {
+      siteData: siteData.status === 'fulfilled' ? siteData.value : { site_name: "Our Platform" },
+      user: userData.status === 'fulfilled' ? userData.value : null
+    };
   } catch {
     return {
       siteData: { site_name: "Our Platform" },
@@ -34,23 +38,7 @@ export default function AppLayout() {
   // Use regular useLoaderData
   const { siteData, user } = useLoaderData<LoaderData>();
   const [currentUser, setUser] = React.useState<User | null>(user);
-  const [isLoading, setIsLoading] = React.useState(true);
-
-  // Fetch user client-side after hydration to avoid cookie forwarding issues
-  React.useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await api.get('/users/me/');
-        setUser(response.data);
-      } catch (error) {
-        console.log('User not authenticated or error fetching user:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, []);
+  const [isLoading, setIsLoading] = React.useState(false); // Start with false since we have server data
 
   const userContextValue: UserContextType = useMemo(() => ({
     user: currentUser,

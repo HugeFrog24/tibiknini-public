@@ -48,6 +48,7 @@ class ContentReportViewSet(viewsets.ModelViewSet):
         """
         Review a report with a verdict and optional note.
         Only staff members can review reports.
+        Uses Celery for async processing.
         """
         if not request.user.is_staff:
             return Response(
@@ -71,34 +72,77 @@ class ContentReportViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        try:
-            # If verdict is upheld, we need to take moderation action first
-            if verdict.startswith("upheld") and not report.action_taken:
-                action_map = {
-                    "upheld_hidden": "hide",
-                    "upheld_warning": "warning",
-                    "upheld_banned": "ban"
-                }
-                
-                action_type = action_map.get(verdict)
-                if action_type:
-                    try:
-                        report.take_action(request.user, action_type)
-                    except Exception as action_error:
-                        logger.error(f"Error taking moderation action: {str(action_error)}", exc_info=True)
-                        return Response(
-                            {"detail": f"Failed to take moderation action: {str(action_error)}"},
-                            status=status.HTTP_400_BAD_REQUEST
-                        )
-            
-            # Now review the report
-            report.review(reviewer=request.user, verdict=verdict, note=note)
-            return Response({"detail": "Report reviewed successfully."})
-        except Exception as e:
-            logger.error(f"Error reviewing report: {str(e)}", exc_info=True)
+        # Check if report is already reviewed
+        if report.verdict != 'pending':
             return Response(
-                {"detail": "An error occurred while reviewing the report."},
-                status=status.HTTP_400_BAD_REQUEST
+                {"detail": "This report has already been reviewed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            # Import here to avoid circular imports
+            from .tasks import process_moderation_review
+            
+            # Queue the moderation task for async processing
+            task = process_moderation_review.delay(
+                report_id=pk,
+                reviewer_id=request.user.id,
+                verdict=verdict,
+                note=note
+            )
+            
+            logger.info(f"Queued moderation review task {task.id} for report {pk}")
+            
+            return Response({
+                "detail": "Review submitted successfully and is being processed.",
+                "task_id": task.id,
+                "status": "processing"
+            })
+            
+        except Exception as e:
+            logger.error(f"Error queuing moderation review: {str(e)}", exc_info=True)
+            return Response(
+                {"detail": "An error occurred while submitting the review."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=False, methods=["get"], url_path="task-status/(?P<task_id>[^/.]+)")
+    def task_status(self, request, task_id=None):
+        """
+        Check the status of a moderation review task.
+        Only staff members can check task status.
+        """
+        if not request.user.is_staff:
+            return Response(
+                {"detail": "You do not have permission to check task status."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            from celery.result import AsyncResult
+            
+            # Get task result
+            task_result = AsyncResult(task_id)
+            
+            response_data = {
+                "task_id": task_id,
+                "status": task_result.status,
+                "ready": task_result.ready(),
+            }
+            
+            if task_result.ready():
+                if task_result.successful():
+                    response_data["result"] = task_result.result
+                else:
+                    response_data["error"] = str(task_result.result)
+            
+            return Response(response_data)
+            
+        except Exception as e:
+            logger.error(f"Error checking task status {task_id}: {str(e)}", exc_info=True)
+            return Response(
+                {"detail": "An error occurred while checking task status."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
     @action(detail=False, methods=["get"])

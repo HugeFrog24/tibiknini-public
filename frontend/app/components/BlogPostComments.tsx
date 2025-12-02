@@ -17,13 +17,18 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Tooltip
+  Tooltip,
+  CircularProgress,
+  LinearProgress
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import FlagIcon from '@mui/icons-material/Flag';
 import UserContext from "../contexts/UserContext";
 import type { UserContextType } from "../contexts/UserContext";
+import { useComment } from "../hooks/useComment";
+import { toast } from "react-toastify";
+import { TOAST_MESSAGES } from "../constants/toastMessages";
 
 interface Author {
   id: number;
@@ -55,10 +60,19 @@ export default function BlogPostComments({ postId, comments = [], reportReasons 
   const fetcher = useFetcher();
   const actionData = useActionData() as { success?: boolean; error?: string; comment?: any; deleted?: string } | undefined;
   const { user, isAuthenticated } = React.useContext<UserContextType>(UserContext);
+  const { createComment, updateComment, deleteComment, pollTaskCompletion } = useComment();
+  
+  // Local state for comments to enable in-place updates
+  const [localComments, setLocalComments] = React.useState<Comment[]>(comments);
   
   const [editingCommentId, setEditingCommentId] = React.useState<number | null>(null);
   const [editContent, setEditContent] = React.useState("");
   const [newComment, setNewComment] = React.useState("");
+  
+  // Async operation states
+  const [isCreating, setIsCreating] = React.useState(false);
+  const [isUpdating, setIsUpdating] = React.useState(false);
+  const [deletingCommentId, setDeletingCommentId] = React.useState<number | null>(null);
   
   // Report dialog state
   const [reportDialogOpen, setReportDialogOpen] = React.useState(false);
@@ -66,27 +80,56 @@ export default function BlogPostComments({ postId, comments = [], reportReasons 
   const [reportDescription, setReportDescription] = React.useState('');
   const [reportingCommentId, setReportingCommentId] = React.useState<number | null>(null);
 
-  const handleSubmitComment = () => {
-    if (!newComment.trim()) return;
+  // Update local comments when props change
+  React.useEffect(() => {
+    setLocalComments(comments);
+  }, [comments]);
 
-    console.log('🔍 DEBUG: Starting comment submission');
-    console.log('🔍 DEBUG: Post ID:', postId);
-    console.log('🔍 DEBUG: Comment content:', newComment.trim());
-    console.log('🔍 DEBUG: Current URL:', window.location.href);
-    console.log('🔍 DEBUG: Will submit to current route action function');
+  const handleSubmitComment = async () => {
+    if (!newComment.trim() || isCreating) return;
 
-    const formData = new FormData();
-    formData.append('_action', 'create');
-    formData.append('content', newComment.trim());
-
-    console.log('🔍 DEBUG: FormData contents:');
-    for (let [key, value] of formData.entries()) {
-      console.log(`🔍 DEBUG: ${key}: ${value}`);
+    setIsCreating(true);
+    
+    try {
+      // Start async comment creation
+      const taskResponse = await createComment(postId, newComment.trim());
+      
+      // Poll for completion
+      const result = await pollTaskCompletion(
+        taskResponse.task_id,
+        'create',
+        postId,
+        (status) => {
+          console.log(`Comment creation status: ${status}`);
+        }
+      );
+      
+      // Add the new comment to local state
+      if (result.success && result.comment_id) {
+        const newCommentObj: Comment = {
+          id: result.comment_id,
+          content: result.content || newComment.trim(),
+          author: {
+            id: user?.id || 0,
+            username: result.author || user?.username || 'Unknown',
+            image: user?.image
+          },
+          pub_date: result.created_at || new Date().toISOString()
+        };
+        
+        setLocalComments(prev => [newCommentObj, ...prev]);
+      }
+      
+      // Clear the input and show success message
+      setNewComment("");
+      toast.success(TOAST_MESSAGES.COMMENT?.CREATE_SUCCESS || 'Comment created successfully!');
+      
+    } catch (error) {
+      console.error('Error creating comment:', error);
+      toast.error(TOAST_MESSAGES.COMMENT?.CREATE_ERROR || 'Failed to create comment');
+    } finally {
+      setIsCreating(false);
     }
-
-    console.log('🔍 DEBUG: Submitting via fetcher.submit() to route action');
-    fetcher.submit(formData, { method: 'post' });
-    setNewComment("");
   };
 
   // Handle action responses
@@ -105,26 +148,81 @@ export default function BlogPostComments({ postId, comments = [], reportReasons 
     setEditContent(comment.content);
   };
 
-  const handleUpdateComment = () => {
-    if (!editContent.trim() || !editingCommentId) return;
+  const handleUpdateComment = async () => {
+    if (!editContent.trim() || !editingCommentId || isUpdating) return;
 
-    const formData = new FormData();
-    formData.append('_action', 'update');
-    formData.append('commentId', editingCommentId.toString());
-    formData.append('content', editContent.trim());
-
-    fetcher.submit(formData, { method: 'post' });
-    setEditingCommentId(null);
-    setEditContent("");
+    setIsUpdating(true);
+    
+    try {
+      // Start async comment update
+      const taskResponse = await updateComment(postId, editingCommentId, editContent.trim());
+      
+      // Poll for completion
+      const result = await pollTaskCompletion(
+        taskResponse.task_id,
+        'update',
+        postId,
+        (status) => {
+          console.log(`Comment update status: ${status}`);
+        }
+      );
+      
+      // Update the comment in local state
+      if (result.success && result.comment_id) {
+        setLocalComments(prev =>
+          prev.map(comment =>
+            comment.id === editingCommentId
+              ? { ...comment, content: result.content || editContent.trim() }
+              : comment
+          )
+        );
+      }
+      
+      // Clear editing state and show success message
+      setEditingCommentId(null);
+      setEditContent("");
+      toast.success(TOAST_MESSAGES.COMMENT?.UPDATE_SUCCESS || 'Comment updated successfully!');
+      
+    } catch (error) {
+      console.error('Error updating comment:', error);
+      toast.error(TOAST_MESSAGES.COMMENT?.UPDATE_ERROR || 'Failed to update comment');
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
-  const handleDeleteComment = (commentId: number) => {
-    if (window.confirm('Are you sure you want to delete this comment?')) {
-      const formData = new FormData();
-      formData.append('_action', 'delete');
-      formData.append('commentId', commentId.toString());
+  const handleDeleteComment = async (commentId: number) => {
+    if (!window.confirm('Are you sure you want to delete this comment?')) return;
 
-      fetcher.submit(formData, { method: 'post' });
+    setDeletingCommentId(commentId);
+    
+    try {
+      // Start async comment deletion
+      const taskResponse = await deleteComment(postId, commentId);
+      
+      // Poll for completion
+      const result = await pollTaskCompletion(
+        taskResponse.task_id,
+        'delete',
+        postId,
+        (status) => {
+          console.log(`Comment deletion status: ${status}`);
+        }
+      );
+      
+      // Remove the comment from local state
+      if (result.success) {
+        setLocalComments(prev => prev.filter(comment => comment.id !== commentId));
+      }
+      
+      // Show success message
+      toast.success(TOAST_MESSAGES.COMMENT?.DELETE_SUCCESS || 'Comment deleted successfully!');
+      
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      toast.error(TOAST_MESSAGES.COMMENT?.DELETE_ERROR || 'Failed to delete comment');
+    } finally {
+      setDeletingCommentId(null);
     }
   };
 
@@ -156,7 +254,7 @@ export default function BlogPostComments({ postId, comments = [], reportReasons 
   return (
     <Box sx={{ mt: 4 }}>
       <Typography variant="h6" gutterBottom>
-        Comments ({Array.isArray(comments) ? comments.length : 0})
+        Comments ({Array.isArray(localComments) ? localComments.length : 0})
       </Typography>
 
       {isAuthenticated ? (
@@ -169,15 +267,24 @@ export default function BlogPostComments({ postId, comments = [], reportReasons 
             placeholder="Write a comment..."
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
+            disabled={isCreating}
           />
-          <Button
-            variant="contained"
-            onClick={handleSubmitComment}
-            disabled={!newComment.trim()}
-            sx={{ mt: 1 }}
-          >
-            Post Comment
-          </Button>
+          <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Button
+              variant="contained"
+              onClick={handleSubmitComment}
+              disabled={!newComment.trim() || isCreating}
+              startIcon={isCreating ? <CircularProgress size={16} /> : undefined}
+            >
+              {isCreating ? 'Creating...' : 'Post Comment'}
+            </Button>
+            {isCreating && (
+              <Typography variant="caption" color="text.secondary">
+                Processing your comment...
+              </Typography>
+            )}
+          </Box>
+          {isCreating && <LinearProgress sx={{ mt: 1 }} />}
         </Box>
       ) : (
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -186,7 +293,7 @@ export default function BlogPostComments({ postId, comments = [], reportReasons 
       )}
 
       <Stack spacing={2}>
-        {Array.isArray(comments) && comments.map((comment) => (
+        {Array.isArray(localComments) && localComments.map((comment) => (
           <Card key={comment.id}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -219,18 +326,25 @@ export default function BlogPostComments({ postId, comments = [], reportReasons 
                   <Button
                     variant="contained"
                     onClick={handleUpdateComment}
-                    disabled={!editContent.trim()}
+                    disabled={!editContent.trim() || isUpdating}
                     size="small"
                     sx={{ mr: 1 }}
+                    startIcon={isUpdating ? <CircularProgress size={16} /> : undefined}
                   >
-                    Save
+                    {isUpdating ? 'Saving...' : 'Save'}
                   </Button>
                   <Button
                     onClick={() => setEditingCommentId(null)}
                     size="small"
+                    disabled={isUpdating}
                   >
                     Cancel
                   </Button>
+                  {isUpdating && (
+                    <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                      Processing update...
+                    </Typography>
+                  )}
                 </Box>
               ) : (
                 <Box>
@@ -249,8 +363,13 @@ export default function BlogPostComments({ postId, comments = [], reportReasons 
                           size="small"
                           color="error"
                           onClick={() => handleDeleteComment(comment.id)}
+                          disabled={deletingCommentId === comment.id}
                         >
-                          <DeleteIcon fontSize="small" />
+                          {deletingCommentId === comment.id ? (
+                            <CircularProgress size={16} />
+                          ) : (
+                            <DeleteIcon fontSize="small" />
+                          )}
                         </IconButton>
                       </>
                     )}

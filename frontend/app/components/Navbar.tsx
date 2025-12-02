@@ -31,6 +31,7 @@ import Brightness7Icon from "@mui/icons-material/Brightness7";
 import ReportIcon from "@mui/icons-material/Report";
 import { handleLogout } from '../utils/auth';
 import UserContext, { UserContextType } from '../contexts/UserContext';
+import NotificationBell from './NotificationBell';
 import type { Theme } from "@mui/material/styles";
 
 interface HideOnScrollProps {
@@ -128,6 +129,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ toggleDarkMode, siteTitle
           <IconButton onClick={toggleDarkMode} color="inherit">
             {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
           </IconButton>
+          <NotificationBell />
           <IconButton
             onClick={handleMenu}
             color="inherit"

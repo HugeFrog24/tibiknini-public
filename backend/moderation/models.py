@@ -241,3 +241,80 @@ class ModerationAction(models.Model):
 
     def __str__(self):
         return f"{self.get_action_type_display()} by {self.performed_by} at {self.performed_at}"
+
+
+class BadWord(models.Model):
+    """
+    Model to store words/phrases that should be flagged in content moderation.
+    """
+    SEVERITY_CHOICES = [
+        ('low', 'Low - Warning'),
+        ('medium', 'Medium - Content Hidden'),
+        ('high', 'High - User Warning'),
+        ('critical', 'Critical - User Ban'),
+    ]
+    
+    word = models.CharField(max_length=100, unique=True)
+    severity = models.CharField(max_length=10, choices=SEVERITY_CHOICES, default='medium')
+    is_active = models.BooleanField(default=True)
+    is_regex = models.BooleanField(default=False, help_text="Whether this word should be treated as a regex pattern")
+    description = models.TextField(blank=True, help_text="Optional description of why this word is flagged")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="created_bad_words",
+    )
+    last_modified_at = models.DateTimeField(auto_now=True)
+    last_modified_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="modified_bad_words",
+    )
+
+    class Meta:
+        ordering = ['word']
+        verbose_name = "Bad Word"
+        verbose_name_plural = "Bad Words"
+
+    def __str__(self):
+        return f"{self.word} ({self.get_severity_display()})"
+
+
+class ContentAnalysisResult(models.Model):
+    """
+    Model to store results of content analysis.
+    """
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    
+    # Analysis results
+    flagged_words = models.JSONField(default=list, help_text="List of flagged words found in content")
+    severity_score = models.IntegerField(default=0, help_text="Overall severity score (0-100)")
+    max_severity = models.CharField(max_length=10, choices=BadWord.SEVERITY_CHOICES, null=True, blank=True)
+    
+    # Metadata
+    analyzed_at = models.DateTimeField(auto_now_add=True)
+    content_length = models.IntegerField(default=0)
+    language_detected = models.CharField(max_length=10, blank=True)
+    
+    # Actions taken
+    action_required = models.BooleanField(default=False)
+    action_taken = models.BooleanField(default=False)
+    auto_hidden = models.BooleanField(default=False)
+    
+    class Meta:
+        ordering = ['-analyzed_at']
+        indexes = [
+            models.Index(fields=['content_type', 'object_id']),
+            models.Index(fields=['severity_score']),
+            models.Index(fields=['action_required']),
+        ]
+        verbose_name = "Content Analysis Result"
+        verbose_name_plural = "Content Analysis Results"
+
+    def __str__(self):
+        return f"Analysis for {self.content_type} #{self.object_id} - Score: {self.severity_score}"

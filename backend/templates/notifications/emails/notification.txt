@@ -1,0 +1,18 @@
+Hello {{ username }},
+
+{{ notification_title }}
+
+{{ notification_message }}
+
+{% if actor_name and actor_name != "System" %}This notification was triggered by {{ actor_name }}.{% endif %}
+
+{% if content_url %}You can view the related content here: {{ content_url }}{% endif %}
+
+Notification Details:
+- Type: {{ notification_type }}
+- Date: {{ notification_date }}
+
+If you no longer wish to receive these notifications, you can update your preferences in your account settings.
+
+Best regards,
+The {{ site_title }} Team

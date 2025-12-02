@@ -19,6 +19,7 @@ import {
     Dialog,
     DialogTitle,
     DialogContent,
+    DialogActions,
     Select,
     MenuItem,
     FormControl,
@@ -32,6 +33,9 @@ import UserContext, { type UserContextType } from "../contexts/UserContext";
 import BlogPostComments from "./BlogPostComments";
 import api from "../utils/api";
 import { showToastMessage, ACTIONS } from "../constants/Constants";
+import { useBlogPost } from "../hooks/useBlogPost";
+import { TOAST_MESSAGES } from "../constants/toastMessages";
+import { toast } from "react-toastify";
 
 interface Author {
     id: number;
@@ -67,13 +71,18 @@ export default function BlogPostDetail({ post, comments = [], reportReasons = []
     const fetcher = useFetcher();
     const actionData = useActionData() as { success?: boolean; error?: string; report?: any } | undefined;
     const { user, isAuthenticated } = React.useContext<UserContextType>(UserContext);
+    const { deleteBlogPost, pollTaskCompletion } = useBlogPost();
     const [likesCount, setLikesCount] = React.useState(post.likes_count);
     const [isLiked, setIsLiked] = React.useState(post.is_liked);
+    const [isDeleting, setIsDeleting] = React.useState(false);
     
     // Report dialog state
     const [reportDialogOpen, setReportDialogOpen] = React.useState(false);
     const [selectedReason, setSelectedReason] = React.useState('');
     const [reportDescription, setReportDescription] = React.useState('');
+    
+    // Delete confirmation dialog state
+    const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
 
     const handleShare = async () => {
         const url = window.location.href;
@@ -100,15 +109,46 @@ export default function BlogPostDetail({ post, comments = [], reportReasons = []
         navigate(`/blog/edit/${post.id}`);
     };
 
-    const handleDelete = async () => {
+    const handleDeleteClick = () => {
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDeleteCancel = () => {
+        setDeleteDialogOpen(false);
+    };
+
+    const handleDeleteConfirm = async () => {
+        setDeleteDialogOpen(false);
+        setIsDeleting(true);
+        
         try {
-            await api.delete(`/blog/posts/id/${post.id}/`);
-            navigate('/blog', { 
+            // Start async deletion
+            const taskResponse = await deleteBlogPost(post.id);
+            
+            // Poll for completion
+            await pollTaskCompletion(
+                taskResponse.task_id,
+                'delete',
+                post.id,
+                (status) => {
+                    // Optional: You could show status updates here
+                    console.log(`Deletion status: ${status}`);
+                }
+            );
+            
+            // Navigate to blog list on successful deletion
+            navigate('/blog', {
                 state: { redirectReason: ACTIONS.REDIRECT.POST_DELETED }
             });
+            
+            // Show success message
+            toast.success(TOAST_MESSAGES.POST.DELETE_SUCCESS);
+            
         } catch (error) {
-            showToastMessage('POST', 'DELETE_ERROR');
             console.error('Error deleting post:', error);
+            toast.error(TOAST_MESSAGES.POST.DELETE_ERROR);
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -324,9 +364,10 @@ export default function BlogPostDetail({ post, comments = [], reportReasons = []
                                 <EditIcon />
                             </IconButton>
                             <IconButton
-                                onClick={handleDelete}
+                                onClick={handleDeleteClick}
                                 color="error"
                                 aria-label="Delete post"
+                                disabled={isDeleting}
                             >
                                 <DeleteIcon />
                             </IconButton>
@@ -381,6 +422,29 @@ export default function BlogPostDetail({ post, comments = [], reportReasons = []
                         </Button>
                     </Box>
                 </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
+                <DialogTitle>Delete Post</DialogTitle>
+                <DialogContent>
+                    <Typography>
+                        Are you sure you want to delete "{post.title}"? This action cannot be undone.
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleDeleteCancel}>
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleDeleteConfirm}
+                        color="error"
+                        variant="contained"
+                        disabled={isDeleting}
+                    >
+                        {isDeleting ? 'Deleting...' : 'Delete'}
+                    </Button>
+                </DialogActions>
             </Dialog>
         </Container>
     );

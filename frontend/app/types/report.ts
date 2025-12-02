@@ -22,7 +22,7 @@ export interface ContentReport {
     id: number;
     username: string;
   };
-  verdict: 'pending' | 'upheld_hidden' | 'upheld_warning' | 'upheld_banned' | 'rejected';
+  verdict: 'pending' | 'upheld_hidden' | 'upheld_warning' | 'upheld_banned' | 'rejected' | 'processing';
   verdict_note?: string;
   action_taken: boolean;
 }
@@ -40,4 +40,5 @@ export const VERDICT_CHOICES = [
   { value: 'upheld_warning', label: 'Upheld - Warning Issued' },
   { value: 'upheld_banned', label: 'Upheld - User Banned' },
   { value: 'rejected', label: 'Rejected - Content Follows Rules' },
+  { value: 'processing', label: 'Processing...' },
 ] as const;

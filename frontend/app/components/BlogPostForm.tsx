@@ -10,13 +10,17 @@ import {
     TextField,
     Typography,
     styled,
-    Alert
+    Alert,
+    LinearProgress,
+    Chip
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 
 import UserContext from "../contexts/UserContext";
 import { useBlogPost, type BlogPost, type BlogPostInput } from "../hooks/useBlogPost";
+import { TOAST_MESSAGES } from "../constants/toastMessages";
 
 interface BlogPostFormProps {
     previousPath?: string;
@@ -34,7 +38,7 @@ const StyledBox = styled(Box)(({ theme }) => ({
 
 const BlogPostForm: React.FC<BlogPostFormProps> = ({ previousPath, initialPost }) => {
     const navigate = useNavigate();
-    const { fetchBlogPost, createBlogPost, updateBlogPost } = useBlogPost();
+    const { fetchBlogPost, createBlogPost, updateBlogPost, pollTaskCompletion } = useBlogPost();
     const { postId } = useParams();
     const { user } = useContext(UserContext);
 
@@ -43,6 +47,8 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ previousPath, initialPost }
     const [title, setTitle] = useState(initialPost?.title ?? "");
     const [content, setContent] = useState(initialPost?.content ?? "");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [processingStatus, setProcessingStatus] = useState<string>('');
+    const [taskId, setTaskId] = useState<string>('');
 
     const isAdminEditingOthersPost = user?.is_staff && post?.author?.id !== user?.id;
 
@@ -50,10 +56,12 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ previousPath, initialPost }
 
     const handleSave = async (isDraft: boolean) => {
         setIsSubmitting(true);
+        setProcessingStatus('Validating...');
 
         if (!title.trim() || !content.trim()) {
-            toast.warning("Please fill all fields before saving.");
+            toast.warning(TOAST_MESSAGES.POST.VALIDATION_ERROR);
             setIsSubmitting(false);
+            setProcessingStatus('');
             return;
         }
 
@@ -65,29 +73,76 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ previousPath, initialPost }
 
         try {
             if (!postId) {
-                const response = await createBlogPost(postData);
-                const slug = slugify(response.title, {
+                // Creating new post
+                setProcessingStatus('Submitting post...');
+                const taskResponse = await createBlogPost(postData);
+                setTaskId(taskResponse.task_id);
+                setProcessingStatus('Processing post creation...');
+                
+                // Poll for completion
+                const completedPost = await pollTaskCompletion(
+                    taskResponse.task_id,
+                    'create',
+                    undefined,
+                    (status) => {
+                        setProcessingStatus(
+                            status === 'processing' ? 'Creating post...' :
+                            status === 'completed' ? 'Post created successfully!' :
+                            status === 'failed' ? 'Post creation failed' :
+                            'Processing...'
+                        );
+                    }
+                ) as BlogPost;
+                
+                const slug = slugify(completedPost.title, {
                     lower: true,
                     strict: true,
                     locale: 'vi',
                     trim: true
                 });
-                navigate(`/blog/posts/${response.id}/${slug}`);
+                
+                toast.success(TOAST_MESSAGES.POST.CREATE_SUCCESS);
+                navigate(`/blog/posts/${completedPost.id}/${slug}`);
             } else {
-                await updateBlogPost(Number(postId), postData);
-                const slug = slugify(title, {
+                // Updating existing post
+                setProcessingStatus('Submitting update...');
+                const taskResponse = await updateBlogPost(Number(postId), postData);
+                setTaskId(taskResponse.task_id);
+                setProcessingStatus('Processing post update...');
+                
+                // Poll for completion
+                const updatedPost = await pollTaskCompletion(
+                    taskResponse.task_id,
+                    'update',
+                    Number(postId),
+                    (status) => {
+                        setProcessingStatus(
+                            status === 'processing' ? 'Updating post...' :
+                            status === 'completed' ? 'Post updated successfully!' :
+                            status === 'failed' ? 'Post update failed' :
+                            'Processing...'
+                        );
+                    }
+                ) as BlogPost;
+                
+                const slug = slugify(updatedPost.title, {
                     lower: true,
                     strict: true,
                     locale: 'vi',
                     trim: true
                 });
+                
+                toast.success(TOAST_MESSAGES.POST.UPDATE_SUCCESS);
                 navigate(`/blog/posts/${postId}/${slug}`);
             }
         } catch (error) {
             console.error("Error saving post:", error);
-            toast.error('An error occurred while saving the post. Please try again.');
+            const errorMessage = !postId ? TOAST_MESSAGES.POST.CREATE_ERROR : TOAST_MESSAGES.POST.UPDATE_ERROR;
+            toast.error(errorMessage);
         } finally {
             setIsSubmitting(false);
+            setProcessingStatus('');
+            setTaskId('');
         }
     };
 
@@ -118,7 +173,7 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ previousPath, initialPost }
                     setIsDraft(fetchedPost.is_draft ?? false);
                 } catch (error) {
                     console.error("Failed to fetch post for editing:", error);
-                    toast.error("Failed to load the post for editing.");
+                    toast.error(TOAST_MESSAGES.POST.LOAD_ERROR);
                 }
             }
         };
@@ -139,6 +194,7 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ previousPath, initialPost }
                                 checked={isDraft}
                                 onChange={handleToggleDraft}
                                 color="primary"
+                                disabled={isSubmitting}
                             />
                         }
                         label="Draft"
@@ -146,35 +202,59 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ previousPath, initialPost }
                     <Button
                         variant={isSubmitting ? 'text' : 'contained'}
                         color="primary"
-                        startIcon={<SaveIcon />}
+                        startIcon={isSubmitting ? <HourglassEmptyIcon /> : <SaveIcon />}
                         onClick={() => handleSave(isDraft)}
                         disabled={isSubmitting}
                     >
-                        {isSubmitting ? 'Saving...' : 'Save'}
+                        {isSubmitting ? 'Processing...' : 'Save'}
                     </Button>
                     <Button
                         variant="outlined"
                         color="secondary"
                         startIcon={<CancelIcon />}
                         onClick={handleCancel}
+                        disabled={isSubmitting}
                     >
                         Cancel
                     </Button>
                 </Box>
             </Box>
+            
+            {/* Processing Status */}
+            {isSubmitting && (
+                <Box sx={{ mb: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <Chip
+                            label={processingStatus || 'Processing...'}
+                            color="primary"
+                            variant="outlined"
+                            size="small"
+                        />
+                        {taskId && (
+                            <Typography variant="caption" color="text.secondary">
+                                Task ID: {taskId.substring(0, 8)}...
+                            </Typography>
+                        )}
+                    </Box>
+                    <LinearProgress />
+                </Box>
+            )}
+            
             {isAdminEditingOthersPost && (
-                <Alert 
-                    severity="warning" 
+                <Alert
+                    severity="warning"
                     sx={{ mb: 2 }}
                 >
                     You are editing {post?.author?.username}'s post as an administrator
                 </Alert>
             )}
+            
             <TextField
                 label="Title"
                 fullWidth
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
+                disabled={isSubmitting}
             />
             <TextField
                 label="Content"
@@ -183,6 +263,7 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ previousPath, initialPost }
                 rows={15}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
+                disabled={isSubmitting}
             />
         </StyledBox>
     );

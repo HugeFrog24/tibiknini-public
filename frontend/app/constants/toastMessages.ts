@@ -16,8 +16,24 @@ export const TOAST_MESSAGES = {
     },
     POST: {
         LIKE_SUCCESS: 'Liked post',
-        CREATE_SUCCESS: 'Created post',
-        EDIT_SUCCESS: 'Edited post'
+        CREATE_SUCCESS: 'Post created successfully!',
+        UPDATE_SUCCESS: 'Post updated successfully!',
+        DELETE_SUCCESS: 'Post deleted successfully!',
+        CREATE_ERROR: 'An error occurred while creating the post. Please try again.',
+        UPDATE_ERROR: 'An error occurred while updating the post. Please try again.',
+        DELETE_ERROR: 'An error occurred while deleting the post. Please try again.',
+        VALIDATION_ERROR: 'Please fill all fields before saving.',
+        LOAD_ERROR: 'Failed to load the post for editing.'
+    },
+    COMMENT: {
+        CREATE_SUCCESS: 'Comment created successfully!',
+        UPDATE_SUCCESS: 'Comment updated successfully!',
+        DELETE_SUCCESS: 'Comment deleted successfully!',
+        CREATE_ERROR: 'An error occurred while creating the comment. Please try again.',
+        UPDATE_ERROR: 'An error occurred while updating the comment. Please try again.',
+        DELETE_ERROR: 'An error occurred while deleting the comment. Please try again.',
+        VALIDATION_ERROR: 'Please enter a comment before submitting.',
+        LOAD_ERROR: 'Failed to load comments.'
     },
     USER: {
         VIEW_OWN_PROFILE: 'Viewing own profile',

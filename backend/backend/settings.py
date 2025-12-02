@@ -69,6 +69,7 @@ INSTALLED_APPS = [
     "messages.apps.MessagesConfig",
     "moderation",
     "navbar",
+    "notifications",
     "users",
     "presence",
     "channels",

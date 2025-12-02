@@ -5,8 +5,15 @@ We're writing to inform you that action has been taken on your {{ content_type }
 Content Details:
 {{ content_description }}
 
-Reason for Action:
+{% if reason %}Reason for Action:
 {{ reason }}
+{% endif %}
+{% if violation_summary %}Violations Detected:
+{{ violation_summary }}
+
+Severity Score: {{ severity_score }}/100
+Maximum Severity: {{ max_severity }}
+{% endif %}
 
 Action Taken:
 {{ action_description }}
