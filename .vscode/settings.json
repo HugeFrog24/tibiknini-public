@@ -3,5 +3,7 @@
         "editor.defaultFormatter": "ms-python.black-formatter"
     },
     "python.formatting.provider": "none",
-    "python.analysis.typeCheckingMode": "basic"
+    "python.analysis.typeCheckingMode": "basic",
+    "snyk.advanced.organization": "512ef4a1-6034-4537-a391-9692d282122a",
+    "snyk.advanced.autoSelectOrganization": true
 }

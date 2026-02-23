@@ -1,6 +1,6 @@
 import re
 import logging
-from typing import Dict, List, Tuple, Any
+from typing import Any
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 
@@ -17,11 +17,11 @@ class ContentAnalyzer:
     def __init__(self):
         self.bad_words = self._load_bad_words()
     
-    def _load_bad_words(self) -> List[BadWord]:
+    def _load_bad_words(self) -> list[BadWord]:
         """Load active bad words from database."""
         return list(BadWord.objects.filter(is_active=True))
     
-    def analyze_content(self, content: str, content_obj: Any = None) -> Dict[str, Any]:
+    def analyze_content(self, content: str, content_obj: Any = None) -> dict[str, Any]:
         """
         Analyze content for inappropriate material.
         
@@ -103,7 +103,7 @@ class ContentAnalyzer:
         
         return analysis_result
     
-    def _find_matches(self, content: str, bad_word: BadWord) -> List[str]:
+    def _find_matches(self, content: str, bad_word: BadWord) -> list[str]:
         """Find matches for a bad word in content."""
         matches = []
         
@@ -122,7 +122,12 @@ class ContentAnalyzer:
         
         return matches
     
-    def _generate_summary(self, flagged_words: List[Dict], score: int, max_severity: str) -> str:
+    def _generate_summary(
+        self,
+        flagged_words: list[dict[str, Any]],
+        score: int,
+        max_severity: str,
+    ) -> str:
         """Generate a human-readable summary of the analysis."""
         if not flagged_words:
             return "Content appears clean - no inappropriate material detected."
@@ -144,7 +149,11 @@ class ContentAnalyzer:
         else:
             return f"Content has minor flags - {word_count} low-severity issues detected."
     
-    def _save_analysis_result(self, content_obj: Any, analysis: Dict[str, Any]) -> None:
+    def _save_analysis_result(
+        self,
+        content_obj: Any,
+        analysis: dict[str, Any],
+    ) -> None:
         """Save analysis result to database."""
         try:
             content_type = ContentType.objects.get_for_model(content_obj)
@@ -189,7 +198,11 @@ class ContentAnalyzer:
         except ContentAnalysisResult.DoesNotExist:
             return None
     
-    def _send_auto_hide_notification(self, content_obj: Any, analysis: Dict[str, Any]) -> None:
+    def _send_auto_hide_notification(
+        self,
+        content_obj: Any,
+        analysis: dict[str, Any],
+    ) -> None:
         """Send email notification when content is auto-hidden."""
         try:
             # Get the content author

@@ -1,5 +1,4 @@
 import logging
-from typing import Dict, Any, Optional, List
 
 from celery import shared_task
 from django.contrib.auth import get_user_model
@@ -7,6 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
+from typing import Any
 
 from .models import Notification, NotificationPreference, NotificationType
 
@@ -21,11 +21,11 @@ def create_notification(
     notification_type: str,
     title: str,
     message: str,
-    actor_id: Optional[int] = None,
-    content_type_id: Optional[int] = None,
-    object_id: Optional[int] = None,
-    extra_data: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    actor_id: int | None = None,
+    content_type_id: int | None = None,
+    object_id: int | None = None,
+    extra_data: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Create a notification and handle delivery preferences.
     
@@ -52,7 +52,7 @@ def create_notification(
                 return {"success": False, "error": "Recipient not found"}
             
             actor = None
-            if actor_id:
+            if actor_id is not None:
                 try:
                     actor = User.objects.get(id=actor_id)
                 except User.DoesNotExist:
@@ -60,7 +60,7 @@ def create_notification(
             
             # Get content type if provided
             content_type = None
-            if content_type_id:
+            if content_type_id is not None:
                 try:
                     content_type = ContentType.objects.get(id=content_type_id)
                 except ContentType.DoesNotExist:
@@ -97,7 +97,9 @@ def create_notification(
             
             # Schedule email notification if user preferences allow
             if preferences.should_send_email(notification_type):
-                send_notification_email.delay(notification.id)
+                transaction.on_commit(
+                    lambda: send_notification_email.delay(notification.id)
+                )
             
             return {
                 "success": True,
@@ -125,7 +127,7 @@ def create_notification(
 
 
 @shared_task(bind=True, max_retries=3)
-def send_notification_email(self, notification_id: int) -> Dict[str, Any]:
+def send_notification_email(self, notification_id: int)-> dict[str, Any]:
     """
     Send email notification if user preferences allow.
     
@@ -202,7 +204,7 @@ def send_notification_email(self, notification_id: int) -> Dict[str, Any]:
 
 
 @shared_task
-def create_comment_notification(comment_id: int, post_author_id: int, commenter_id: int) -> Dict[str, Any]:
+def create_comment_notification(comment_id: int, post_author_id: int, commenter_id: int) -> dict[str, Any]:
     """
     Create a notification when someone comments on a post.
     
@@ -250,7 +252,7 @@ def create_comment_notification(comment_id: int, post_author_id: int, commenter_
 
 
 @shared_task
-def create_follow_notification(follower_id: int, followed_id: int) -> Dict[str, Any]:
+def create_follow_notification(follower_id: int, followed_id: int) -> dict[str, Any]:
     """
     Create a notification when someone follows a user.
     
@@ -295,7 +297,7 @@ def create_follow_notification(follower_id: int, followed_id: int) -> Dict[str, 
 
 
 @shared_task
-def create_password_change_notification(user_id: int, change_datetime: str) -> Dict[str, Any]:
+def create_password_change_notification(user_id: int, change_datetime: str) -> dict[str, Any]:
     """
     Create a notification for password change.
     
@@ -328,7 +330,7 @@ def create_password_change_notification(user_id: int, change_datetime: str) -> D
 
 
 @shared_task
-def cleanup_old_notifications(days: int = 30) -> Dict[str, Any]:
+def cleanup_old_notifications(days: int = 30) -> dict[str, Any]:
     """
     Clean up old read notifications.
     
@@ -339,7 +341,6 @@ def cleanup_old_notifications(days: int = 30) -> Dict[str, Any]:
         Dictionary with cleanup results
     """
     try:
-        from django.utils import timezone
         from datetime import timedelta
         
         cutoff_date = timezone.now() - timedelta(days=days)
@@ -364,7 +365,10 @@ def cleanup_old_notifications(days: int = 30) -> Dict[str, Any]:
 
 
 @shared_task
-def mark_notifications_as_read(user_id: int, notification_ids: Optional[List[int]] = None) -> Dict[str, Any]:
+def mark_notifications_as_read(
+    user_id: int,
+    notification_ids: list[int] | None = None
+) -> dict[str, Any]:
     """
     Mark notifications as read for a user.
     
@@ -378,7 +382,7 @@ def mark_notifications_as_read(user_id: int, notification_ids: Optional[List[int
     try:
         queryset = Notification.objects.filter(recipient_id=user_id, is_read=False)
         
-        if notification_ids:
+        if notification_ids is not None:
             queryset = queryset.filter(id__in=notification_ids)
         
         updated_count = queryset.update(
